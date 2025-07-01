@@ -16,8 +16,10 @@ extern void test_finalize(aclrtStream stream, int device_id);
 
 extern void test_put(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev_ptr);
 extern void test_get(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev_ptr);
+extern void test_put_nbi(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev_ptr);
+extern void test_get_nbi(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev_ptr);
 
-static void test_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint32_t rank_size)
+static void test_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint32_t rank_size, bool is_nbi)
 {
     int total_size = 16 * (int)rank_size;
     size_t input_size = total_size * sizeof(float);
@@ -34,7 +36,12 @@ static void test_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uin
 
     uint32_t block_dim = 1;
     void *ptr = shmem_malloc(1024);
-    test_put(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    if (is_nbi) {
+        test_put_nbi(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    }
+    else {
+        test_put(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    }
     ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
     sleep(2);
 
@@ -46,8 +53,12 @@ static void test_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uin
         std::cout << input[i] << " ";
     }
     std::cout << std::endl;
-
-    test_get(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    if (is_nbi) {
+        test_get_nbi(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    }
+    else {
+        test_get(block_dim, stream, (uint8_t *)ptr, (uint8_t *)dev_ptr);
+    }
     ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
     sleep(2);
 
@@ -73,7 +84,21 @@ void test_shmem_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
     test_init(rank_id, n_ranks, local_mem_size, &stream);
     ASSERT_NE(stream, nullptr);
 
-    test_put_get(stream, (uint8_t *)shm::g_state.heap_base, rank_id, n_ranks);
+    test_put_get(stream, (uint8_t *)shm::g_state.heap_base, rank_id, n_ranks, false);
+    std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
+    test_finalize(stream, device_id);
+    if (::testing::Test::HasFailure()){
+        exit(1);
+    }
+}
+
+void test_shmem_mem_nbi(int rank_id, int n_ranks, uint64_t local_mem_size) {
+    int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+    aclrtStream stream;
+    test_init(rank_id, n_ranks, local_mem_size, &stream);
+    ASSERT_NE(stream, nullptr);
+
+    test_put_get(stream, (uint8_t *)shm::g_state.heap_base, rank_id, n_ranks, true);
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
     if (::testing::Test::HasFailure()){
@@ -86,4 +111,11 @@ TEST(TestMemApi, TestShmemMem)
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_mem, local_mem_size, process_count);
+}
+
+TEST(TestMemApi, TestShmemMemNbi)
+{   
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task(test_shmem_mem_nbi, local_mem_size, process_count);
 }

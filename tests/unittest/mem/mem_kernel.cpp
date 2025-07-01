@@ -14,11 +14,15 @@ public:
         rank = smem_shm_get_global_rank();
         rank_size = smem_shm_get_global_rank_size();
     }
-    __aicore__ inline void Process()
+    __aicore__ inline void Process_nbi()
     {
         shmem_put_float_mem_nbi(gva_gm, dev_gm, rank_size * 16, rank);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
+    }
+    __aicore__ inline void Process()
+    {
+        shmem_put_float_mem(gva_gm, dev_gm, rank_size * 16, rank);
     }
 private:
     __gm__ float *gva_gm;
@@ -35,9 +39,21 @@ extern "C" __global__ __aicore__ void put_num_test(GM_ADDR gva, GM_ADDR dev)
     op.Process();
 }
 
+extern "C" __global__ __aicore__ void put_num_test_nbi(GM_ADDR gva, GM_ADDR dev)
+{
+    kernel_put_num op;
+    op.Init(gva, dev);
+    op.Process_nbi();
+}
+
 void test_put(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
 {
     put_num_test<<<block_dim, nullptr, stream>>>(gva, dev);
+}
+
+void test_put_nbi(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
+{
+    put_num_test_nbi<<<block_dim, nullptr, stream>>>(gva, dev);
 }
 
 class kernel_get_num {
@@ -54,7 +70,7 @@ public:
         // 1x512 Bytes Buffer
         pipe.InitBuffer(buf_queue, 1, 512);
     }
-    __aicore__ inline void Process()
+    __aicore__ inline void Process_nbi()
     {
         AscendC::LocalTensor<float> buf_tensor = buf_queue.AllocTensor<float>();
         __ubuf__ float *buf = (__ubuf__ float *)buf_tensor.address_.bufferAddr;
@@ -66,6 +82,12 @@ public:
         }
 
         buf_queue.FreeTensor(buf_tensor);
+    }
+    __aicore__ inline void Process()
+    {
+        for (int i = 0; i < rank_size; i++) {
+            shmem_get_float_mem(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
+        }
     }
 private:
     AscendC::TPipe pipe;
@@ -84,7 +106,19 @@ extern "C" __global__ __aicore__ void get_num_test(GM_ADDR gva, GM_ADDR dev)
     op.Process();
 }
 
+extern "C" __global__ __aicore__ void get_num_test_nbi(GM_ADDR gva, GM_ADDR dev)
+{
+    kernel_get_num op;
+    op.Init(gva, dev);
+    op.Process_nbi();
+}
+
 void test_get(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
 {
     get_num_test<<<block_dim, nullptr, stream>>>(gva, dev);
+}
+
+void test_get_nbi(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
+{
+    get_num_test_nbi<<<block_dim, nullptr, stream>>>(gva, dev);
 }

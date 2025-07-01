@@ -10,6 +10,7 @@ ascendc_library(unittest_kernel SHARED ${KERNEL_FILES})
 ascendc_include_directories(unittest_kernel
     PUBLIC
     ${PROJECT_SOURCE_DIR}/include/
+    ${PROJECT_SOURCE_DIR}/tests/unittest/include/
     ${PROJECT_SOURCE_DIR}/3rdparty/memfabric_hybrid/output/smem/include/smem/device/
 )
 

@@ -81,6 +81,30 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P_AICORE);
 
 SHMEM_TYPE_FUNC(SHMEM_TYPENAME_G_AICORE);
 
+/**
+* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+*
+* @param dst               [in] Pointer on local device of the destination data.
+* @param src               [in] Pointer on Symmetric memory of the source data.
+* @param elem_size         [in] Number of elements in the dest and source arrays.
+* @param pe                [in] PE number of the remote PE.
+*/
+SHMEM_DEVICE void shmem_getmem(__gm__ void* dst, __gm__ void* src, uint32_t elem_size, int32_t pe)
+{
+    /* ROCE */
+    /* RDMA */
+    /* MTE  */
+    /* Global State Get */
+    __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
+    /* CopyUB Config Set */
+    uint64_t copy_ub = device_state->mte_config.shmem_ub;
+    uint32_t copy_ub_size = device_state->mte_config.ub_size;
+    AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
+    shmem_mte_get_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
+        reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
+    AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+    AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+}
 
 #define SHMEM_GET_TYPENAME_MEM(NAME, TYPE)                                                                                      \
     /**                                                                                                                         \
@@ -202,6 +226,32 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR);
     }
 
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED);
+
+
+/**
+* @brief Synchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+*
+* @param dst               [in] Pointer on local device of the destination data.
+* @param src               [in] Pointer on Symmetric memory of the source data.
+* @param elem_size         [in] Number of elements in the dest and source arrays.
+* @param pe                [in] PE number of the remote PE.
+*/
+SHMEM_DEVICE void shmem_putmem(__gm__ void* dst, __gm__ void* src, uint32_t elem_size, int32_t pe)
+{
+    /* ROCE */
+    /* RDMA */
+    /* MTE  */
+    /* Global State Get */
+    __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
+    /* CopyUB Config Set */
+    uint64_t copy_ub = device_state->mte_config.shmem_ub;
+    uint32_t copy_ub_size = device_state->mte_config.ub_size;
+    AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
+    shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
+        reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
+    AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+    AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+}
 
 
 #define SHMEM_PUT_TYPENAME_MEM(NAME, TYPE)                                                                                      \
@@ -530,7 +580,31 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_DETAILED);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_DETAILED);
 
 
-#define SHMEM_GET_TYPENAME_MEM_NBI(NAME, TYPE)                                                                                      \
+/**
+* @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+*
+* @param dst               [in] Pointer on local device of the destination data.
+* @param src               [in] Pointer on Symmetric memory of the source data.
+* @param elem_size         [in] Number of elements in the dest and source arrays.
+* @param pe                [in] PE number of the remote PE.
+*/
+SHMEM_DEVICE void shmem_getmem_nbi(__gm__ void* dst, __gm__ void* src, uint32_t elem_size, int32_t pe)
+{
+    /* ROCE */
+    /* RDMA */
+    /* MTE  */
+    /* Global State Get */
+    __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
+    /* CopyUB Config Set */
+    uint64_t copy_ub = device_state->mte_config.shmem_ub;
+    uint32_t copy_ub_size = device_state->mte_config.ub_size;
+    AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
+    shmem_mte_get_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
+        reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
+}
+
+
+#define SHMEM_GET_TYPENAME_MEM_NBI(NAME, TYPE)                                                                                  \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE. \
     *                                                                                                                           \
@@ -556,7 +630,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_DETAILED);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_DETAILED_NBI(NAME, TYPE)                                                                             \
+#define SHMEM_GET_TYPENAME_MEM_DETAILED_NBI(NAME, TYPE)                                                                         \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on symmetric memory from the specified PE to address on the local device.                                         \
@@ -583,7 +657,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_DETAILED_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_TENSOR_NBI(NAME, TYPE)                                                                               \
+#define SHMEM_GET_TYPENAME_MEM_TENSOR_NBI(NAME, TYPE)                                                                           \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE. \
     *                                                                                                                           \
@@ -613,7 +687,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                      \
+#define SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                  \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on symmetric memory from the specified PE to address on the local device.                                         \
@@ -644,7 +718,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_NBI(NAME, TYPE)                                                                                      \
+#define SHMEM_PUT_TYPENAME_MEM_NBI(NAME, TYPE)                                                                                  \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.               \
     *                                                                                                                           \
@@ -670,7 +744,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI(NAME, TYPE)                                                                             \
+#define SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI(NAME, TYPE)                                                                         \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on local PE to symmetric address on the specified PE.                                                             \
@@ -697,7 +771,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI(NAME, TYPE)                                                                               \
+#define SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI(NAME, TYPE)                                                                           \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.               \
     *                                                                                                                           \
@@ -727,7 +801,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                      \
+#define SHMEM_PUT_TYPENAME_MEM_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                  \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on local PE to symmetric address on the specified PE.                                                             \
@@ -758,7 +832,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_DETAILED_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_UB_NBI(NAME, TYPE)                                                                                   \
+#define SHMEM_GET_TYPENAME_MEM_UB_NBI(NAME, TYPE)                                                                               \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local UB.\
      *                                                                                                                          \
@@ -781,7 +855,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_UB_TENSOR_NBI(NAME, TYPE)                                                                            \
+#define SHMEM_GET_TYPENAME_MEM_UB_TENSOR_NBI(NAME, TYPE)                                                                        \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local UB.\
      *                                                                                                                          \
@@ -804,7 +878,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_UB_DETAILED_NBI(NAME, TYPE)                                                                          \
+#define SHMEM_GET_TYPENAME_MEM_UB_DETAILED_NBI(NAME, TYPE)                                                                      \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on symmetric memory from the specified PE to address on the local UB.                                             \
@@ -828,7 +902,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_DETAILED_NBI);
 
 
-#define SHMEM_GET_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                   \
+#define SHMEM_GET_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI(NAME, TYPE)                                                               \
     /**                                                                                                                         \
      * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                \
      *        on symmetric memory from the specified PE to address on the local UB.                                             \
@@ -852,7 +926,31 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_UB_NBI(NAME, TYPE)                                                                                   \
+/**
+* @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+*
+* @param dst               [in] Pointer on local device of the destination data.
+* @param src               [in] Pointer on Symmetric memory of the source data.
+* @param elem_size         [in] Number of elements in the dest and source arrays.
+* @param pe                [in] PE number of the remote PE.
+*/
+SHMEM_DEVICE void shmem_putmem_nbi(__gm__ void* dst, __gm__ void* src, uint32_t elem_size, int32_t pe)
+{
+    /* ROCE */
+    /* RDMA */
+    /* MTE  */
+    /* Global State Get */
+    __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
+    /* CopyUB Config Set */
+    uint64_t copy_ub = device_state->mte_config.shmem_ub;
+    uint32_t copy_ub_size = device_state->mte_config.ub_size;
+    AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
+    shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
+        reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
+}
+
+
+#define SHMEM_PUT_TYPENAME_MEM_UB_NBI(NAME, TYPE)                                                                               \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy a contiguous data on local UB to symmetric address on the specified PE.               \
     *                                                                                                                           \
@@ -875,7 +973,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_NBI(NAME, TYPE)                                                                            \
+#define SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_NBI(NAME, TYPE)                                                                        \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Copy a contiguous data on local UB to symmetric address on the specified PE.               \
     *                                                                                                                           \
@@ -898,7 +996,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_UB_DETAILED_NBI(NAME, TYPE)                                                                          \
+#define SHMEM_PUT_TYPENAME_MEM_UB_DETAILED_NBI(NAME, TYPE)                                                                      \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                 \
     *        on local UB to symmetric address on the specified PE.                                                              \
@@ -922,7 +1020,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_NBI);
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_DETAILED_NBI);
 
 
-#define SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI(NAME, TYPE)                                                                   \
+#define SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI(NAME, TYPE)                                                               \
     /**                                                                                                                         \
     * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data                                 \
     *        on local UB to symmetric address on the specified PE.                                                              \

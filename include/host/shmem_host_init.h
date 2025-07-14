@@ -68,6 +68,22 @@ SHMEM_HOST_API int shmem_init_attr(shmem_init_attr_t *attributes);
  */
 SHMEM_HOST_API int shmem_finalize();
 
+/**
+ * @brief returns the major and minor version.
+ *
+ * @param major [OUT] major version
+ *
+ * @param minor [OUT] minor version
+ */
+SHMEM_HOST_API void shmem_info_get_version(int* major, int* minor);
+
+/**
+ * @brief returns the vendor defined name string.
+ *
+ * @param name [OUT] name
+ */
+SHMEM_HOST_API void shmem_info_get_name(char *name);
+
 #ifdef __cplusplus
 }
 #endif

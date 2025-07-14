@@ -53,6 +53,13 @@ enum {
     SHMEM_CMP_LE
 };
 
+/**
+ * @brief Reserved for future use.
+ */
+typedef struct {
+    int num_contexts;
+} shmem_team_config_t;
+
 /**@} */ // end of group_enums
 
 /**

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <cstring>
 #include <vector>
+#include <iostream>
+#include <sstream>
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
 
@@ -241,4 +243,24 @@ int32_t shmem_finalize()
     }
     shm::smem_api::smem_un_init();
     return SHMEM_SUCCESS;
+}
+
+void shmem_info_get_version(int *major, int* minor)
+{
+    SHM_ASSERT_RET_VOID(major != nullptr && minor != nullptr);
+    *major = SHMEM_MAJOR_VERSION;
+    *minor = SHMEM_MINOR_VERSION;
+}
+
+void shmem_info_get_name(char *name)
+{
+    SHM_ASSERT_RET_VOID(name != nullptr);
+    std::ostringstream oss;
+    oss << "SHMEM v" << SHMEM_VENDOR_MAJOR_VER << "." << SHMEM_VENDOR_MINOR_VER << "." << SHMEM_VENDOR_PATCH_VER;
+    const char *version_str = oss.str().c_str();
+    size_t i;
+    for (i = 0; i < SHMEM_MAX_NAME_LEN - 1 && version_str[i] != '\0'; i++) {
+        name[i] = version_str[i];
+    }
+    name[i] = '\0';
 }

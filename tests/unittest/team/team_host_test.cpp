@@ -79,11 +79,46 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size) {
     }
 }
 
-
-
 TEST(TestTeamApi, TestShmemTeam)
 {   
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_team, local_mem_size, process_count);
+}
+
+void test_shmem_team_config(int rank_id, int n_ranks, uint64_t local_mem_size)
+{
+    int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+    aclrtStream stream;
+    test_init(rank_id, n_ranks, local_mem_size, &stream);
+    ASSERT_NE(stream, nullptr);
+
+    shmem_team_t team_odd;
+    int start = 0;
+    int stride = 1;
+    int team_size = 8;
+    int ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
+    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(team_odd >= 0 && team_odd < SHMEM_MAX_TEAMS);
+
+    shmem_team_config_t config;
+    config.num_contexts = 1;
+    ret = shmem_team_get_config(team_odd, &config);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(config.num_contexts, 0);
+
+    shmem_team_destroy(team_odd);
+
+    std::cerr << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
+    test_finalize(stream, device_id);
+    if (::testing::Test::HasFailure()){
+        exit(1);
+    }
+}
+
+TEST(TestTeamApi, TestShmemTeamConfig)
+{
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task(test_shmem_team_config, local_mem_size, process_count);
 }

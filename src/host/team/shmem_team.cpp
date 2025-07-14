@@ -288,6 +288,17 @@ int32_t shmem_team_n_pes(shmem_team_t team)
     }
 }
 
+int shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config)
+{
+    SHMEM_CHECK_RET(config == nullptr);
+    if (shm::is_valid_team(team)) {
+        config->num_contexts = 0;
+        return 0;
+    } else {
+        return SHMEM_INVALID_PARAM;
+    }
+}
+
 void shmem_barrier(shmem_team_t tid) {
     // using default stream to do barrier
     shmemi_barrier_on_stream(tid, nullptr);

@@ -73,6 +73,14 @@ SHMEM_HOST_API int shmem_team_my_pe(shmem_team_t team);
  */
 SHMEM_HOST_API int shmem_team_n_pes(shmem_team_t team);
 
+/**
+ * @brief return team config which pass in as team created
+ *
+ * @param team [IN] team handle
+ * @param config [OUT] the config associated with team, reserved for future use
+ */
+SHMEM_HOST_API int shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config);
+
 #ifdef __cplusplus
 }
 #endif

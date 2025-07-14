@@ -13,4 +13,11 @@
 #include "shmemi_team.h"
 #include "shmemi_mm.h"
 
+#define SHMEM_MAJOR_VERSION 1
+#define SHMEM_MINOR_VERSION 1
+#define SHMEM_MAX_NAME_LEN 256
+#define SHMEM_VENDOR_MAJOR_VER 1
+#define SHMEM_VENDOR_MINOR_VER 1
+#define SHMEM_VENDOR_PATCH_VER 1
+
 #endif // SHMEM_SHMEMI_HOST_COMMON_H

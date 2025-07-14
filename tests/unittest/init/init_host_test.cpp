@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
 #include <acl/acl.h>
 #include "shmem_api.h"
@@ -225,4 +226,44 @@ TEST(TestInitAPI, TestSetConfig)
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_init_set_config, local_mem_size, process_count);
+}
+
+TEST(TestInitAPI, TestInfoGetVersion)
+{
+    int major = 0;
+    int minor = 0;
+    shmem_info_get_version(&major, &minor);
+    EXPECT_EQ(major, SHMEM_MAJOR_VERSION);
+    EXPECT_EQ(minor, SHMEM_MINOR_VERSION);
+}
+
+TEST(TestInitAPI, TestInfoGetVersionNull)
+{
+    int major = 0;
+    shmem_info_get_version(&major, nullptr);
+    EXPECT_EQ(major, 0);
+}
+
+TEST(TestInitAPI, TestInfoGetName)
+{
+    char name[256];
+    shmem_info_get_name(name);
+    EXPECT_TRUE(strlen(name) > 0);
+
+    const char* template_str = "SHMEM v%s.%s.%s";
+    char expect[256];
+    snprintf(expect, 256, template_str, std::to_string(SHMEM_VENDOR_MAJOR_VER).c_str(),
+             std::to_string(SHMEM_VENDOR_MINOR_VER).c_str(),
+             std::to_string(SHMEM_VENDOR_PATCH_VER).c_str());
+
+    for (size_t i = 0; i < strlen(expect); i++) {
+        EXPECT_EQ(expect[i], name[i]);
+    }
+}
+
+TEST(TestInitAPI, TestInfoGetNameNull)
+{
+    char *input = nullptr;
+    shmem_info_get_name(input);
+    EXPECT_EQ(input, nullptr);
 }

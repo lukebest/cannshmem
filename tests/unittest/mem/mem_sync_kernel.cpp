@@ -11,9 +11,9 @@
 
 #include "shmem_api.h"
 
-class kernel_put_num {
+class kernel_put_num_sync {
 public:
-    __aicore__ inline kernel_put_num() {}
+    __aicore__ inline kernel_put_num_sync() {}
     __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)
     {
         gva_gm = (__gm__ float *)gva;
@@ -24,9 +24,9 @@ public:
     }
     __aicore__ inline void Process()
     {
-        shmem_put_float_mem_nbi(gva_gm, dev_gm, rank_size * 16, rank);
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
+        shmem_put_float_mem(gva_gm, dev_gm, rank_size * 16, rank);
+        // AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
+        // AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
     }
 private:
     __gm__ float *gva_gm;
@@ -36,21 +36,21 @@ private:
     int64_t rank_size;
 };
 
-extern "C" __global__ __aicore__ void put_num_test(GM_ADDR gva, GM_ADDR dev)
+extern "C" __global__ __aicore__ void put_num_test_sync(GM_ADDR gva, GM_ADDR dev)
 {
-    kernel_put_num op;
+    kernel_put_num_sync op;
     op.Init(gva, dev);
     op.Process();
 }
 
-void test_put(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
+void test_put_sync(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
 {
-    put_num_test<<<block_dim, nullptr, stream>>>(gva, dev);
+    put_num_test_sync<<<block_dim, nullptr, stream>>>(gva, dev);
 }
 
-class kernel_get_num {
+class kernel_get_num_sync {
 public:
-    __aicore__ inline kernel_get_num() {}
+    __aicore__ inline kernel_get_num_sync() {}
     __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)
     {
         gva_gm = (__gm__ float *)gva;
@@ -68,9 +68,10 @@ public:
         __ubuf__ float *buf = (__ubuf__ float *)buf_tensor.address_.bufferAddr;
 
         for (int i = 0; i < rank_size; i++) {
-            shmem_mte_get_mem_nbi(dev_gm + 16 * i, gva_gm, buf, (uint32_t)256, 16, i % rank_size, EVENT_ID0);
-            AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-            AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
+            shmem_get_float_mem(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
+            // shmem_mte_get_mem_nbi(dev_gm + 16 * i, gva_gm, buf, (uint32_t)256, 16, i % rank_size, EVENT_ID0);
+            // AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
+            // AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         }
 
         buf_queue.FreeTensor(buf_tensor);
@@ -85,14 +86,14 @@ private:
     int64_t rank_size;
 };
 
-extern "C" __global__ __aicore__ void get_num_test(GM_ADDR gva, GM_ADDR dev)
+extern "C" __global__ __aicore__ void get_num_test_sync(GM_ADDR gva, GM_ADDR dev)
 {
-    kernel_get_num op;
+    kernel_get_num_sync op;
     op.Init(gva, dev);
     op.Process();
 }
 
-void test_get(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
+void test_get_sync(uint32_t block_dim, void* stream, uint8_t* gva, uint8_t* dev)
 {
-    get_num_test<<<block_dim, nullptr, stream>>>(gva, dev);
+    get_num_test_sync<<<block_dim, nullptr, stream>>>(gva, dev);
 }

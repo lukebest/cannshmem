@@ -23,6 +23,15 @@ extern "C" {
 /// \def SHMEM_HOST_API
 /// \brief A macro that identifies a function on the host side.
 #define SHMEM_HOST_API   __attribute__((visibility("default")))
+
+/// \def SHMEM_XXX_VERSION
+/// \brief macros that define current version info
+#define SHMEM_MAJOR_VERSION 1
+#define SHMEM_MINOR_VERSION 1
+#define SHMEM_MAX_NAME_LEN 256
+#define SHMEM_VENDOR_MAJOR_VER 1
+#define SHMEM_VENDOR_MINOR_VER 1
+#define SHMEM_VENDOR_PATCH_VER 1
 /**@} */ // end of group_macros
 
 /**

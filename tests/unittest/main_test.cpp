@@ -11,7 +11,6 @@
 #include <iostream>
 #include "acl/acl.h"
 #include "shmem_api.h"
-#include "main_test.h"
 
 int test_global_ranks;
 int test_gnpu_num;

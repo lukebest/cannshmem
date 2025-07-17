@@ -340,22 +340,3 @@ int shmem_team_get_config(shmem_team_t team, shmem_team_config_t *config)
         return SHMEM_INVALID_PARAM;
     }
 }
-
-void shmem_barrier(shmem_team_t tid) {
-    // using default stream to do barrier
-    shmemi_barrier_on_stream(tid, nullptr);
-}
-
-void shmem_barrier_all() {
-    shmem_barrier(SHMEM_TEAM_WORLD);
-}
-
-void shmem_barrier_on_stream(shmem_team_t tid, aclrtStream stream)
-{
-    shmemi_barrier_on_stream(tid, stream);
-}
-
-void shmem_barrier_all_on_stream(aclrtStream stream)
-{
-    shmemi_barrier_on_stream(SHMEM_TEAM_WORLD, stream);
-}

@@ -1,11 +1,19 @@
+/*
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <iostream>
 #include <string>
+#include <gtest/gtest.h>
 
 #include "acl/acl.h"
 #include "shmem_api.h"
 
-#include <gtest/gtest.h>
-using namespace std;
 extern int test_gnpu_num;
 extern int test_first_npu;
 extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count);
@@ -30,7 +38,7 @@ static int32_t test_scalar_put_get(aclrtStream stream, uint32_t rank_id, uint32_
 
     EXPECT_EQ(aclrtMemcpy(y_host, 1 * sizeof(float), ptr, 1 * sizeof(float), ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
-    string p_name = "[Process " + to_string(rank_id) + "] ";
+    std::string p_name = "[Process " + std::to_string(rank_id) + "] ";
     std::cout << p_name << "-----[PUT]------ " << y_host[0] << " ----" << std::endl;
 
     // for gtest

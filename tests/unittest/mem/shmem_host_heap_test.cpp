@@ -1,16 +1,18 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2023. All rights reserved.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <cstdint>
 #include <unordered_set>
 #include <gtest/gtest.h>
 
 #include "acl/acl.h"
-
-#include "host/shmem_host_init.h"
-#include "host/shmem_host_heap.h"
-#include "shmemi_init.h"
-#include "shmemi_mm.h"
+#include "shmemi_host_common.h"
 
 extern int test_gnpu_num;
 extern int test_first_npu;
@@ -43,7 +45,7 @@ protected:
         EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
         EXPECT_NE(shm::g_state.team_pools[0], nullptr);
         status = shmem_init_status();
-        EXPECT_EQ(status, SHMEM_STATUS_IS_INITALIZED);
+        EXPECT_EQ(status, SHMEM_STATUS_IS_INITIALIZED);
         testingRank = true;
     }
 

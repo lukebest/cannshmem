@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #ifndef SHMEM_HOST_DEF_H
 #define SHMEM_HOST_DEF_H
 #include <climits>
@@ -14,6 +23,15 @@ extern "C" {
 /// \def SHMEM_HOST_API
 /// \brief A macro that identifies a function on the host side.
 #define SHMEM_HOST_API   __attribute__((visibility("default")))
+
+/// \def SHMEM_XXX_VERSION
+/// \brief macros that define current version info
+#define SHMEM_MAJOR_VERSION 1
+#define SHMEM_MINOR_VERSION 1
+#define SHMEM_MAX_NAME_LEN 256
+#define SHMEM_VENDOR_MAJOR_VER 1
+#define SHMEM_VENDOR_MINOR_VER 1
+#define SHMEM_VENDOR_PATCH_VER 1
 /**@} */ // end of group_macros
 
 /**
@@ -37,9 +55,9 @@ enum shmem_error_code_t : int {
  * @brief The state of the SHMEM library initialization.
 */
 enum shmem_init_status_t{
-    SHMEM_STATUS_NOT_INITALIZED = 0,    ///< Uninitialized.
+    SHMEM_STATUS_NOT_INITIALIZED = 0,    ///< Uninitialized.
     SHMEM_STATUS_SHM_CREATED,           ///< Shared memory heap creation is complete.
-    SHMEM_STATUS_IS_INITALIZED,         ///< Initialization is complete.
+    SHMEM_STATUS_IS_INITIALIZED,         ///< Initialization is complete.
     SHMEM_STATUS_INVALID = INT_MAX,     ///< Invalid status code.
 };
 

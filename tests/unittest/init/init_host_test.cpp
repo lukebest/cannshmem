@@ -1,8 +1,17 @@
+/*
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
 #include <acl/acl.h>
-#include "shmem_api.h"
+#include <gtest/gtest.h>
 #include "shmemi_host_common.h"
 #include <gtest/gtest.h>
 extern int test_gnpu_num;
@@ -30,7 +39,7 @@ void test_shmem_init(int rank_id, int n_ranks, uint64_t local_mem_size) {
     EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
     EXPECT_NE(shm::g_state.team_pools[0], nullptr);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_IS_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_IS_INITIALIZED);
     status = shmem_finalize();
     EXPECT_EQ(status, SHMEM_SUCCESS);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
@@ -57,7 +66,7 @@ void test_shmem_init_attr(int rank_id, int n_ranks, uint64_t local_mem_size) {
     EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
     EXPECT_NE(shm::g_state.team_pools[0], nullptr);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_IS_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_IS_INITIALIZED);
     status = shmem_finalize();
     delete attributes;
     EXPECT_EQ(status, SHMEM_SUCCESS);
@@ -79,7 +88,7 @@ void test_shmem_init_invalid_rank_id(int rank_id, int n_ranks, uint64_t local_me
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
     EXPECT_EQ(aclFinalize(), 0);
     if (::testing::Test::HasFailure()){
@@ -97,7 +106,7 @@ void test_shmem_init_rank_id_over_size(int rank_id, int n_ranks, uint64_t local_
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_PARAM);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
     EXPECT_EQ(aclFinalize(), 0);
     if (::testing::Test::HasFailure()){
@@ -116,7 +125,7 @@ void test_shmem_init_zero_mem(int rank_id, int n_ranks, uint64_t local_mem_size)
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
     EXPECT_EQ(aclFinalize(), 0);
     if (::testing::Test::HasFailure()){
@@ -135,7 +144,7 @@ void test_shmem_init_invalid_mem(int rank_id, int n_ranks, uint64_t local_mem_si
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_SMEM_ERROR);
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
     EXPECT_EQ(aclFinalize(), 0);
     if (::testing::Test::HasFailure()){
@@ -169,7 +178,7 @@ void test_shmem_init_set_config(int rank_id, int n_ranks, uint64_t local_mem_siz
     EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
     status = shmem_init_status();
-    EXPECT_EQ(status, SHMEM_STATUS_IS_INITALIZED);
+    EXPECT_EQ(status, SHMEM_STATUS_IS_INITIALIZED);
     status = shmem_finalize();
     EXPECT_EQ(status, SHMEM_SUCCESS);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);

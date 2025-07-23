@@ -28,6 +28,21 @@ extern "C" {
 */
 
 /**
+* @brief The state of the SHMEM host OP type.
+*/
+enum shmemi_op_t{
+    SHMEMI_OP_PUT = 0,
+    // SHMEMI_OP_P,
+    // SHMEMI_OP_PUT_SIGNAL,
+    SHMEMI_OP_GET,
+    // SHMEMI_OP_G,
+    // SHMEMI_OP_FENCE,
+    // SHMEMI_OP_AMO,
+    // SHMEMI_OP_QUIET,
+    // SHMEMI_OP_SENTINEL = INT_MAX,
+};
+
+/**
  * @brief Team's index.
 */
 enum shmem_team_index_t{

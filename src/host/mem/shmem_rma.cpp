@@ -8,7 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <iostream>
+#include "acl/acl.h"
 #include "shmemi_host_common.h"
+#include "host/shmem_host_rma.h"
+#include "shmemi_device_rma.h"
+#include "host_device/shmem_types.h"
 
 using namespace std;
 // shmem_ptr Symmetric?
@@ -39,3 +43,95 @@ int32_t shmem_mte_set_ub_params(uint64_t offset, uint32_t ub_size, uint32_t even
     SHMEM_CHECK_RET(shm::update_device_state());
     return SHMEM_SUCCESS;
 }
+
+#define SHMEM_TYPE_PUT(NAME, TYPE)                                                                                              \
+    /**                                                                                                                         \
+    * @brief Synchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
+    * @param source             [in] Pointer on local device of the source data.                                                \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                               \
+        int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem", SHMEMI_OP_PUT, NO_NBI,                   \
+                                      (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      1, 1,                                                                       \
+                                      shm::g_state_host.default_stream,                                           \
+                                      shm::g_state_host.default_block_num);                                       \
+        if (ret < 0) {                                                                                            \
+            SHM_LOG_ERROR("device calling transfer failed");                                                      \
+        }                                                                                                         \
+    }
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT)
+#undef SHMEM_TYPE_PUT
+
+#define SHMEM_TYPE_PUT_NBI(NAME, TYPE)                                                                                          \
+    /**                                                                                                                         \
+    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
+    * @param source             [in] Pointer on local device of the source data.                                                \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe) {             \
+        int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem_nbi", SHMEMI_OP_PUT, NBI,                            \
+                                      (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      1, 1,                                                                       \
+                                      shm::g_state_host.default_stream,                                           \
+                                      shm::g_state_host.default_block_num);                                       \
+        if (ret < 0) {                                                                                            \
+            SHM_LOG_ERROR("device calling transfer failed");                                                      \
+        }                                                                                                         \
+}
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT_NBI)
+#undef SHMEM_TYPE_PUT_NBI
+
+#define SHMEM_TYPE_GET(NAME, TYPE)                                                                                              \
+    /**                                                                                                                         \
+    * @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.  \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on local device of the destination data.                                           \
+    * @param source             [in] Pointer on Symmetric memory of the source data.                                            \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_get_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                               \
+        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem", SHMEMI_OP_GET, NO_NBI,                             \
+                                      (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      1, 1,                                                                       \
+                                      shm::g_state_host.default_stream,                                           \
+                                      shm::g_state_host.default_block_num);                                       \
+        if (ret < 0) {                                                                                            \
+            SHM_LOG_ERROR("device calling transfer failed");                                                      \
+        }                                                                                                         \
+    }
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
+#undef SHMEM_TYPE_GET
+
+#define SHMEM_TYPE_GET_NBI(NAME, TYPE)                                                                                          \
+    /**                                                                                                                         \
+    * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE. \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on local device of the destination data.                                           \
+    * @param source             [in] Pointer on Symmetric memory of the source data.                                            \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_get_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe) {             \
+        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem_nbi", SHMEMI_OP_GET, NBI,                            \
+                                      (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      1, 1,                                                                       \
+                                      shm::g_state_host.default_stream,                                           \
+                                      shm::g_state_host.default_block_num);                                       \
+        if (ret < 0) {                                                                                            \
+            SHM_LOG_ERROR("device calling transfer failed");                                                      \
+        }                                                                                                         \
+    }
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
+#undef SHMEM_TYPE_GET_NBI

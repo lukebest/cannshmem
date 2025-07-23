@@ -91,6 +91,15 @@ typedef struct {
     shmemi_mte_config_t mte_config;
 } shmemi_device_host_state_t;
 
+// host only state
+typedef struct {
+    // typedef void *aclrtStream; as in https://www.hiascend.com/document/detail/zh/canncommercial/80RC3/apiref/appdevgapi/aclcppdevg_03_1355.html
+    void *default_stream;
+    // using TEventID = int8_t; as in https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/800alpha003/apiref/ascendcopapi/atlasascendc_api_07_0181.html
+    int8_t default_event_id;
+    uint32_t default_block_num;
+} shmemi_host_state_t;
+
 #ifdef __cplusplus
 }
 #endif

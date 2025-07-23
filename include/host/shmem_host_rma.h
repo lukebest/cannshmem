@@ -10,9 +10,16 @@
 #ifndef SHMEM_HOST_RMA_H
 #define SHMEM_HOST_RMA_H
 
+#include "shmem_host_def.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum {
+    NO_NBI = 0,
+    NBI,
+};
 
 /**
  * @brief Translate an local symmetric address to remote symmetric address on the specified PE.
@@ -35,6 +42,62 @@ SHMEM_HOST_API void* shmem_ptr(void *ptr, int pe);
  * @return Returns 0 on success or an error code on failure.
  */
 SHMEM_HOST_API int shmem_mte_set_ub_params(uint64_t offset, uint32_t ub_size, uint32_t event_id);
+
+#define SHMEM_TYPE_PUT(NAME, TYPE)                                                                                              \
+    /**                                                                                                                         \
+    * @brief Synchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
+    * @param source             [in] Pointer on local device of the source data.                                                \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT)
+#undef SHMEM_TYPE_PUT
+
+#define SHMEM_TYPE_PUT_NBI(NAME, TYPE)                                                                                          \
+    /**                                                                                                                         \
+    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
+    * @param source             [in] Pointer on local device of the source data.                                                \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT_NBI)
+#undef SHMEM_TYPE_PUT_NBI
+
+#define SHMEM_TYPE_GET(NAME, TYPE)                                                                                              \
+    /**                                                                                                                         \
+    * @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.  \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on local device of the destination data.                                           \
+    * @param source             [in] Pointer on Symmetric memory of the source data.                                            \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_get_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
+#undef SHMEM_TYPE_GET
+
+#define SHMEM_TYPE_GET_NBI(NAME, TYPE)                                                                                          \
+    /**                                                                                                                         \
+    * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE. \
+    *                                                                                                                           \
+    * @param dest               [in] Pointer on local device of the destination data.                                           \
+    * @param source             [in] Pointer on Symmetric memory of the source data.                                            \
+    * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
+    * @param pe                 [in] PE number of the remote PE.                                                                \
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_get_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
+#undef SHMEM_TYPE_GET_NBI
 
 #ifdef __cplusplus
 }

@@ -25,6 +25,8 @@ namespace shm {
 #define DEFAULT_FLAG 0
 #define DEFAULT_ID 0
 #define DEFAULT_TIMEOUT 120
+#define DEFAULT_TEVENT 0
+#define DEFAULT_BLOCK_NUM 1
 
 // initializer
 #define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                            \
@@ -48,6 +50,7 @@ namespace shm {
     }
 
 shmemi_device_host_state_t g_state = SHMEM_DEVICE_HOST_STATE_INITIALIZER;
+shmemi_host_state_t g_state_host = {nullptr, DEFAULT_TEVENT, DEFAULT_BLOCK_NUM};
 shmem_init_attr_t g_attr;
 static smem_shm_t g_smem_handle = nullptr;
 static bool g_attr_init = false;
@@ -71,6 +74,12 @@ int32_t shmemi_state_init_attr(shmem_init_attr_t *attributes)
     g_state.mype = attributes->my_rank;
     g_state.npes = attributes->n_ranks;
     g_state.heap_size = attributes->local_mem_size + SHMEM_EXTRA_SIZE;
+
+    aclrtStream stream = nullptr;
+    SHMEM_CHECK_RET(aclrtCreateStream(&stream));
+    g_state_host.default_stream = stream;
+    g_state_host.default_event_id = DEFAULT_TEVENT;
+    g_state_host.default_block_num = DEFAULT_BLOCK_NUM;
     return status;
 }
 

@@ -17,6 +17,38 @@ extern "C" {
 #endif
 
 /**
+* @brief Standard RMA Types and Names valid on Host
+*
+* |NAME       | TYPE      |
+* |-----------|-----------|
+* |float      | float     |
+* |double     | double    |
+* |int8       | int8      |
+* |int16      | int16     |
+* |int32      | int32     |
+* |int64      | int64     |
+* |uint8      | uint8     |
+* |uint16     | uint16    |
+* |uint32     | uint32    |
+* |uint64     | uint64    |
+* |char       | char      |
+*/
+#define SHMEM_TYPE_FUNC(FUNC)        \
+    FUNC(float, float);              \
+    FUNC(double, double);            \
+    FUNC(int8, int8_t);              \
+    FUNC(int16, int16_t);            \
+    FUNC(int32, int32_t);            \
+    FUNC(int64, int64_t);            \
+    FUNC(uint8, uint8_t);            \
+    FUNC(uint16, uint16_t);          \
+    FUNC(uint32, uint32_t);          \
+    FUNC(uint64, uint64_t);          \
+    FUNC(char, char)
+// FUNC(half, half);
+// FUNC(bfloat16, bfloat16_t);
+
+/**
  * @defgroup group_macros Macros
  * @{
 */

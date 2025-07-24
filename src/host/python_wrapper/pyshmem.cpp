@@ -67,11 +67,80 @@ int shmem_initialize(int rank, int world_size, int64_t mem_size)
 
     return 0;
 }
+
+int32_t shmem_set_op_engine_type(shmem_init_attr_t &attributes, data_op_engine_type_t value)
+{
+    int ret = shmem_set_data_op_engine_type(&attributes, value);
+    if (ret != 0) {
+        throw std::runtime_error("set data operation engine type failed");
+    }
+    return ret;
 }
+
+int32_t set_timeout(shmem_init_attr_t &attributes, uint32_t value)
+{
+    int ret = shmem_set_timeout(&attributes, value);
+    if (ret != 0) {
+        throw std::runtime_error("set time out failed");
+    }
+    return ret;
+}
+
+int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size, const char *ip_port,
+                            shmem_init_attr_t &attributes)
+{
+    shmem_init_attr_t *attr_ptr = &attributes;
+    int ret = shmem_set_attr(my_rank, n_ranks, local_mem_size, ip_port, &attr_ptr);
+    if (ret != 0) {
+        throw std::runtime_error("set shmem attributes failed");
+    }
+    return ret;
+}
+}
+}
+
+void DefineShmemAttr(py::module_ &m)
+{
+    py::enum_<data_op_engine_type_t>(m, "OpEngineType")
+        .value("MTE", SHMEM_DATA_OP_MTE, "copy data from local space to global space");
+
+    py::class_<shmem_init_optional_attr_t>(m, "OptionalAttr")
+        .def(py::init([]() {
+                auto optional_attr = new (std::nothrow)shmem_init_optional_attr_t;
+                return optional_attr;
+            }))
+        .def_readwrite("version", &shmem_init_optional_attr_t::version)
+        .def_readwrite("data_op_engine_type", &shmem_init_optional_attr_t::data_op_engine_type)
+        .def_readwrite("shm_init_timeout", &shmem_init_optional_attr_t::shm_init_timeout)
+        .def_readwrite("shm_create_timeout", &shmem_init_optional_attr_t::shm_create_timeout)
+        .def_readwrite("control_operation_timeout", &shmem_init_optional_attr_t::control_operation_timeout);
+
+    py::class_<shmem_init_attr_t>(m, "InitAttr")
+        .def(py::init([]() {
+                 auto init_attr = new (std::nothrow)shmem_init_attr_t;
+                 return init_attr;
+             }))
+        .def_readwrite("my_rank", &shmem_init_attr_t::my_rank)
+        .def_readwrite("n_ranks", &shmem_init_attr_t::n_ranks)
+        .def_readwrite("ip_port", &shmem_init_attr_t::ip_port)
+        .def_readwrite("local_mem_size", &shmem_init_attr_t::local_mem_size)
+        .def_readwrite("option_attr", &shmem_init_attr_t::option_attr);
+}
+
+void DefineShmemInitStatus(py::module_ &m)
+{
+    py::enum_<shmem_init_status_t>(m, "InitStatus")
+        .value("NOT_INITIALIZED", SHMEM_STATUS_NOT_INITIALIZED)
+        .value("SHM_CREATED", SHMEM_STATUS_SHM_CREATED)
+        .value("INITIALIZED", SHMEM_STATUS_IS_INITIALIZED)
+        .value("INVALID", SHMEM_STATUS_INVALID);
 }
 
 PYBIND11_MODULE(_pyaclshmem, m)
 {
+    DefineShmemAttr(m);
+    DefineShmemInitStatus(m);
+
     m.def("aclshmem_init", &shm::shmem_initialize, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
           py::arg("npes"), py::arg("mem_size"), R"(
 Initialize share memory module.
@@ -89,6 +158,51 @@ Returns:
 Finalize share memory module.
     )");
 
+    m.def("aclshmem_set_attributes", &shm::shmem_set_attributes, py::call_guard<py::gil_scoped_release>(),
+        py::arg("my_rank"), py::arg("n_ranks"), py::arg("local_mem_size"), py::arg("ip_port"),
+        py::arg("attributes"), R"(
+Set the default attributes
+Arguments:
+    my_rank(int): Current rank.
+    n_ranks(int): Total number of ranks.
+    local_mem_size(int): The size of shared memory currently occupied by current rank.
+    ip_port(str): The ip and port number of the sever, e.g. tcp://ip:port.
+    attributes(InitAttr): Attributes set.
+Returns:
+    On success, returns 0. On error, error code on failure.
+)");
+
+    m.def("aclshmem_init_status", []() {
+        int32_t ret = shmem_init_status();
+        return static_cast<shmem_init_status_t>(ret); 
+    }, py::call_guard<py::gil_scoped_release>(), R"(
+Query the current initialization status of shared memory module.
+
+Returns:
+    Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is complete. 
+    All return types can be found in shmem_init_status_t.
+    )");
+
+    m.def("aclshmem_set_data_op_engine_type", &shm::shmem_set_op_engine_type, py::call_guard<py::gil_scoped_release>(),
+          py::arg("attributes"), py::arg("vaue"), R"(
+Modify the data operation engine type in the attributes that will be used for initialization.
+Arguments:
+    attributes(InitAttr): Attributes set.
+    value(int): Value of data operation engine type.
+Returns:
+    On success, returns 0. On error, error code on failure.
+    )");
+
+    m.def("aclshmem_set_timeout", &shm::set_timeout, py::call_guard<py::gil_scoped_release>(),
+          py::arg("attributes"), py::arg("vaue"), R"(
+Modify the timeout in the attributes that will be used for initialization.
+Arguments:
+    attributes(InitAttr): Attributes set.
+    value(int): Value of data operation engine type.
+Returns:
+    On success, returns 0. On error, error code on failure.
+    )");
+
     m.def(
         "aclshmem_malloc",
         [](size_t size) {
@@ -102,6 +216,52 @@ Finalize share memory module.
         R"(
 Allocates size bytes and returns a pointer to the allocated memory. The memory is not initialized. If size is 0, then
 aclshmem_malloc() returns NULL.
+    )");
+
+    m.def(
+        "aclshmem_calloc",
+        [](size_t nmemb, size_t size) {
+            auto ptr = shmem_calloc(nmemb, size);
+            if (ptr == nullptr) {
+                throw std::runtime_error("aclshmem_calloc failed");
+            }
+            return (intptr_t)ptr;
+        },
+        py::call_guard<py::gil_scoped_release>(), 
+        py::arg("nmemb"), 
+        py::arg("size"),
+        R"(
+Allocates memory for an array of nmemb elements of size bytes each and returns a pointer to the allocated memory.
+The memory is set to zero. If nmemb or size is 0, then returns NULL.
+
+Arguments:
+    nmemb(int): number of elements
+    size(int): size of each element in bytes
+Returns:
+    pointer to the allocated memory
+    )");
+
+    m.def(
+        "aclshmem_align",
+        [](size_t alignment, size_t size) {
+            auto ptr = shmem_align(alignment, size);
+            if (ptr == nullptr) {
+                throw std::runtime_error("aclshmem_align failed");
+            }
+            return (intptr_t)ptr;
+        },
+        py::call_guard<py::gil_scoped_release>(),
+        py::arg("alignment"),
+        py::arg("size"),
+        R"(
+Allocates size bytes of memory with specified alignment and returns a pointer to the allocated memory.
+The memory address will be a multiple of the given alignment value (must be a power of two).
+
+Arguments:
+    alignment(int): required memory alignment (must be power of two)
+    size(int): number of bytes to allocate
+Returns:
+    Pointer to the allocated memory, or NULL if allocation failed
     )");
 
     m.def(
@@ -180,6 +340,10 @@ Destroy a team with team id
 
 Arguments:
     team(int): team id to be destroyed
+    )");
+
+    m.def("get_ffts_config", &shmemx_get_ffts_config, py::call_guard<py::gil_scoped_release>(), R"(
+Get runtime ffts config. This config should be passed to MIX Kernel and set by MIX Kernel using shmemx_set_ffts.
     )");
 
 //    m.def("barrier_all", &shmem_barrier_all, py::call_guard<py::gil_scoped_release>(), R"(

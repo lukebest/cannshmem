@@ -22,7 +22,9 @@ for lib in ["libshmem.so"]:
     ctypes.CDLL(os.path.join(libs_path, lib))
 
 from ._pyaclshmem import aclshmem_init, aclshmem_finialize, aclshmem_malloc, aclshmem_free, \
-    aclshmem_ptr, my_pe, pe_count, mte_set_ub_params, team_split_strided, team_translate_pe, team_destroy
+    aclshmem_ptr, my_pe, pe_count, mte_set_ub_params, team_split_strided, team_translate_pe, team_destroy, \
+    InitAttr, OpEngineType, aclshmem_set_attributes, aclshmem_set_data_op_engine_type, aclshmem_set_timeout, \
+    InitStatus, aclshmem_calloc, aclshmem_align, aclshmem_init_status, get_ffts_config
 
 __all__ = [
     'aclshmem_init',
@@ -35,5 +37,15 @@ __all__ = [
     'mte_set_ub_params',
     'team_split_strided',
     'team_translate_pe',
-    'team_destroy'
+    'team_destroy',
+    'InitAttr',
+    'InitStatus',
+    'OpEngineType',
+    'aclshmem_set_attributes',
+    'aclshmem_set_data_op_engine_type',
+    'aclshmem_set_timeout',
+    'aclshmem_calloc',
+    'aclshmem_align',
+    'aclshmem_init_status',
+    'get_ffts_config'
 ]

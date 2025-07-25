@@ -29,6 +29,11 @@ SHMEM_GLOBAL void shmemi_getmem(GM_ADDR lptr, GM_ADDR rptr, uint32_t elem_size, 
     shmem_get_uint8_mem(lptr, rptr, elem_size, pe);
 }
 
+SHMEM_GLOBAL void shmemi_putmem_signal(GM_ADDR lptr, GM_ADDR rptr, uint32_t elem_size,
+                                       GM_ADDR sig_addr, int32_t signal, int sig_op, int pe) {
+    __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);
+    shmem_put_uint8_mem_signal(lptr, rptr, elem_size, sig_addr_int32, signal, sig_op, pe);
+}
 
 // kernel function calling entrance
 int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool is_nbi,
@@ -61,5 +66,18 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
                 break;
         }
     }
+    return 0;
+}
+
+int32_t shmem_putmem_signal_host(uint8_t *lptr, uint8_t *rptr,
+                            size_t n_elems, size_t elem_bytes, int pe,
+                            uint8_t *sig_addr, int32_t signal, int sig_op,
+                            ptrdiff_t lstride, ptrdiff_t rstride,
+                            aclrtStream acl_strm, size_t block_size){
+    if ((lstride > 1) || (rstride > 1)) {
+      return -1;
+    }
+
+    shmemi_putmem_signal<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, sig_addr, signal, sig_op, pe);
     return 0;
 }

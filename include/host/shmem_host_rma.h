@@ -59,7 +59,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT)
 
 #define SHMEM_TYPE_PUT_NBI(NAME, TYPE)                                                                                          \
     /**                                                                                                                         \
-    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.               \
     *                                                                                                                           \
     * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
     * @param source             [in] Pointer on local device of the source data.                                                \
@@ -98,6 +98,23 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
 
 SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
 #undef SHMEM_TYPE_GET_NBI
+
+#define SHMEM_PUT_TYPENAME_MEM_SIGNAL(NAME, TYPE)                                                                               \
+    /**
+    * @brief Synchronous interface. Copy a contiguous data on local UB to symmetric address on the specified PE.
+    *
+    * @param dst               [in] Pointer on local device of the destination data.
+    * @param src               [in] Pointer on Symmetric memory of the source data.
+    * @param elem_size         [in] Number of elements in the dest and source arrays.
+    * @param sig_addr          [in] Symmetric address of the signal word to be updated.
+    * @param signal            [in] The value used to update sig_addr.
+    * @param sig_op            [in] Operation used to update sig_addr with signal. Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
+    * @param pe                [in] PE number of the remote PE.
+    */                                                                                                                          \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem_signal(TYPE* dst, TYPE* src, size_t elem_size,                     \
+                                                        int32_t *sig_addr, int32_t signal, int sig_op, int pe);
+SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL)
+#undef SHMEM_PUT_TYPENAME_MEM_SIGNAL
 
 #ifdef __cplusplus
 }

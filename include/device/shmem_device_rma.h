@@ -673,7 +673,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI);
 * @param pe                [in] PE number of the remote PE.
  */
 SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t elem_size, \
-                                          __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)
+                                          __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)
 {
     /* ROCE */
     /* RDMA */
@@ -686,9 +686,11 @@ SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
     shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
                           reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
+    int32_t signal_int32 = static_cast<int32_t>(signal);
+    __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);
     AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
     AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
-    shmemix_signal_op(sig_addr, signal, sig_op, pe);
+    shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);
 }
 
 
@@ -705,7 +707,7 @@ SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t
     * @param pe                [in] PE number of the remote PE.
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(__gm__ TYPE* dst, __ubuf__ TYPE* src, size_t elem_size,                     \
-                                             __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)                    \
+                                             __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)                    \
     {                                                                                                                           \
         /* ROCE */                                                                                                              \
         /* RDMA */                                                                                                              \
@@ -718,7 +720,7 @@ SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB);
@@ -737,7 +739,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB);
     * @param pe                [in] PE number of the remote PE.
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(AscendC::GlobalTensor<TYPE> dst, AscendC::LocalTensor<TYPE> src,            \
-                                                      size_t elem_size, __gm__ int32_t *sig_addr, int32_t signal,             \
+                                                      size_t elem_size, __gm__ uint64_t *sig_addr, uint64_t signal,             \
                                                       int sig_op, int pe)                                                       \
     {                                                                                                                           \
         /* ROCE */                                                                                                              \
@@ -747,10 +749,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB);
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         shmem_mte_put_mem_nbi(dst, src, elem_size, pe, copy_event_id);                                                          \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_TENSOR);
@@ -771,7 +774,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_TENSOR);
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(__gm__ TYPE* dst, __ubuf__ TYPE* src,                                       \
                                                     const non_contiguous_copy_param& copy_params,                               \
-                                                    __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)             \
+                                                    __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)             \
     {                                                                                                                           \
         /* ROCE */                                                                                                              \
         /* RDMA */                                                                                                              \
@@ -780,10 +783,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_TENSOR);
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         shmem_mte_put_mem_nbi(dst, src, copy_params, pe, copy_event_id);                                                        \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_DETAILED);
@@ -804,7 +808,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_DETAILED);
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(AscendC::GlobalTensor<TYPE> dst, AscendC::LocalTensor<TYPE> src,            \
                                                     const non_contiguous_copy_param& copy_params,                               \
-                                                    __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)             \
+                                                    __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)             \
     {                                                                                                                           \
         /* ROCE */                                                                                                              \
         /* RDMA */                                                                                                              \
@@ -813,10 +817,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_DETAILED);
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         shmem_mte_put_mem_nbi(dst, src, copy_params, pe, copy_event_id);                                                        \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_TENSOR_DETAILED);
@@ -834,17 +839,18 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_UB_TENSOR_DETAILED);
     * @param pe                [in] PE number of the remote PE.
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(__gm__ TYPE* dst, __gm__ TYPE* src, size_t elem_size,                       \
-                                                        __gm__ int32_t* sig_addr, int32_t signal, int sig_op, int pe)         \
+                                                        __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)         \
     { /* ROCE */ /* RDMA */ /* MTE  */ /* Global State Set */                                                                   \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                                   \
         uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                               \
         shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id); \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL);
@@ -863,7 +869,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL);
     * @param pe                [in] PE number of the remote PE.
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(AscendC::GlobalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src,           \
-                                                    size_t elem_size, __gm__ int32_t *sig_addr, int32_t signal,               \
+                                                    size_t elem_size, __gm__ uint64_t *sig_addr, uint64_t signal,               \
                                                     int sig_op, int pe)                                                         \
     { /* ROCE */ /* RDMA */ /* MTE  */ /* Global State Set */                                                                   \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
@@ -874,10 +880,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL);
         ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                                    \
         ub_tensor.address_.logicPos = device_state->mte_config.ub_size;                                                         \
         shmem_mte_put_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                                               \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_TENSOR);
@@ -898,7 +905,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_TENSOR);
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(__gm__ TYPE* dst, __gm__ TYPE* src,                                         \
                                                     const non_contiguous_copy_param& copy_params,                               \
-                                                    __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)             \
+                                                    __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)             \
     { /* ROCE */ /* RDMA */ /* MTE  */ /* Global State Set */                                                                   \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
@@ -906,10 +913,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_TENSOR);
         uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                               \
         shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size,                                \
                               copy_params, pe, copy_event_id);                                                                  \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_DETAILED);
@@ -930,7 +938,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_DETAILED);
     */                                                                                                                          \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_signal(AscendC::GlobalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src,           \
                                                     const non_contiguous_copy_param& copy_params,                               \
-                                                    __gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)             \
+                                                    __gm__ uint64_t *sig_addr, uint64_t signal, int sig_op, int pe)             \
     { /* ROCE */ /* RDMA */ /* MTE  */ /* Global State Set */                                                                   \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                                   \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
@@ -940,10 +948,11 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_DETAILED);
         ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                                    \
         ub_tensor.address_.logicPos = device_state->mte_config.ub_size;                                                         \
         shmem_mte_put_mem_nbi(dst, src, ub_tensor, copy_params, pe, copy_event_id);                                             \
+        int32_t signal_int32 = static_cast<int32_t>(signal);                                                                    \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
-        shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
+        shmemix_signal_op(sig_addr_int32, signal_int32, sig_op, pe);                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_TENSOR_DETAILED);

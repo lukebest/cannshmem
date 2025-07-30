@@ -13,6 +13,7 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
@@ -255,6 +256,86 @@ int32_t shmem_team_split_strided(
         return SHMEM_INNER_ERROR;
     }
     *new_team = my_team.team_idx;
+    return 0;
+}
+
+
+int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
+{
+    if (x_team == nullptr || y_team == nullptr) {
+        SHM_LOG_ERROR("output team is null.");
+        return SHMEM_INVALID_PARAM;
+    }
+
+    if (x_range <= 0) {
+        SHM_LOG_ERROR("input x range must be larger than 0.");
+        return SHMEM_INVALID_PARAM;
+    }
+
+    *x_team = SHMEM_TEAM_INVALID;
+    *y_team = SHMEM_TEAM_INVALID;
+    if (!shm::is_valid_team(parent_team)) {
+        SHM_LOG_ERROR("input parent team is invalid!, team: " << parent_team);
+        return SHMEM_INVALID_PARAM;
+    }
+
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
+
+    int32_t src_start = src_team->start;
+    int32_t src_stride = src_team->stride;
+    int32_t src_size = src_team->size;
+    int32_t x_team_counts = std::ceil(src_size / float(x_range));
+    int32_t y_team_counts = x_range;
+
+    if (x_range > src_size) {
+        x_range = src_size;
+    }
+
+    int start = 0;
+    int errorCode = 0;
+
+    for (int i = 0; i < x_team_counts; ++i) {
+        shmem_team_t my_xteam;
+        int x_size = (i == x_team_counts - 1 && src_size % x_range) ? src_size % x_range: x_range;
+        errorCode = shmem_team_split_strided(parent_team, start, 1, x_size, &my_xteam);
+        if (errorCode != 0) {
+            SHM_LOG_WARN("create x-axis team " << i + 1 << " of " << x_team_counts << " failed");
+        }
+
+        start += x_range;
+        
+        if (my_xteam != SHMEM_TEAM_INVALID) {
+            if (*x_team == SHMEM_TEAM_INVALID) {
+                *x_team = my_xteam;
+                SHM_LOG_INFO("Current pe is " << src_team->mype << " , split x-axis succeed for x- " << i);
+            } else {
+                return SHMEM_INNER_ERROR;
+            }
+        }
+    }
+
+    start = 0;
+    for (int i = 0; i < y_team_counts; ++i) {
+        shmem_team_t my_yteam;
+        int remainder = src_size % x_range;
+        int y_range = src_size / x_range;
+        int y_size = (remainder && i < remainder) ? y_range + 1: y_range;
+    
+        errorCode = shmem_team_split_strided(parent_team, start, x_range, y_size, &my_yteam);
+        if (errorCode != 0) {
+            SHM_LOG_WARN("create y-axis team " << i + 1 << " of " << y_team_counts << " failed");
+        }
+
+        start += 1;
+        if (my_yteam != SHMEM_TEAM_INVALID) {
+            if (*y_team == SHMEM_TEAM_INVALID) {
+                *y_team = my_yteam;
+                SHM_LOG_INFO("Current pe is " << src_team->mype << " , split y-axis succeed for y- " << i);
+            } else {
+                return SHMEM_INNER_ERROR;
+            }
+        }
+    }
     return 0;
 }
 

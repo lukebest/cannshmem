@@ -32,10 +32,10 @@ extern "C" {
 */
 enum shmemi_op_t{
     SHMEMI_OP_PUT = 0,
-    // SHMEMI_OP_P,
+    SHMEMI_OP_P,
     // SHMEMI_OP_PUT_SIGNAL,
     SHMEMI_OP_GET,
-    // SHMEMI_OP_G,
+    SHMEMI_OP_G,
     // SHMEMI_OP_FENCE,
     // SHMEMI_OP_AMO,
     // SHMEMI_OP_QUIET,

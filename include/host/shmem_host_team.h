@@ -30,6 +30,18 @@ extern "C" {
 SHMEM_HOST_API int shmem_team_split_strided(shmem_team_t parent_team, int pe_start, int pe_stride, int pe_size, shmem_team_t *new_team);
 
 /**
+ * @brief Collective Interface. Creates a new SHMEM team from an existing parent team.
+ * 
+ * @param parent_team       [in] A team handle.
+ * @param x_range           [in] represents the number of elements in the first dimensions
+ * @param x_team            [in] A new x-axis team after team split.
+ * @param y_team            [in] A new y-axis team after team split.
+ *
+ * @return 0 on successful creation of new_team; otherwise nonzero.
+ */
+SHMEM_HOST_API int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team);
+
+/**
  * @brief Translate a given PE number in one team into the corresponding PE number in another team.
  * 
  * @param src_team           [in] A team handle.

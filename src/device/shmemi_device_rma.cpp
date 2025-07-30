@@ -63,3 +63,34 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
     }
     return 0;
 }
+
+#define SHMEMI_TYPENAME_P(NAME, TYPE)                                                       \   
+    SHMEM_GLOBAL void shmemi_##NAME##_p(GM_ADDR dest_addr, const TYPE value, int pe) {      \
+        __gm__ TYPE* dst = (__gm__ TYPE*) dest_addr;                                        \
+        shmem_##NAME##_p(dst, value, pe);                                                   \
+    }
+    
+SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_P)
+
+#undef SHMEMI_TYPENAME_P
+
+// shmem_g
+#define SHMEMI_TYPENAME_G(NAME, TYPE)                                                       \
+    SHMEM_GLOBAL void shmemi_##NAME##_g(GM_ADDR src, int pe, GM_ADDR value_addr) {          \
+        __gm__ TYPE* src_addr = (__gm__ TYPE*)src;                                          \
+        __gm__ TYPE* dst_addr = (__gm__ TYPE*)value_addr;                                   \    
+        *dst_addr = shmem_##NAME##_g(src_addr, pe);                                         \                        
+    }
+    
+SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_G)
+#undef SHMEMI_TYPENAME_G
+
+
+#define SHMEMI_TYPENAME_PREPARE_RMA_P(NAME, TYPE)                                                               \
+    void shmemi_prepare_and_post_rma_##NAME##_p(const char *api_name, uint8_t* dst_ptr, TYPE value, int pe,     \
+                                                      aclrtStream acl_strm, size_t block_size) {                \
+        shmemi_##NAME##_p<<<block_size, 0, acl_strm>>>(dst_ptr, value, pe);                                     \
+    }   
+    
+SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_PREPARE_RMA_P)
+#undef SHMEMI_TYPENAME_PREPARE_RMA_P

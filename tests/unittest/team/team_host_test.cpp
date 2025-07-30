@@ -73,6 +73,37 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size) {
         ASSERT_EQ(shmem_my_pe(), rank_id);
     }
 
+    // #################### 2d子通信域切分测试 ############################
+    shmem_team_t team_x;
+    shmem_team_t team_y;
+    int x_range = 2;
+    int y_range = n_ranks / 2;
+    int errorCode = shmem_team_split_2d(SHMEM_TEAM_WORLD, x_range, &team_x, &team_y);
+    ASSERT_EQ(errorCode, 0);
+
+    // #################### host侧取值测试 ##############################
+    ASSERT_EQ(shmem_team_n_pes(team_x), x_range);
+    ASSERT_EQ(shmem_team_n_pes(team_y), y_range);
+    ASSERT_EQ(shmem_n_pes(), n_ranks);
+    ASSERT_EQ(shmem_my_pe(), rank_id);
+
+    int local_x_idx = shmem_team_my_pe(team_x);
+    int global_x_idx = shmem_team_translate_pe(team_x, local_x_idx, SHMEM_TEAM_WORLD);
+    ASSERT_EQ(global_x_idx, rank_id);
+
+    int back_x_local = shmem_team_translate_pe(SHMEM_TEAM_WORLD, rank_id, team_x);
+    ASSERT_EQ(back_x_local, local_x_idx);
+
+    int local_y_idx = shmem_team_my_pe(team_y);
+    int global_y_idx = shmem_team_translate_pe(team_y, local_y_idx, SHMEM_TEAM_WORLD);
+    ASSERT_EQ(global_y_idx, rank_id);
+
+    int back_y_local = shmem_team_translate_pe(SHMEM_TEAM_WORLD, rank_id, team_y);
+    ASSERT_EQ(back_y_local, local_y_idx);
+
+    int x_to_y_id = shmem_team_translate_pe(team_x, local_x_idx, team_y);
+    ASSERT_NE(x_to_y_id, -1);
+
     // #################### device代码测试 ##############################
 
     auto status = test_get_device_state(stream, (uint8_t *)shm::g_state.heap_base, rank_id, n_ranks, team_odd, stride);

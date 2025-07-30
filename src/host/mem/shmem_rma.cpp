@@ -24,10 +24,9 @@ void* shmem_ptr(void *ptr, int32_t pe)
         SHM_LOG_ERROR("PE: " << shmem_my_pe() << " Got Ilegal Address !!");
         return nullptr;
     }
-    void *mype_ptr = shm::g_state.p2p_heap_base[shmem_my_pe()];
-    uint64_t offset = reinterpret_cast<uint64_t>(ptr) - reinterpret_cast<uint64_t>(mype_ptr);
     if (shm::g_state.heap_base != nullptr) {
-        return (void *)((uint64_t)shm::g_state.heap_base + shm::g_state.heap_size * pe + offset);
+        uint64_t offset = reinterpret_cast<uint64_t>(ptr) - reinterpret_cast<uint64_t>(shm::g_state.heap_base);
+        return (void *)((uint64_t)shm::g_state.p2p_heap_base[pe] + offset);
     }
     else {
         return nullptr;
@@ -135,3 +134,70 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
 
 SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
 #undef SHMEM_TYPE_GET_NBI
+
+#define SHMEM_TYPENAME_P(NAME, TYPE)                                                        \
+    /**                                                                                     \
+    * @brief Provide a low latency put capability for single element of most basic types.   \
+    *                                                                                       \
+    * @param dst               [in] Symmetric address of the destination data on local PE.  \
+    * @param value             [in] The element to be put.                                  \
+    * @param pe                [in] The number of the remote PE.                            \
+    */                                                                                      \
+    SHMEM_HOST_API void shmem_##NAME##_p(TYPE* dst, const TYPE value, int pe) {             \
+        shmemi_prepare_and_post_rma_##NAME##_p("shmem_" #NAME "_p", (uint8_t*)dst, value,   \
+                                            pe, shm::g_state_host.default_stream,            \
+                                            shm::g_state_host.default_block_num);        \ 
+                                                                                            \
+    }
+    
+SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P)
+#undef SHMEM_TYPENAME_P
+
+#define SHMEM_TYPENAME_G(NAME, TYPE)                                                        \
+    /**                                                                                     \
+    * @brief Provide a low latency put capability for single element of most basic types.   \
+    *                                                                                       \
+    * @param src               [in] Symmetric address of the destination data on local PE.  \
+    * @param pe                [in] The number of the remote PE.                            \
+    * @return A single element of type specified in the input pointer.                      \
+    */                                                                                      \
+    SHMEM_HOST_API TYPE shmem_##NAME##_g(TYPE* src, int32_t pe) {                                       \
+        TYPE value;                                                                                     \
+        auto ptr = shmem_ptr(src, pe);                                                                  \
+        if (ptr == nullptr) {                                                                           \
+            SHM_LOG_ERROR("shmem_g failed");                                                            \
+            return value;                                                                               \
+        }                                                                                               \
+        int ret= aclrtMemcpy(&value, sizeof(TYPE), reinterpret_cast<void*>(ptr), sizeof(TYPE), ACL_MEMCPY_DEVICE_TO_HOST);   \
+        if (ret != 0) {                                                                                  \
+            SHM_LOG_ERROR("shmem_g failed");                                                             \
+        }                                                                                                \
+        return value;                                                                                    \
+    }
+
+SHMEM_TYPE_FUNC(SHMEM_TYPENAME_G)
+#undef SHMEM_TYPENAME_G
+
+void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t pe)
+{
+    int ret = shmemi_prepare_and_post_rma("shmem putmem", SHMEMI_OP_PUT, NO_NBI,                 \
+                                (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                \
+                                1, 1,                                                            \
+                                shm::g_state_host.default_stream,                                \
+                                shm::g_state_host.default_block_num);                            \
+    if (ret < 0) {                                                                               \             
+        SHM_LOG_ERROR("shmem_putmem failed");                                                    \
+    }                                                                                            \       
+}
+
+void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe)
+{
+    int ret = shmemi_prepare_and_post_rma("shmem getmem", SHMEMI_OP_GET, NO_NBI,                  \
+                                (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                 \
+                                1, 1,                                                             \
+                                shm::g_state_host.default_stream,                                 \
+                                shm::g_state_host.default_block_num);                             \
+    if (ret < 0) {                                                                                \
+        SHM_LOG_ERROR("shmem_getmem failed");                                                     \
+    }                                                                                             \
+}

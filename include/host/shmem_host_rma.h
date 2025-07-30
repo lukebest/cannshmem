@@ -99,6 +99,53 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
 SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
 #undef SHMEM_TYPE_GET_NBI
 
+
+#define SHMEM_TYPENAME_P(NAME, TYPE)                                                 \
+    /**                                                                                     \
+    * @brief Provide a low latency put capability for single element of most basic types.   \
+    *                                                                                       \
+    * @param dst               [in] Symmetric address of the destination data on local PE.  \
+    * @param value             [in] The element to be put.                                  \
+    * @param pe                [in] The number of the remote PE.                            \
+    */                                                                                      \
+    SHMEM_HOST_API void shmem_##NAME##_p(TYPE* dst, const TYPE value, int pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P)
+#undef SHMEM_TYPENAME_P
+
+#define SHMEM_TYPENAME_G(NAME, TYPE)                                                 \
+    /**                                                                                     \
+    * @brief Provide a low latency put capability for single element of most basic types.   \
+    *                                                                                       \
+    * @param src               [in] Symmetric address of the destination data on local PE.  \
+    * @param pe                [in] The number of the remote PE.                            \
+    * @return A single element of type specified in the input pointer.                      \
+    */                                                                                      \
+    SHMEM_HOST_API TYPE shmem_##NAME##_g(TYPE* src, int32_t pe);
+
+SHMEM_TYPE_FUNC(SHMEM_TYPENAME_G)
+#undef SHMEM_TYPENAME_G
+
+/**                                                                                                                         \
+* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the specified PE.  \
+*                                                                                                                           \
+* @param dst                [in] Pointer on Symmetric addr of local PE.                                           \
+* @param src                [in] Pointer on local memory of the source data.                                            \
+* @param elem_size          [in] size of elements in the destination and source addr.                                       \
+* @param pe                 [in] PE number of the remote PE.                                                                \
+*/     
+SHMEM_HOST_API void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t pe);
+
+/**                                                                                                                         \
+* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.  \
+*                                                                                                                           \
+* @param dst                [in] Pointer on local device of the destination data.                                           \
+* @param src                [in] Pointer on Symmetric memory of the source data.                                            \
+* @param elem_size          [in] size of elements in the destination and source addr.                                       \
+* @param pe                 [in] PE number of the remote PE.                                                                \
+*/                                                                                                                          \
+SHMEM_HOST_API void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe);
+
 #ifdef __cplusplus
 }
 #endif

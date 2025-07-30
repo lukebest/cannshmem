@@ -69,7 +69,7 @@ enum {
  * @brief signal compare ops, used by signalee in p2p synchronization
  */
 enum {
-    SHMEM_CMP_EQ,
+    SHMEM_CMP_EQ = 0,
     SHMEM_CMP_NE,
     SHMEM_CMP_GT,
     SHMEM_CMP_GE,

@@ -30,4 +30,9 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
                                     ptrdiff_t lstride = 1, ptrdiff_t rstride = 1,
                                     aclrtStream acl_strm = nullptr, size_t block_size = 1);
 
+int32_t shmemi_prepare_and_post_with_signal_rma(uint8_t *lptr, uint8_t *rptr,
+                                   size_t n_elems, size_t elem_bytes, int pe,
+                                   uint8_t *sig_addr, int32_t signal, int sig_op,
+                                   ptrdiff_t lstride = 1, ptrdiff_t rstride = 1,
+                                   aclrtStream acl_strm = nullptr, size_t block_size = 1);
 #endif

@@ -15,15 +15,7 @@
 #include <iostream>
 #include <vector>
 
-//#include "torch/extension.h"
 //#include "ATen/ops/from_blob.h"
-//#include "torch_npu/csrc/core/npu/NPUFunctions.h"
-//#include "torch_npu/csrc/aten/common/from_blob.h"
-//#include "host/shmem_host_init.h"
-//#include "host/shmem_host_heap.h"
-//#include "host/shmem_host_rma.h"
-//#include "host/shmem_host_team.h"
-//#include "host/shmem_host_sync.h"
 #include "shmem_api.h"
 
 namespace py = pybind11;

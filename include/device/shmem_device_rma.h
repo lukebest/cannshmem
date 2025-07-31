@@ -124,8 +124,7 @@ SHMEM_DEVICE void shmem_getmem(__gm__ void* dst, __gm__ void* src, uint32_t elem
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
     shmem_mte_get_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
         reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
-    AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
-    AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+    shmem_quiet();
 }
 
 #define SHMEM_GET_TYPENAME_MEM(NAME, TYPE)                                                                                      \
@@ -149,8 +148,7 @@ SHMEM_DEVICE void shmem_getmem(__gm__ void* dst, __gm__ void* src, uint32_t elem
         uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                               \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         shmem_mte_get_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id); \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM);
@@ -177,8 +175,7 @@ SHMEM_DEVICE void shmem_putmem(__gm__ void* dst, __gm__ void* src, uint32_t elem
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
     shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
         reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
-    AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
-    AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+    shmem_quiet();
 }
 
 
@@ -203,8 +200,7 @@ SHMEM_DEVICE void shmem_putmem(__gm__ void* dst, __gm__ void* src, uint32_t elem
         uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                               \
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                                 \
         shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id); \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM);
@@ -698,8 +694,7 @@ SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
     shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char*>(dst), reinterpret_cast<__gm__ char*>(src), \
                           reinterpret_cast<__ubuf__ char*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id);
-    AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
-    AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);
+    shmem_quiet();
     shmemix_signal_op(sig_addr, signal, sig_op, pe);
 }
 
@@ -724,8 +719,7 @@ SHMEM_DEVICE void shmem_putmem_signal(__gm__ void* dst, __gm__ void* src, size_t
         uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                               \
         shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id); \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
         shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
     }
 
@@ -757,8 +751,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL);
         ub_tensor.address_.logicPos = device_state->mte_config.ub_size;                                                         \
         shmem_mte_put_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                                               \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
         shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
     }
 
@@ -789,8 +782,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_TENSOR);
         shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE*>(copy_ub), copy_ub_size,                                \
                               copy_params, pe, copy_event_id);                                                                  \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
         shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                            \
     }
 
@@ -823,8 +815,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL_DETAILED);
         ub_tensor.address_.logicPos = device_state->mte_config.ub_size;                                                         \
         shmem_mte_put_mem_nbi(dst, src, ub_tensor, copy_params, pe, copy_event_id);                                             \
         __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);                                          \
-        AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                         \
-        AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(copy_event_id);                                                        \
+        shmem_quiet();                                                                                                          \
         shmemix_signal_op(sig_addr, signal, sig_op, pe);                                                                        \
     }
 

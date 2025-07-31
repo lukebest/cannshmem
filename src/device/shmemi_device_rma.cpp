@@ -39,6 +39,7 @@ SHMEM_GLOBAL void shmemi_putmem_signal(GM_ADDR lptr, GM_ADDR rptr, uint32_t elem
 int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool is_nbi,
                                     uint8_t *lptr, uint8_t *rptr,
                                     size_t n_elems, size_t elem_bytes, int pe,
+                                    uint8_t *sig_addr, int32_t signal, int sig_op,
                                     ptrdiff_t lstride, ptrdiff_t rstride,
                                     aclrtStream acl_strm, size_t block_size)
 {
@@ -54,6 +55,8 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
             case SHMEMI_OP_GET:
                 shmemi_getmem_nbi<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, pe);
                 break;
+            default:
+                break;
         }
     }
     else {
@@ -64,24 +67,16 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
             case SHMEMI_OP_GET:
                 shmemi_getmem<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, pe);
                 break;
+            case SHMEMI_OP_PUT_SIGNAL:
+                shmemi_putmem_signal<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, sig_addr, signal, sig_op, pe);
+            default:
+                break;
         }
     }
     return 0;
 }
 
-int32_t shmemi_prepare_and_post_with_signal_rma(uint8_t *lptr, uint8_t *rptr,
-                                   size_t n_elems, size_t elem_bytes, int pe,
-                                   uint8_t *sig_addr, int32_t signal, int sig_op,
-                                   ptrdiff_t lstride, ptrdiff_t rstride,
-                                   aclrtStream acl_strm, size_t block_size){
-    if ((lstride > 1) || (rstride > 1)) {
-      return -1;
-    }
-
-    shmemi_putmem_signal<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, sig_addr, signal, sig_op, pe);
-    return 0;
-}
-#define SHMEMI_TYPENAME_P(NAME, TYPE)                                                       \   
+#define SHMEMI_TYPENAME_P(NAME, TYPE)                                                       \
     SHMEM_GLOBAL void shmemi_##NAME##_p(GM_ADDR dest_addr, const TYPE value, int pe) {      \
         __gm__ TYPE* dst = (__gm__ TYPE*) dest_addr;                                        \
         shmem_##NAME##_p(dst, value, pe);                                                   \
@@ -95,8 +90,8 @@ SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_P)
 #define SHMEMI_TYPENAME_G(NAME, TYPE)                                                       \
     SHMEM_GLOBAL void shmemi_##NAME##_g(GM_ADDR src, int pe, GM_ADDR value_addr) {          \
         __gm__ TYPE* src_addr = (__gm__ TYPE*)src;                                          \
-        __gm__ TYPE* dst_addr = (__gm__ TYPE*)value_addr;                                   \    
-        *dst_addr = shmem_##NAME##_g(src_addr, pe);                                         \                        
+        __gm__ TYPE* dst_addr = (__gm__ TYPE*)value_addr;                                   \
+        *dst_addr = shmem_##NAME##_g(src_addr, pe);                                         \
     }
     
 SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_G)

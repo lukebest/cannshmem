@@ -52,9 +52,10 @@ int32_t shmem_mte_set_ub_params(uint64_t offset, uint32_t ub_size, uint32_t even
     * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
     * @param pe                 [in] PE number of the remote PE.                                                                \
     */                                                                                                                          \
-    SHMEM_HOST_API void shmem_put_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                               \
+    SHMEM_HOST_API void shmem_put_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                 \
         int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem", SHMEMI_OP_PUT, NO_NBI,                   \
                                       (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      nullptr, 0, 0,                                                              \
                                       1, 1,                                                                       \
                                       shm::g_state_host.default_stream,                                           \
                                       shm::g_state_host.default_block_num);                                       \
@@ -68,7 +69,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT)
 
 #define SHMEM_TYPE_PUT_NBI(NAME, TYPE)                                                                                          \
     /**                                                                                                                         \
-    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.                \
+    * @brief Asynchronous interface. Copy a contiguous data on local PE to symmetric address on the specified PE.               \
     *                                                                                                                           \
     * @param dest               [in] Pointer on Symmetric memory of the destination data.                                       \
     * @param source             [in] Pointer on local device of the source data.                                                \
@@ -76,8 +77,9 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT)
     * @param pe                 [in] PE number of the remote PE.                                                                \
     */                                                                                                                          \
     SHMEM_HOST_API void shmem_put_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe) {             \
-        int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem_nbi", SHMEMI_OP_PUT, NBI,                            \
+        int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem_nbi", SHMEMI_OP_PUT, NBI,                  \
                                       (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      nullptr, 0, 0,                                                              \
                                       1, 1,                                                                       \
                                       shm::g_state_host.default_stream,                                           \
                                       shm::g_state_host.default_block_num);                                       \
@@ -98,9 +100,10 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_PUT_NBI)
     * @param nelems             [in] Number of elements in the destination and source arrays.                                   \
     * @param pe                 [in] PE number of the remote PE.                                                                \
     */                                                                                                                          \
-    SHMEM_HOST_API void shmem_get_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                               \
-        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem", SHMEMI_OP_GET, NO_NBI,                             \
+    SHMEM_HOST_API void shmem_get_##NAME##_mem(TYPE *dest, TYPE *source, size_t nelems, int pe) {                 \
+        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem", SHMEMI_OP_GET, NO_NBI,                   \
                                       (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      nullptr, 0, 0,                                                              \
                                       1, 1,                                                                       \
                                       shm::g_state_host.default_stream,                                           \
                                       shm::g_state_host.default_block_num);                                       \
@@ -122,8 +125,9 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET)
     * @param pe                 [in] PE number of the remote PE.                                                                \
     */                                                                                                                          \
     SHMEM_HOST_API void shmem_get_##NAME##_mem_nbi(TYPE *dest, TYPE *source, size_t nelems, int pe) {             \
-        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem_nbi", SHMEMI_OP_GET, NBI,                            \
+        int ret = shmemi_prepare_and_post_rma("shmem_get_" #NAME "_mem_nbi", SHMEMI_OP_GET, NBI,                  \
                                       (uint8_t *)dest, (uint8_t *)source, nelems, sizeof(TYPE), pe,               \
+                                      nullptr, 0, 0,                                                              \
                                       1, 1,                                                                       \
                                       shm::g_state_host.default_stream,                                           \
                                       shm::g_state_host.default_block_num);                                       \
@@ -150,8 +154,9 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
     */                                                                                                                          \
     SHMEM_HOST_API void shmem_put_##NAME##_mem_signal(TYPE* dst, TYPE* src, size_t elem_size,                                   \
                                                       uint8_t* sig_addr, int32_t signal, int sig_op, int pe){                   \
-        int ret = shmemi_prepare_and_post_with_signal_rma((uint8_t *)dst, (uint8_t *)src, elem_size, sizeof(TYPE), pe,                       \
-                                      sig_addr,  signal, sig_op,                                                                \
+        int ret = shmemi_prepare_and_post_rma("shmem_put_" #NAME "_mem_signal", SHMEMI_OP_PUT_SIGNAL, NO_NBI,                   \
+                                      (uint8_t *)dst, (uint8_t *)src, elem_size, sizeof(TYPE), pe,                              \
+                                      sig_addr, signal, sig_op,                                                                 \
                                       1, 1,                                                                                     \
                                       shm::g_state_host.default_stream,                                                         \
                                       shm::g_state_host.default_block_num);                                                     \
@@ -162,6 +167,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPE_GET_NBI)
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL)
 #undef SHMEM_PUT_TYPENAME_MEM_SIGNAL
+
 #define SHMEM_TYPENAME_P(NAME, TYPE)                                                        \
     /**                                                                                     \
     * @brief Provide a low latency put capability for single element of most basic types.   \
@@ -172,8 +178,8 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_SIGNAL)
     */                                                                                      \
     SHMEM_HOST_API void shmem_##NAME##_p(TYPE* dst, const TYPE value, int pe) {             \
         shmemi_prepare_and_post_rma_##NAME##_p("shmem_" #NAME "_p", (uint8_t*)dst, value,   \
-                                            pe, shm::g_state_host.default_stream,            \
-                                            shm::g_state_host.default_block_num);        \ 
+                                            pe, shm::g_state_host.default_stream,           \
+                                            shm::g_state_host.default_block_num);           \
                                                                                             \
     }
     
@@ -209,18 +215,20 @@ void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t pe)
 {
     int ret = shmemi_prepare_and_post_rma("shmem putmem", SHMEMI_OP_PUT, NO_NBI,                 \
                                 (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                \
+                                nullptr, 0, 0,                                                   \
                                 1, 1,                                                            \
                                 shm::g_state_host.default_stream,                                \
                                 shm::g_state_host.default_block_num);                            \
-    if (ret < 0) {                                                                               \             
+    if (ret < 0) {                                                                               \
         SHM_LOG_ERROR("shmem_putmem failed");                                                    \
-    }                                                                                            \       
+    }                                                                                            \
 }
 
 void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe)
 {
     int ret = shmemi_prepare_and_post_rma("shmem getmem", SHMEMI_OP_GET, NO_NBI,                  \
                                 (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                 \
+                                nullptr, 0, 0,                                                    \
                                 1, 1,                                                             \
                                 shm::g_state_host.default_stream,                                 \
                                 shm::g_state_host.default_block_num);                             \

@@ -30,7 +30,7 @@ extern "C" {
 SHMEM_HOST_API int shmem_team_split_strided(shmem_team_t parent_team, int pe_start, int pe_stride, int pe_size, shmem_team_t *new_team);
 
 /**
- * @brief Collective Interface. Creates a new SHMEM team from an existing parent team.
+ * @brief Collective Interface. Split team from an existing parent team based on a 2D Cartsian Space.
  * 
  * @param parent_team       [in] A team handle.
  * @param x_range           [in] represents the number of elements in the first dimensions

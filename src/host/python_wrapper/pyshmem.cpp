@@ -315,6 +315,114 @@ Returns:
     On success, returns new team id. On error, -1 is returned.
     )");
 
+    m.def(
+        "shmem_team_split_2d",
+        [](int parent, int x_range) {
+            shmem_team_t new_x_team;
+            shmem_team_t new_y_team;
+            auto ret = shmem_team_split_2d(parent, x_range, &new_x_team, &new_y_team);
+            if (ret != 0) {
+                std::cerr << "split parent team(" << parent << ") failed: " << ret << std::endl;
+                return std::make_pair(ret, ret);
+            }
+            return std::make_pair(new_x_team, new_y_team);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("parent"), py::arg("x_range"),  R"(
+Collective Interface. Split team from an existing parent team based on a 2D Cartsian Space
+
+Arguments:
+    parent_team       [in] A team handle.
+    x_range           [in] represents the number of elements in the first dimensions
+    x_team            [in] A new x-axis team after team split.
+    y_team            [in] A new y-axis team after team split.
+Returns:
+    On success, returns new x team id and new y team id. On error, (-1, -1) is returned.
+    )");
+
+    m.def(
+        "shmem_putmem",
+        [](intptr_t dst, intptr_t src, size_t elem_size, int pe) {
+            auto dst_addr = (void*)dst;
+            auto src_addr = (void*)src;
+            shmem_putmem(dst_addr, src_addr, elem_size, pe);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"), 
+        py::arg("elem_size"), py::arg("pe"), R"(
+Synchronous interface. Copy contiguous data on symmetric memory from local PE to address on the specified PE
+
+Arguments:
+    dst                [in] Pointer on Symmetric addr of local PE.
+    src                [in] Pointer on local memory of the source data.     
+    elem_size          [in] size of elements in the destination and source addr.    
+    pe                 [in] PE number of the remote PE.
+    )");
+
+    m.def(
+        "shmem_getmem",
+        [](intptr_t dst, intptr_t src, size_t elem_size, int pe) {
+            auto dst_addr = (void*)dst;
+            auto src_addr = (void*)src;
+            shmem_getmem(dst_addr, src_addr, elem_size, pe);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
+        py::arg("elem_size"), py::arg("pe"),  R"(
+Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
+
+Arguments:
+    dst                [in] Pointer on Symmetric addr of local PE.
+    src                [in] Pointer on local memory of the source data.     
+    elem_size          [in] size of elements in the destination and source addr.    
+    pe                 [in] PE number of the remote PE.
+    )");
+
+#define PYBIND_SHMEM_TYPENAME_P(NAME, TYPE)                                                 \
+    {                                                                                       \
+        std::string funcName = "shmem_" #NAME "_p";                                         \
+        m.def(                                                                              \
+            funcName.c_str(),                                                               \
+            [](intptr_t dst, const TYPE value, int pe) {                                    \
+                auto dst_addr = (TYPE*)dst;                                                 \
+                shmem_##NAME##_p(dst_addr, value, pe);                                      \ 
+            },                                                                              \
+            py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("value"),     \
+            py::arg("pe"), R"(                                                              \
+    Provide a low latency put capability for single element of most basic types             \
+                                                                                            \
+    Arguments:                                                                              \
+        dst               [in] Symmetric address of the destination data on local PE.       \
+        value             [in] The element to be put.                                       \
+        pe                [in] The number of the remote PE.                                 \
+        )");                                                                                \
+    }                                                                                   
+
+
+SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_P)
+#undef PYBIND_SHMEM_TYPENAME_P
+
+#define PYBIND_SHMEM_TYPENAME_G(NAME, TYPE)                                                 \
+    {                                                                                       \
+        std::string funcName = "shmem_" #NAME "_g";                                         \
+        m.def(                                                                              \
+            funcName.c_str(),                                                               \
+            [](intptr_t src, int pe) {                                    \
+                auto src_addr = (TYPE*)src;                                                 \
+                return shmem_##NAME##_g(src_addr, pe);                                      \ 
+            },                                                                              \
+            py::call_guard<py::gil_scoped_release>(), py::arg("src"),     \
+            py::arg("pe"), R"(                                                              \
+    Provide a low latency get single element of most basic types.             \
+                                                                                            \
+    Arguments:                                                                              \
+        src               [in] Symmetric address of the destination data on local PE.  \
+        pe                [in] The number of the remote PE.                            \
+        A single element of type specified in the input pointer.                             \
+        )");                                                                                \
+    }                                                                                   
+
+
+SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_G)
+#undef PYBIND_SHMEM_TYPENAME_G
+
     m.def("team_translate_pe", &shmem_team_translate_pe, py::call_guard<py::gil_scoped_release>(),
           py::arg("src_team"), py::arg("src_pe"), py::arg("dest_team"), R"(
 Translate a given PE number in one team into the corresponding PE number in another team

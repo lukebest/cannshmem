@@ -133,7 +133,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P)
 
 #define SHMEM_TYPENAME_G(NAME, TYPE)                                                 \
     /**                                                                                     \
-    * @brief Provide a low latency put capability for single element of most basic types.   \
+    * @brief Provide a low latency get single element of most basic types.   \
     *                                                                                       \
     * @param src               [in] Symmetric address of the destination data on local PE.  \
     * @param pe                [in] The number of the remote PE.                            \
@@ -145,7 +145,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_G)
 #undef SHMEM_TYPENAME_G
 
 /**                                                                                                                         \
-* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the specified PE.  \
+* @brief Synchronous interface. Copy contiguous data on symmetric memory from local PE to address on the specified PE.  \
 *                                                                                                                           \
 * @param dst                [in] Pointer on Symmetric addr of local PE.                                           \
 * @param src                [in] Pointer on local memory of the source data.                                            \

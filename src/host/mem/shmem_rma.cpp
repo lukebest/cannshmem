@@ -188,7 +188,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P)
 
 #define SHMEM_TYPENAME_G(NAME, TYPE)                                                        \
     /**                                                                                     \
-    * @brief Provide a low latency put capability for single element of most basic types.   \
+    * @brief Provide a low latency get single element of most basic types.   \
     *                                                                                       \
     * @param src               [in] Symmetric address of the destination data on local PE.  \
     * @param pe                [in] The number of the remote PE.                            \

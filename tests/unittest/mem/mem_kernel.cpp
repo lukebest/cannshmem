@@ -137,6 +137,47 @@ void test_put_mem_signal(uint32_t block_dim, void* stream, float* gva, float* de
     put_mem_signal_test<<<block_dim, nullptr, stream>>>((uint8_t *)gva, (uint8_t *)dev, sig_addr, signal, sig_op);
 }
 
+class KernelPutmemSignalNbi{
+public:
+  __aicore__ inline KernelPutmemSignalNbi() {}
+  __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev, GM_ADDR sig_addr, int32_t signal_ , int sig_op_)
+  {
+    gva_gm = (__gm__ float *)gva;
+    dev_gm = (__gm__ float *)dev;
+    sig_addr_gm = (__gm__ int32_t *)sig_addr;
+    signal = signal_;
+    rank = smem_shm_get_global_rank();
+    sig_op = sig_op_;
+  }
+
+  __aicore__ inline void Process()
+  {
+    shmem_put_float_mem_signal_nbi(gva_gm, dev_gm, 8, sig_addr_gm, signal, sig_op, rank);
+  }
+private:
+  __gm__ float *gva_gm;
+  __gm__ float *dev_gm;
+  __gm__ int32_t *sig_addr_gm;
+
+  int32_t signal;
+  int64_t rank;
+  int sig_op;
+};
+
+extern "C" __global__ __aicore__ void put_mem_signal_test_nbi(GM_ADDR gva, GM_ADDR dev,
+                                                          GM_ADDR sig_addr, int32_t signal , int sig_op)
+{
+  KernelPutmemSignal op;
+  op.Init(gva, dev, sig_addr, signal, sig_op);
+  op.Process();
+}
+
+void test_put_mem_signal_nbi(uint32_t block_dim, void* stream, float* gva, float* dev, uint8_t *sig_addr, int32_t signal, int sig_op)
+{
+  put_mem_signal_test_nbi<<<block_dim, nullptr, stream>>>((uint8_t *)gva, (uint8_t *)dev, sig_addr, signal, sig_op);
+}
+
+
 class ShmemTest {
 public:
     __aicore__ inline ShmemTest() {}

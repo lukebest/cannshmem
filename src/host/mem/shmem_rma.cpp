@@ -236,3 +236,29 @@ void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe)
         SHM_LOG_ERROR("shmem_getmem failed");                                                     \
     }                                                                                             \
 }
+
+void shmem_putmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe)
+{
+    int ret = shmemi_prepare_and_post_rma("shmem_putmem_nbi", SHMEMI_OP_PUT, NBI,                \
+                                (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                \
+                                nullptr, 0, 0,                                                   \
+                                1, 1,                                                            \
+                                shm::g_state_host.default_stream,                                \
+                                shm::g_state_host.default_block_num);                            \
+    if (ret < 0) {                                                                               \
+        SHM_LOG_ERROR("shmem_putmem_nbi failed");                                                \
+    }                                                                                            \
+}
+
+void shmem_getmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe)
+{
+    int ret = shmemi_prepare_and_post_rma("shmem_getmem_nbi", SHMEMI_OP_GET, NBI,                 \
+                                (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                 \
+                                nullptr, 0, 0,                                                    \
+                                1, 1,                                                             \
+                                shm::g_state_host.default_stream,                                 \
+                                shm::g_state_host.default_block_num);                             \
+    if (ret < 0) {                                                                                \
+        SHM_LOG_ERROR("shmem_getmem_nbi failed");                                                 \
+    }                                                                                             \
+}

@@ -457,6 +457,42 @@ Get runtime ffts config. This config should be passed to MIX Kernel and set by M
 //    team(int): team id
 //    )");
 
+    m.def(
+    "shmem_putmem_nbi",
+    [](intptr_t dst, intptr_t src, size_t elem_size, int pe) {
+    auto dst_addr = (void*)dst;
+    auto src_addr = (void*)src;
+    shmem_putmem_nbi(dst_addr, src_addr, elem_size, pe);
+    },
+    py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
+            py::arg("elem_size"), py::arg("pe"), R"(
+    Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+
+    Arguments:
+        dst                [in] Pointer on Symmetric addr of local PE.
+        src                [in] Pointer on local memory of the source data.
+        elem_size          [in] size of elements in the destination and source addr.
+        pe                 [in] PE number of the remote PE.
+        )");
+
+    m.def(
+    "shmem_getmem_nbi",
+    [](intptr_t dst, intptr_t src, size_t elem_size, int pe) {
+    auto dst_addr = (void*)dst;
+    auto src_addr = (void*)src;
+    shmem_getmem_nbi(dst_addr, src_addr, elem_size, pe);
+    },
+    py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
+            py::arg("elem_size"), py::arg("pe"),  R"(
+    Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
+
+    Arguments:
+        dst                [in] Pointer on Symmetric addr of local PE.
+        src                [in] Pointer on local memory of the source data.
+        elem_size          [in] size of elements in the destination and source addr.
+        pe                 [in] PE number of the remote PE.
+        )");
+
     m.def("my_pe", &shmem_team_my_pe, py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
 Get my PE number within a team, i.e. index of the PE
 

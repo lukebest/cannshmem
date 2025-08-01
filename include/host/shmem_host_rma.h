@@ -161,8 +161,28 @@ SHMEM_HOST_API void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t
 * @param src                [in] Pointer on Symmetric memory of the source data.                                            \
 * @param elem_size          [in] size of elements in the destination and source addr.                                       \
 * @param pe                 [in] PE number of the remote PE.                                                                \
-*/                                                                                                                          \
+*/
 SHMEM_HOST_API void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe);
+
+/**                                                                                                                          \
+* @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.                  \
+*                                                                                                                            \
+* @param dst                [in] Pointer on Symmetric addr of local PE.                                                      \
+* @param src                [in] Pointer on local memory of the source data.                                                 \
+* @param elem_size          [in] size of elements in the destination and source addr.                                        \
+* @param pe                 [in] PE number of the remote PE.                                                                 \
+*/
+SHMEM_HOST_API void shmem_putmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe);
+
+/**                                                                                                                         \
+* @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE. \
+*                                                                                                                           \
+* @param dst                [in] Pointer on local device of the destination data.                                           \
+* @param src                [in] Pointer on Symmetric memory of the source data.                                            \
+* @param elem_size          [in] size of elements in the destination and source addr.                                       \
+* @param pe                 [in] PE number of the remote PE.                                                                \
+*/
+SHMEM_HOST_API void shmem_getmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe);
 
 #ifdef __cplusplus
 }

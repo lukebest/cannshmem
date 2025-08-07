@@ -27,6 +27,7 @@ mkdir -p $THIRD_PARTY_DIR
 RELEASE_DIR=$PROJECT_ROOT/ci/release
 
 BUILD_TYPE=Release
+PYEXPAND_TYPE=OFF
 
 COMPILE_OPTIONS=""
 
@@ -47,7 +48,7 @@ function fn_build()
 
 
     cd build
-    cmake $COMPILE_OPTIONS -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     make install -j8
     cd -
 }
@@ -128,13 +129,14 @@ function fn_build_memfabric()
     fi
 
     cd $THIRD_PARTY_DIR
-    git clone -b br_hdk_patch https://gitee.com/ascend/memfabric_hybrid.git
+    git clone -b master https://gitee.com/ascend/memfabric_hybrid.git
     cd memfabric_hybrid
     git submodule init
     git submodule update --recursive
-    mkdir build
+    bash script/compile_acc_links.sh $BUILD_TYPE OFF OFF
+    mkdir -p build
     cd build 
-    cmake -DBUILD_PYTHON=OFF -DBUILD_OPEN_ABI=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE -DBUILD_OPEN_ABI=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     make install -j4
     ls -l ../output/smem
     echo "Memfabric_hybrid is successfully installed to $THIRD_PARTY_DIR/memfabric_hybrid"
@@ -219,6 +221,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_TYPE=Debug
             fn_build_googletest
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_UNIT_TEST=ON"
+            shift
+            ;;
+        -python_extension)
+            PYEXPAND_TYPE=ON
             shift
             ;;
         -gendoc)

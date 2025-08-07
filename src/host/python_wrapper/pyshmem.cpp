@@ -12,10 +12,9 @@
 #include <pybind11/stl.h>
 
 #include <cstdint>
-#include <iostream>
 #include <vector>
+#include <iostream>
 
-//#include "ATen/ops/from_blob.h"
 #include "shmem_api.h"
 
 namespace py = pybind11;
@@ -36,7 +35,15 @@ inline std::string get_connect_url()
         return "";
     }
 
-    auto port_int = std::strtol(port, nullptr, 10) + 11;
+    char *endptr;
+    auto port_long = std::strtol(port, &endptr, 10);
+    // master port + 11 as non-master port.
+    if (endptr == port || *endptr != '\0' || port_long <= 0 || port_long > 65535 - 11) {
+        // SHM_LOG_ERROR is not available in this file, use std::cerr
+        std::cerr << "[ERROR] Invalid MASTER_PORT value from environment: " << port << std::endl;
+        return "";
+    }
+    auto port_int = port_long + 11;
     return std::string("tcp://").append(address).append(":").append(std::to_string(port_int));
 }
 
@@ -128,12 +135,12 @@ void DefineShmemInitStatus(py::module_ &m)
         .value("INVALID", SHMEM_STATUS_INVALID);
 }
 
-PYBIND11_MODULE(_pyaclshmem, m)
+PYBIND11_MODULE(_pyshmem, m)
 {
     DefineShmemAttr(m);
     DefineShmemInitStatus(m);
 
-    m.def("aclshmem_init", &shm::shmem_initialize, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
+    m.def("shmem_init", &shm::shmem_initialize, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
           py::arg("npes"), py::arg("mem_size"), R"(
 Initialize share memory module.
 
@@ -145,12 +152,12 @@ Returns:
     returns zero on success. On error, -1 is returned.
     )");
 
-    m.def("aclshmem_finialize", &shmem_finalize, py::call_guard<py::gil_scoped_release>(),
+    m.def("shmem_finialize", &shmem_finalize, py::call_guard<py::gil_scoped_release>(),
           R"(
 Finalize share memory module.
     )");
 
-    m.def("aclshmem_set_attributes", &shm::shmem_set_attributes, py::call_guard<py::gil_scoped_release>(),
+    m.def("shmem_set_attributes", &shm::shmem_set_attributes, py::call_guard<py::gil_scoped_release>(),
         py::arg("my_rank"), py::arg("n_ranks"), py::arg("local_mem_size"), py::arg("ip_port"),
         py::arg("attributes"), R"(
 Set the default attributes
@@ -164,18 +171,18 @@ Returns:
     On success, returns 0. On error, error code on failure.
 )");
 
-    m.def("aclshmem_init_status", []() {
+    m.def("shmem_init_status", []() {
         int32_t ret = shmem_init_status();
-        return static_cast<shmem_init_status_t>(ret); 
+        return static_cast<shmem_init_status_t>(ret);
     }, py::call_guard<py::gil_scoped_release>(), R"(
 Query the current initialization status of shared memory module.
 
 Returns:
-    Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is complete. 
+    Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is complete.
     All return types can be found in shmem_init_status_t.
     )");
 
-    m.def("aclshmem_set_data_op_engine_type", &shm::shmem_set_op_engine_type, py::call_guard<py::gil_scoped_release>(),
+    m.def("shmem_set_data_op_engine_type", &shm::shmem_set_op_engine_type, py::call_guard<py::gil_scoped_release>(),
           py::arg("attributes"), py::arg("vaue"), R"(
 Modify the data operation engine type in the attributes that will be used for initialization.
 Arguments:
@@ -196,31 +203,31 @@ Returns:
     )");
 
     m.def(
-        "aclshmem_malloc",
+        "shmem_malloc",
         [](size_t size) {
             auto ptr = shmem_malloc(size);
             if (ptr == nullptr) {
-                throw std::runtime_error("aclshmem_malloc failed");
+                throw std::runtime_error("shmem_malloc failed");
             }
             return (intptr_t)ptr;
         },
         py::call_guard<py::gil_scoped_release>(), py::arg("size"),
         R"(
 Allocates size bytes and returns a pointer to the allocated memory. The memory is not initialized. If size is 0, then
-aclshmem_malloc() returns NULL.
+shmem_malloc() returns NULL.
     )");
 
     m.def(
-        "aclshmem_calloc",
+        "shmem_calloc",
         [](size_t nmemb, size_t size) {
             auto ptr = shmem_calloc(nmemb, size);
             if (ptr == nullptr) {
-                throw std::runtime_error("aclshmem_calloc failed");
+                throw std::runtime_error("shmem_calloc failed");
             }
             return (intptr_t)ptr;
         },
-        py::call_guard<py::gil_scoped_release>(), 
-        py::arg("nmemb"), 
+        py::call_guard<py::gil_scoped_release>(),
+        py::arg("nmemb"),
         py::arg("size"),
         R"(
 Allocates memory for an array of nmemb elements of size bytes each and returns a pointer to the allocated memory.
@@ -234,11 +241,11 @@ Returns:
     )");
 
     m.def(
-        "aclshmem_align",
+        "shmem_align",
         [](size_t alignment, size_t size) {
             auto ptr = shmem_align(alignment, size);
             if (ptr == nullptr) {
-                throw std::runtime_error("aclshmem_align failed");
+                throw std::runtime_error("shmem_align failed");
             }
             return (intptr_t)ptr;
         },
@@ -257,18 +264,18 @@ Returns:
     )");
 
     m.def(
-        "aclshmem_free",
+        "shmem_free",
         [](intptr_t ptr) {
             auto mem = (void *)ptr;
             shmem_free(mem);
         },
         py::call_guard<py::gil_scoped_release>(), py::arg("ptr"),
         R"(
-Frees the memory space pointed to by ptr, which must have been returned by a previous call to aclshmem_malloc.
+Frees the memory space pointed to by ptr, which must have been returned by a previous call to shmem_malloc.
     )");
 
     m.def(
-        "aclshmem_ptr", [](intptr_t ptr, int pe) { return (intptr_t)shmem_ptr((void *)ptr, pe); },
+        "shmem_ptr", [](intptr_t ptr, int pe) { return (intptr_t)shmem_ptr((void *)ptr, pe); },
         py::call_guard<py::gil_scoped_release>(), py::arg("ptr"), py::arg("peer"), R"(
 Get address that may be used to directly reference dest on the specified PE.
 
@@ -346,14 +353,14 @@ Returns:
             auto src_addr = (void*)src;
             shmem_putmem(dst_addr, src_addr, elem_size, pe);
         },
-        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"), 
+        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
         py::arg("elem_size"), py::arg("pe"), R"(
 Synchronous interface. Copy contiguous data on symmetric memory from local PE to address on the specified PE
 
 Arguments:
     dst                [in] Pointer on Symmetric addr of local PE.
-    src                [in] Pointer on local memory of the source data.     
-    elem_size          [in] size of elements in the destination and source addr.    
+    src                [in] Pointer on local memory of the source data.
+    elem_size          [in] size of elements in the destination and source addr.
     pe                 [in] PE number of the remote PE.
     )");
 
@@ -370,8 +377,8 @@ Synchronous interface. Copy contiguous data on symmetric memory from the specifi
 
 Arguments:
     dst                [in] Pointer on Symmetric addr of local PE.
-    src                [in] Pointer on local memory of the source data.     
-    elem_size          [in] size of elements in the destination and source addr.    
+    src                [in] Pointer on local memory of the source data.
+    elem_size          [in] size of elements in the destination and source addr.
     pe                 [in] PE number of the remote PE.
     )");
 
@@ -382,7 +389,7 @@ Arguments:
             funcName.c_str(),                                                               \
             [](intptr_t dst, const TYPE value, int pe) {                                    \
                 auto dst_addr = (TYPE*)dst;                                                 \
-                shmem_##NAME##_p(dst_addr, value, pe);                                      \ 
+                shmem_##NAME##_p(dst_addr, value, pe);                                      \
             },                                                                              \
             py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("value"),     \
             py::arg("pe"), R"(                                                              \
@@ -393,7 +400,7 @@ Arguments:
         value             [in] The element to be put.                                       \
         pe                [in] The number of the remote PE.                                 \
         )");                                                                                \
-    }                                                                                   
+    }
 
 
 SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_P)
@@ -406,7 +413,7 @@ SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_P)
             funcName.c_str(),                                                               \
             [](intptr_t src, int pe) {                                    \
                 auto src_addr = (TYPE*)src;                                                 \
-                return shmem_##NAME##_g(src_addr, pe);                                      \ 
+                return shmem_##NAME##_g(src_addr, pe);                                      \
             },                                                                              \
             py::call_guard<py::gil_scoped_release>(), py::arg("src"),     \
             py::arg("pe"), R"(                                                              \
@@ -417,7 +424,7 @@ SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_P)
         pe                [in] The number of the remote PE.                            \
         A single element of type specified in the input pointer.                             \
         )");                                                                                \
-    }                                                                                   
+    }
 
 
 SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_G)
@@ -432,7 +439,7 @@ Arguments:
     src_pe(int): source PE number
     dest_team(int): destination team id
 Returns:
-    On success, returns the specified PE’s number in the dest_team. On error, -1 is returned.
+    On success, returns the specified PE's number in the dest_team. On error, -1 is returned.
     )");
 
     m.def("team_destroy", &shmem_team_destroy, py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
@@ -445,17 +452,6 @@ Arguments:
     m.def("get_ffts_config", &shmemx_get_ffts_config, py::call_guard<py::gil_scoped_release>(), R"(
 Get runtime ffts config. This config should be passed to MIX Kernel and set by MIX Kernel using shmemx_set_ffts.
     )");
-
-//    m.def("barrier_all", &shmem_barrier_all, py::call_guard<py::gil_scoped_release>(), R"(
-//Do barrier operation on global team with default stream.
-//    )");
-//
-//    m.def("barrier_team", &shmem_barrier, py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
-//Do barrier operation on specified team with default stream
-//
-//Arguments:
-//    team(int): team id
-//    )");
 
     m.def(
     "shmem_putmem_nbi",
@@ -499,7 +495,7 @@ Get my PE number within a team, i.e. index of the PE
 Arguments:
     team(int): team id
 Returns:
-    On success, returns the PE’s number in the specified team. On error, -1 is returned.
+    On success, returns the PE's number in the specified team. On error, -1 is returned.
     )");
 
     m.def("pe_count", &shmem_team_n_pes, py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(

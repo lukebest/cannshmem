@@ -26,7 +26,7 @@ SHMEM
   - Atlas 800I A2/A3 系列产品
   - Atlas 800T A2/A3 系列产品
 - 平台：aarch64/x86
-- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.1.RC1及之后版本（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
+- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1.alpha003及之后版本。CANN版本为社区版本，暂无支持商用版本。（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
 cmake >= 3.19  
 GLIBC >= 2.28
 
@@ -55,6 +55,12 @@ GLIBC >= 2.28
     ./软件包名.run --install # 安装软件，可使用--help查询相关安装选项
     ```
     出现提示`xxx install success!`则安装成功
+
+shmem 默认开启tls通信加密。如果想关闭，需要启动前手动设置环境变量：
+```
+export MEMFABRIC_HYBRID_TLS_ENABLE=0
+```
+具体细节详见安全声明章节
 
 执行一个样例matmul_allreduce算子。  
 1.在shmem/目录编译:

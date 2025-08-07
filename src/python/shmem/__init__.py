@@ -21,17 +21,17 @@ libs_path = os.path.join(os.getenv('SHMEM_HOME_PATH', current_dir), 'shmem/lib')
 for lib in ["libshmem.so"]:
     ctypes.CDLL(os.path.join(libs_path, lib))
 
-from ._pyaclshmem import aclshmem_init, aclshmem_finialize, aclshmem_malloc, aclshmem_free, \
-    aclshmem_ptr, my_pe, pe_count, mte_set_ub_params, team_split_strided, team_translate_pe, team_destroy, \
-    InitAttr, OpEngineType, aclshmem_set_attributes, aclshmem_set_data_op_engine_type, aclshmem_set_timeout, \
-    InitStatus, aclshmem_calloc, aclshmem_align, aclshmem_init_status, get_ffts_config
+from ._pyaclshmem import shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
+    shmem_ptr, my_pe, pe_count, mte_set_ub_params, team_split_strided, team_translate_pe, team_destroy, \
+    InitAttr, OpEngineType, shmem_set_attributes, shmem_set_data_op_engine_type, shmem_set_timeout, \
+    InitStatus, shmem_calloc, shmem_align, shmem_init_status, get_ffts_config
 
 __all__ = [
-    'aclshmem_init',
-    'aclshmem_finialize',
-    'aclshmem_malloc',
-    'aclshmem_free',
-    'aclshmem_ptr',
+    'shmem_init',
+    'shmem_finialize',
+    'shmem_malloc',
+    'shmem_free',
+    'shmem_ptr',
     'my_pe',
     'pe_count',
     'mte_set_ub_params',
@@ -41,11 +41,11 @@ __all__ = [
     'InitAttr',
     'InitStatus',
     'OpEngineType',
-    'aclshmem_set_attributes',
-    'aclshmem_set_data_op_engine_type',
-    'aclshmem_set_timeout',
-    'aclshmem_calloc',
-    'aclshmem_align',
-    'aclshmem_init_status',
+    'shmem_set_attributes',
+    'shmem_set_data_op_engine_type',
+    'shmem_set_timeout',
+    'shmem_calloc',
+    'shmem_align',
+    'shmem_init_status',
     'get_ffts_config'
 ]

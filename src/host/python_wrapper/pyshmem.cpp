@@ -328,7 +328,7 @@ Returns:
     )");
 
     m.def(
-        "shmem_team_split_2d",
+        "team_split_2d",
         [](int parent, int x_range) {
             shmem_team_t new_x_team;
             shmem_team_t new_y_team;

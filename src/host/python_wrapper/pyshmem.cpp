@@ -424,10 +424,10 @@ Returns:
     m.def(
         "shmem_info_get_name",
         []() {
-            std::string name;
-            name.resize(SHMEM_MAX_NAME_LEN);
-            shmem_info_get_name(name.c_str());
-            return name;
+            char name[SHMEM_MAX_NAME_LEN];
+            shmem_info_get_name(name);
+            std::string ret_name(name);
+            return ret_name;
         },
         py::call_guard<py::gil_scoped_release>(), R"(
 returns the vendor defined name string.

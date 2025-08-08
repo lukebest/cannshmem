@@ -38,6 +38,7 @@ __all__ = [
     'pe_count',
     'mte_set_ub_params',
     'team_split_strided',
+    'team_split_2d',
     'team_translate_pe',
     'team_destroy',
     'InitAttr',

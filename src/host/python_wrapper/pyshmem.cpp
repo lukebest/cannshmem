@@ -124,6 +124,11 @@ void DefineShmemAttr(py::module_ &m)
         .def_readwrite("ip_port", &shmem_init_attr_t::ip_port)
         .def_readwrite("local_mem_size", &shmem_init_attr_t::local_mem_size)
         .def_readwrite("option_attr", &shmem_init_attr_t::option_attr);
+
+    py::class_<shmem_team_config_t>(m, "TeamConfig")
+        .def(py::init<>())
+        .def(py::init<int>())
+        .def_readwrite("num_contexts", &shmem_team_config_t::num_contexts);
 }
 
 void DefineShmemInitStatus(py::module_ &m)
@@ -347,6 +352,21 @@ Returns:
     )");
 
     m.def(
+        "shmem_team_get_config",
+        [](int team, shmem_team_config_t team_config){
+            return shmem_team_get_config(team, &team_config);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("team"), py::arg("team_config"), R"(
+Return team config which pass in as team created
+
+Arguments:
+    team(int)                 [in] team id
+    team_config(TeamConfig)   [out] the config of team
+Returns:
+    0 if success, -1 if fail.
+    )");
+
+    m.def(
         "shmem_putmem",
         [](intptr_t dst, intptr_t src, size_t elem_size, int pe) {
             auto dst_addr = (void*)dst;
@@ -380,6 +400,42 @@ Arguments:
     src                [in] Pointer on local memory of the source data.
     elem_size          [in] size of elements in the destination and source addr.
     pe                 [in] PE number of the remote PE.
+    )");
+
+    
+    m.def(
+        "shmem_info_get_version",
+        []() {
+            int major = 0;
+            int minor = 0;
+            shmem_info_get_version(&major, &minor);
+            return major, minor;
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+Returns the major and minor version.
+
+Arguments:
+    None
+Returns:
+    major(int)      [out]major version
+    minor(int)      [out]minor version
+    )");
+
+    m.def(
+        "shmem_info_get_name",
+        []() {
+            std::string name;
+            name.resize(SHMEM_MAX_NAME_LEN);
+            shmem_info_get_name(name.c_str());
+            return name;
+        },
+        py::call_guard<py::gil_scoped_release>(), R"(
+returns the vendor defined name string.
+
+Arguments:
+    None
+Returns:
+    name(str)      [out]defined name
     )");
 
 #define PYBIND_SHMEM_TYPENAME_P(NAME, TYPE)                                                 \

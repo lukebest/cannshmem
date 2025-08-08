@@ -55,6 +55,7 @@ shmem_init_attr_t g_attr;
 static smem_shm_t g_smem_handle = nullptr;
 static bool g_attr_init = false;
 static char* g_ipport = nullptr;
+static shm::log_level g_log_level = shm::log_level::INFO_LEVEL;
 
 int32_t version_compatible()
 {
@@ -242,12 +243,14 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
     
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
+    SHMEM_CHECK_RET(shm::shm_out_logger::Instance().set_log_level(shm::g_log_level));
     SHMEM_CHECK_RET(shm::check_attr(attributes));
     SHMEM_CHECK_RET(shm::version_compatible());
     SHMEM_CHECK_RET(shm::shmemi_options_init());
 
     SHMEM_CHECK_RET(shm::shmemi_state_init_attr(attributes));
     SHMEM_CHECK_RET(shm::shmemi_load_lib());
+    SHMEM_CHECK_RET(shm::smem_api::smem_set_log_level(int(shm::g_log_level)));
     SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes));
     SHMEM_CHECK_RET(shm::update_device_state());
 

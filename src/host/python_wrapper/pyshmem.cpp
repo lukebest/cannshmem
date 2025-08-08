@@ -192,7 +192,7 @@ Returns:
     On success, returns 0. On error, error code on failure.
     )");
 
-    m.def("aclshmem_set_timeout", &shm::set_timeout, py::call_guard<py::gil_scoped_release>(),
+    m.def("shmem_set_timeout", &shm::set_timeout, py::call_guard<py::gil_scoped_release>(),
           py::arg("attributes"), py::arg("vaue"), R"(
 Modify the timeout in the attributes that will be used for initialization.
 Arguments:

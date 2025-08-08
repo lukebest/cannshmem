@@ -334,8 +334,7 @@ Returns:
             shmem_team_t new_y_team;
             auto ret = shmem_team_split_2d(parent, x_range, &new_x_team, &new_y_team);
             if (ret != 0) {
-                std::cerr << "split parent team(" << parent << ") failed: " << ret << std::endl;
-                return std::make_pair(ret, ret);
+                throw std::runtime_error("shmem_team_split_2d failed");
             }
             return std::make_pair(new_x_team, new_y_team);
         },

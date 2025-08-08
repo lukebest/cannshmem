@@ -353,15 +353,15 @@ Returns:
 
     m.def(
         "shmem_team_get_config",
-        [](int team, shmem_team_config_t team_config){
-            return shmem_team_get_config(team, &team_config);
+        [](int team){
+            shmem_team_config_t team_config;
+            return std::make_pair(shmem_team_get_config(team, &team_config), team_config.num_contexts);
         },
-        py::call_guard<py::gil_scoped_release>(), py::arg("team"), py::arg("team_config"), R"(
+        py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
 Return team config which pass in as team created
 
 Arguments:
     team(int)                 [in] team id
-    team_config(TeamConfig)   [out] the config of team
 Returns:
     0 if success, -1 if fail.
     )");

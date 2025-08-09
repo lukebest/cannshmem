@@ -36,6 +36,8 @@ smem_shm_set_extra_context_func smem_api::g_smem_shm_set_extra_context = nullptr
 smem_shm_control_barrier_func smem_api::g_smem_shm_control_barrier = nullptr;
 smem_shm_control_all_gather_func smem_api::g_smem_shm_control_all_gather = nullptr;
 smem_shm_topo_can_reach_func smem_api::g_smem_shm_topo_can_reach = nullptr;
+smem_shm_register_exit_func smem_api::g_smem_shm_register_exit = nullptr;
+smem_shm_global_exit_func smem_api::g_smem_shm_global_exit = nullptr;
 
 int32_t smem_api::load_library(const std::string &lib_dir_path)
 {
@@ -83,6 +85,8 @@ int32_t smem_api::load_library(const std::string &lib_dir_path)
     DL_LOAD_SYM(g_smem_shm_control_barrier, smem_shm_control_barrier_func, g_smem_handle, "smem_shm_control_barrier");
     DL_LOAD_SYM(g_smem_shm_control_all_gather, smem_shm_control_all_gather_func, g_smem_handle, "smem_shm_control_allgather");
     DL_LOAD_SYM(g_smem_shm_topo_can_reach, smem_shm_topo_can_reach_func, g_smem_handle, "smem_shm_topology_can_reach");
+    DL_LOAD_SYM(g_smem_shm_register_exit, smem_shm_register_exit_func, g_smem_handle, "smem_shm_register_exit");
+    DL_LOAD_SYM(g_smem_shm_global_exit, smem_shm_global_exit_func, g_smem_handle, "smem_shm_global_exit");
 
     g_loaded = true;
     SHM_LOG_INFO("loaded library: " << g_smem_file_name << " under dir: " << lib_dir_path.c_str());

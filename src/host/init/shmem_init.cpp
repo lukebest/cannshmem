@@ -238,6 +238,11 @@ int32_t shmem_init_status()
     else return SHMEM_STATUS_INVALID;
 }
 
+void shmem_rank_exit(int status){
+    SHM_LOG_DEBUG("shmem_rank_exit is work ,status: " << status);
+    exit(status);
+}
+
 int32_t shmem_init_attr(shmem_init_attr_t *attributes)
 {
     int32_t ret;
@@ -258,6 +263,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes));
     SHMEM_CHECK_RET(shm::update_device_state());
     SHMEM_CHECK_RET(shm::shmemi_sync_init());
+    SHMEM_CHECK_RET(shm::smem_api::smem_shm_register_exit(shm::g_smem_handle, &shmem_rank_exit));
     shm::g_state.is_shmem_initialized = true;
     SHMEM_CHECK_RET(shm::shmemi_control_barrier_all());
     return SHMEM_SUCCESS;
@@ -296,4 +302,8 @@ void shmem_info_get_name(char *name)
         name[i] = version_str[i];
     }
     name[i] = '\0';
+}
+
+void shmem_global_exit(int status){
+    shm::smem_api::smem_shm_global_exit(shm::g_smem_handle, status);
 }

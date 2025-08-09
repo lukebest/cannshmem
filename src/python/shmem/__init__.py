@@ -51,6 +51,7 @@ __all__ = [
     'shmem_align',
     'shmem_init_status',
     'get_ffts_config',
+    'shmem_global_exit',
     'shmem_putmem_nbi',
     'shmem_getmem_nbi',
     'shmem_putmem',

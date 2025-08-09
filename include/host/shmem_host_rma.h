@@ -203,6 +203,35 @@ SHMEM_HOST_API void shmem_putmem_nbi(void* dst, void* src, size_t elem_size, int
 */
 SHMEM_HOST_API void shmem_getmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe);
 
+/**                                                                                                                         \
+    * @brief Asynchronous interface. Copy a contiguous data on local UB to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dst               [in] Pointer on local device of the destination data.                                            \
+    * @param src               [in] Pointer on Symmetric memory of the source data.                                             \
+    * @param elem_size         [in] Number of elements in the dest and source arrays.                                           \
+    * @param sig_addr          [in] Symmetric address of the signal word to be updated.                                         \
+    * @param signal            [in] The value used to update sig_addr.                                                          \
+    * @param sig_op            [in] Operation used to update sig_addr with signal.                                              \
+    *                               Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD                                     \
+    * @param pe                [in] PE number of the remote PE.                                                                 \
+ */
+SHMEM_HOST_API void shmem_putmem_signal_nbi(void* dst, void* src, size_t elem_size,                                          \
+                                            void* sig_addr, int32_t signal, int sig_op, int pe);
+
+/**                                                                                                                         \
+    * @brief Synchronous interface. Copy a contiguous data on local UB to symmetric address on the specified PE.                \
+    *                                                                                                                           \
+    * @param dst               [in] Pointer on local device of the destination data.                                            \
+    * @param src               [in] Pointer on Symmetric memory of the source data.                                             \
+    * @param elem_size         [in] Number of elements in the dest and source arrays.                                           \
+    * @param sig_addr          [in] Symmetric address of the signal word to be updated.                                         \
+    * @param signal            [in] The value used to update sig_addr.                                                          \
+    * @param sig_op            [in] Operation used to update sig_addr with signal.                                              \
+    *                               Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD                                     \
+    * @param pe                [in] PE number of the remote PE.                                                                 \
+ */
+SHMEM_HOST_API void shmem_putmem_signal(void* dst, void* src, size_t elem_size,                                          \
+                                            void* sig_addr, int32_t signal, int sig_op, int pe);
 #ifdef __cplusplus
 }
 #endif

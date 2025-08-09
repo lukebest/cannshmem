@@ -232,6 +232,11 @@ while [[ $# -gt 0 ]]; do
             GEN_DOC=ON
             shift
             ;;
+        -python_extension)
+            PYEXPAND_TYPE=ON
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DBUILD_PYTHON=ON"
+            shift
+            ;;
         -onlygendoc)
             fn_build_doxygen
             fn_build_sphinx

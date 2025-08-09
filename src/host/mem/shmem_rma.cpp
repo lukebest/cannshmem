@@ -292,3 +292,29 @@ void shmem_getmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe)
         SHM_LOG_ERROR("shmem_getmem_nbi failed");                                                 \
     }                                                                                             \
 }
+
+void shmem_putmem_signal_nbi(void* dst, void* src, size_t elem_size,                                          \
+                             void* sig_addr, int32_t signal, int sig_op, int pe){                             \
+  int ret = shmemi_prepare_and_post_rma("shmem_putmem_signal_nbi", SHMEMI_OP_PUT_SIGNAL, NBI,      \
+                                        (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                     \
+                                        (uint8_t *)sig_addr, signal, sig_op,                                  \
+                                        1, 1,                                                                 \
+                                        shm::g_state_host.default_stream,                                     \
+                                        shm::g_state_host.default_block_num);                                 \
+  if (ret < 0) {                                                                                              \
+    SHM_LOG_ERROR("device calling transfer failed");                                                          \
+  }                                                                                                           \
+}
+
+void shmem_putmem_signal(void* dst, void* src, size_t elem_size,                                              \
+                             void* sig_addr, int32_t signal, int sig_op, int pe){                             \
+  int ret = shmemi_prepare_and_post_rma("shmem_putmem_signal", SHMEMI_OP_PUT_SIGNAL, NO_NBI,   \
+                                        (uint8_t *)dst, (uint8_t *)src, elem_size, 1, pe,                     \
+                                        (uint8_t *)sig_addr, signal, sig_op,                                  \
+                                        1, 1,                                                                 \
+                                        shm::g_state_host.default_stream,                                     \
+                                        shm::g_state_host.default_block_num);                                 \
+  if (ret < 0) {                                                                                              \
+    SHM_LOG_ERROR("device calling transfer failed");                                                          \
+  }                                                                                                           \
+}

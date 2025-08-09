@@ -550,6 +550,61 @@ Get runtime ffts config. This config should be passed to MIX Kernel and set by M
         pe                 [in] PE number of the remote PE.
         )");
 
+    m.def(
+        "shmem_putmem_signal_nbi",
+        [](intptr_t dst, intptr_t src, size_t elem_size, intptr_t sig,
+           int32_t signal, int sig_op, int pe) {
+          auto dst_addr = (void*)dst;
+          auto src_addr = (void*)src;
+          auto sig_addr = (void*)sig;
+          shmem_putmem_signal_nbi(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
+        py::arg("elem_size"),py::arg("sig"), py::arg("signal"),py::arg("sig_op"), py::arg("pe"),  R"(
+    Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
+
+    Arguments:
+        dst                [in] Pointer on Symmetric addr of local PE.
+        src                [in] Pointer on local memory of the source data.
+        elem_size          [in] size of elements in the destination and source addr.
+        sig                [in] Symmetric address of the signal word to be updated.
+        signal             [in] The value used to update sig_addr.
+        sig_op             [in] Operation used to update sig_addr with signal.
+                                Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
+        pe                 [in] PE number of the remote PE.
+        )");
+
+    m.def(
+        "shmem_putmem_signal",
+        [](intptr_t dst, intptr_t src, size_t elem_size, intptr_t sig,
+           int32_t signal, int sig_op, int pe) {
+          auto dst_addr = (void*)dst;
+          auto src_addr = (void*)src;
+          auto sig_addr = (void*)sig;
+          shmem_putmem_signal(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
+        py::arg("elem_size"),py::arg("sig"), py::arg("signal"),py::arg("sig_op"), py::arg("pe"),  R"(
+    Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
+
+    Arguments:
+        dst                [in] Pointer on Symmetric addr of local PE.
+        src                [in] Pointer on local memory of the source data.
+        elem_size          [in] size of elements in the destination and source addr.
+        sig                [in] Symmetric address of the signal word to be updated.
+        signal             [in] The value used to update sig_addr.
+        sig_op             [in] Operation used to update sig_addr with signal.
+                                Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
+        pe                 [in] PE number of the remote PE.
+        )");
+
+    m.def("shmem_global_exit", &shmem_global_exit, py::call_guard<py::gil_scoped_release>(), py::arg("status"), R"(
+Exit all ranks process by broadcast all ranks to exit();
+
+Arguments:
+    status(int): the status which is provided to exit();
+    )");
+
     m.def("my_pe", &shmem_team_my_pe, py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
 Get my PE number within a team, i.e. index of the PE
 

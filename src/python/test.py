@@ -31,6 +31,15 @@ def run_tests():
     # 5. test finialize
     _ = ash.shmem_finialize()
 
+def exit_test():
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+    # 1. test init
+    ret = ash.aclshmem_init(rank, world_size, g_ash_size)
+    if ret != 0:
+        raise ValueError('[ERROR] aclshmem_init failed')
+    if rank == 0:
+        ash.shmem_global_exit(0)
 
 if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -38,4 +47,5 @@ if __name__ == "__main__":
     torch.npu.set_device(local_rank)
     dist.init_process_group(backend="hccl", rank=local_rank)
     run_tests()
+    exit_test()
     print("test.py running success!")

@@ -37,6 +37,8 @@ using smem_shm_set_extra_context_func = int32_t (*)(smem_shm_t, const void *, ui
 using smem_shm_control_barrier_func = int32_t (*)(smem_shm_t);
 using smem_shm_control_all_gather_func = int32_t (*)(smem_shm_t, const char *, uint32_t, char *, uint32_t);
 using smem_shm_topo_can_reach_func = int32_t (*)(smem_shm_t, uint32_t, uint32_t *);
+using smem_shm_register_exit_func = int32_t (*)(smem_shm_t, void (*func)(int));
+using smem_shm_global_exit_func = void (*)(smem_shm_t, int);
 
 class smem_api {
 public:
@@ -216,6 +218,26 @@ public:
         return g_smem_shm_topo_can_reach(handle, remote_rank, reach_info);
     }
 
+    static inline int32_t smem_shm_register_exit(smem_shm_t handle, void (*exit)(int))
+    {
+      if (g_smem_shm_register_exit == nullptr) {
+        SHM_LOG_ERROR("function pointer smem_shm_register_exit is NULL");
+        return -1;
+      }
+
+      return g_smem_shm_register_exit(handle, exit);
+    }
+
+    static inline void smem_shm_global_exit(smem_shm_t handle, int status)
+    {
+      if (g_smem_shm_global_exit == nullptr) {
+        SHM_LOG_ERROR("function pointer smem_shm_global_exit is NULL");
+        return;
+      }
+
+      return g_smem_shm_global_exit(handle, status);
+    }
+
     ~smem_api();
 
 private:
@@ -242,6 +264,8 @@ private:
     static smem_shm_control_barrier_func g_smem_shm_control_barrier;
     static smem_shm_control_all_gather_func g_smem_shm_control_all_gather;
     static smem_shm_topo_can_reach_func g_smem_shm_topo_can_reach;
+    static smem_shm_register_exit_func g_smem_shm_register_exit;
+    static smem_shm_global_exit_func g_smem_shm_global_exit;
 };
 }  // namespace shm
 

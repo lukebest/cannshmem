@@ -92,6 +92,12 @@ SHMEM_HOST_API void shmem_info_get_version(int* major, int* minor);
  */
 SHMEM_HOST_API void shmem_info_get_name(char *name);
 
+/**
+ * @brief exit all ranks.
+ *
+ * @param status [IN] name
+ */
+SHMEM_HOST_API void shmem_global_exit(int status);
 #ifdef __cplusplus
 }
 #endif

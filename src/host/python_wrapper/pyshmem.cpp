@@ -354,7 +354,11 @@ Returns:
         "shmem_team_get_config",
         [](int team){
             shmem_team_config_t team_config;
-            return std::make_pair(shmem_team_get_config(team, &team_config), team_config.num_contexts);
+            auto ret = shmem_team_get_config(team, &team_config);
+            if (ret != 0) {
+                throw std::runtime_error("get team config failed");
+            }
+            return team_config;
         },
         py::call_guard<py::gil_scoped_release>(), py::arg("team"), R"(
 Return team config which pass in as team created

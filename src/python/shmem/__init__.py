@@ -27,7 +27,7 @@ from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
     InitStatus, shmem_calloc, shmem_align, shmem_init_status, get_ffts_config, \
     shmem_putmem_nbi, shmem_getmem_nbi, shmem_putmem, shmem_getmem, shmem_putmem_signal, shmem_putmem_signal_nbi, \
     shmem_info_get_version, shmem_info_get_name, \
-    shmem_team_get_config, OptionalAttr)
+    shmem_team_get_config, OptionalAttr, shmem_global_exit)
 
 __all__ = [
     'shmem_init',

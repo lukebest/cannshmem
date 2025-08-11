@@ -62,7 +62,7 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
                 shmemi_getmem_nbi<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, pe);
                 break;
             case SHMEMI_OP_PUT_SIGNAL:
-              shmemi_putmem_signal_nbi<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, sig_addr, signal, sig_op, pe);
+                shmemi_putmem_signal_nbi<<<block_size, 0, acl_strm>>>(lptr, rptr, n_elems * elem_bytes, sig_addr, signal, sig_op, pe);
             default:
                 break;
         }

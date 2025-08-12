@@ -7,7 +7,7 @@
 #include "shmemi_host_common.h"
 #include "bfloat16.h"
 #include "fp16_t.h"
-#include "../utils/func_type.h"
+#include "unittest/utils/func_type.h"
 
 extern int test_gnpu_num;
 extern int test_first_npu;

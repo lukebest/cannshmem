@@ -15,7 +15,7 @@
 #include "shmem_api.h"
 #include "bfloat16.h"
 #include "fp16_t.h"
-#include "../utils/func_type.h"
+#include "unittest/utils/func_type.h"
 
 extern int test_gnpu_num;
 extern int test_first_npu;
@@ -28,7 +28,7 @@ const float test_offset = 3.5f;
 
 #define PUT_ONE_NUM_DO(NAME, TYPE)                                                                                           \
     extern void put_##NAME##_one_num_do(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev);      \
-    extern void get_##NAME##_one_num_do(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev) 
+    extern void get_##NAME##_one_num_do(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev)
 
 SHMEM_FUNC_TYPE_HOST(PUT_ONE_NUM_DO);
 

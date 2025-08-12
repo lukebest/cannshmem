@@ -15,7 +15,7 @@ fi
 export ASCEND_TOOLKIT_HOME=${_ASCEND_INSTALL_PATH}
 export ASCEND_HOME_PATH=${_ASCEND_INSTALL_PATH}
 
-source ${_ASCEND_INSTALL_PATH}/../set_env.sh
+source "$(dirname "$_ASCEND_INSTALL_PATH")/set_env.sh"
 
 CURRENT_DIR=$(pwd)
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
@@ -134,7 +134,7 @@ function fn_build_memfabric()
     git submodule init
     git submodule update --recursive
     mkdir -p build
-    cd build 
+    cd build
     cmake -DBUILD_PYTHON=$PYEXPAND_TYPE -DBUILD_OPEN_ABI=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     make install -j16
     ls -l ../output/smem

@@ -10,7 +10,7 @@
  #include "kernel_operator.h"
 
 #include "shmem_api.h"
-#include "../utils/func_type.h"
+#include "unittest/utils/func_type.h"
 
 const int ub_size = 256;
 

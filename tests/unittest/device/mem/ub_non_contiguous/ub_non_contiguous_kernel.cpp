@@ -11,7 +11,7 @@
 #include "smem_shm_aicore_base_api.h"
 
 #include "shmem_api.h"
-#include "../utils/func_type.h"
+#include "unittest/utils/func_type.h"
 
 #define KERNEL_UB_PUT_NUM_NON_CONTIGUOUS(NAME, TYPE)                                                                                    \
     class kernel_ub_##NAME##_put_num_non_contiguous {                                                                                   \
@@ -71,9 +71,9 @@
                                                                                                                                         \
         int64_t rank;                                                                                                                   \
         int64_t rank_size;                                                                                                              \
-    } 
+    }
 
-SHMEM_FUNC_TYPE_KERNEL(KERNEL_UB_PUT_NUM_NON_CONTIGUOUS);        
+SHMEM_FUNC_TYPE_KERNEL(KERNEL_UB_PUT_NUM_NON_CONTIGUOUS);
 
 # define UB_PUT_NUM_NON_CONTIGUOUS_TEST(NAME, TYPE)                                                                                                      \
     extern "C" __global__ __aicore__ void ub_##NAME##_put_non_contiguous_num_test(GM_ADDR gva, GM_ADDR dev, int repeat, int length, uint64_t config)     \
@@ -150,7 +150,7 @@ SHMEM_FUNC_TYPE_KERNEL(TEST_UB_NON_CONTIGUOUS_PUT);
                                                                                                                                         \
         int64_t rank;                                                                                                                   \
         int64_t rank_size;                                                                                                              \
-    } 
+    }
 
 SHMEM_FUNC_TYPE_KERNEL(KERNEL_UB_GET_NUM_NON_CONTIGUOUS);
 

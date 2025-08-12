@@ -8,10 +8,21 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 #
-CURRENT_DIR=$(pwd)
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+readonly CURRENT_DIR=$(pwd)
+readonly SCRIPT_DIR=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
+readonly PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+readonly BUILD_PATH="$PROJECT_ROOT/build"
+readonly COVERAGE_PATH="$BUILD_PATH/coverage"
+
+if ! lcov --version; then
+    echo "Please install lcov before run unit test."
+    exit 1
+else
+    echo "lcov installed"
+fi
+
 cd ${PROJECT_ROOT}
+rm -rf "$COVERAGE_PATH"
 
 set -e
 RANK_SIZE="8"
@@ -93,6 +104,16 @@ while [[ $# -gt 0 ]]; do
 done
 export SMEM_CONF_STORE_TLS_ENABLE=0
 export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/3rdparty/memfabric_hybrid/output/smem/lib64:${PROJECT_ROOT}/3rdparty/memfabric_hybrid/output/hybm/lib64:${ASCEND_HOME_PATH}/lib64:$LD_LIBRARY_PATH
-./build/bin/shmem_unittest "$RANK_SIZE" "$IPPORT" "$GNPU_NUM" "$FIRST_RANK" "$FIRST_NPU"  --gtest_output=xml:test_detail.xml --gtest_filter=${TEST_FILTER}
+
+# Run unit test
+cd "$BUILD_PATH"
+./bin/shmem_unittest "$RANK_SIZE" "$IPPORT" "$GNPU_NUM" "$FIRST_RANK" "$FIRST_NPU"  --gtest_output=xml:test_detail.xml --gtest_filter=${TEST_FILTER}
+
+# Collect coverage
+mkdir -p "$COVERAGE_PATH"
+cd "$COVERAGE_PATH"
+lcov --d "$BUILD_PATH" --c --output-file "$COVERAGE_PATH/coverage.info" -rc lcov_branch_coverage=1 --rc lcov_excl_br_line="LCOV_EXCL_BR_LINE|SHM_LOG_*|SHM_ASSERT*|SHMEM_CHECK_RET"
+lcov -e "$COVERAGE_PATH/coverage.info" "*/src/host/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
+genhtml -o "$COVERAGE_PATH/result" "$COVERAGE_PATH/coverage.info" --show-details --legend --rc lcov_branch_coverage=1
 
 cd ${CURRENT_DIR}

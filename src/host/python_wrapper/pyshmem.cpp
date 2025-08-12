@@ -103,7 +103,9 @@ int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_me
 void DefineShmemAttr(py::module_ &m)
 {
     py::enum_<data_op_engine_type_t>(m, "OpEngineType")
-        .value("MTE", SHMEM_DATA_OP_MTE, "copy data from local space to global space");
+        .value("MTE", SHMEM_DATA_OP_MTE)
+        .value("SDMA", SHMEM_DATA_OP_SDMA)
+        .value("ROCE", SHMEM_DATA_OP_ROCE);
 
     py::class_<shmem_init_optional_attr_t>(m, "OptionalAttr")
         .def(py::init([]() {

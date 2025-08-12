@@ -212,6 +212,9 @@ int32_t shmem_set_timeout(shmem_init_attr_t *attributes, uint32_t value)
 int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size, const char *ip_port,
                        shmem_init_attr_t **attributes)
 {
+    SHM_ASSERT_RETURN(local_mem_size <= SHMEM_MAX_LOCAL_SIZE, SHMEM_INVALID_VALUE);
+    SHM_ASSERT_RETURN(n_ranks <= SHMEM_MAX_RANKS, SHMEM_INVALID_VALUE);
+    SHM_ASSERT_RETURN(my_rank <= SHMEM_MAX_RANKS, SHMEM_INVALID_VALUE);
     *attributes = &shm::g_attr;
     size_t ip_len = strlen(ip_port);
     shm::g_ipport = new char[ip_len + 1];

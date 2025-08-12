@@ -16,6 +16,7 @@ extern "C" {
 
 #define SHMEM_MAX_RANKS 1024
 #define SHMEM_MAX_TEAMS 32
+#define SHMEM_MAX_LOCAL_SIZE 4UL * 1024 * 1024 * 1024
 
 /* arch related */
 #define SCALAR_DATA_CACHELINE_SIZE 64

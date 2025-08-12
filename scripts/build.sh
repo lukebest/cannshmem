@@ -129,10 +129,10 @@ function fn_build_memfabric()
     fi
 
     cd $THIRD_PARTY_DIR
-    git clone -b master https://gitee.com/ascend/memfabric_hybrid.git
+    git clone -b br_release_shmem_1.0 https://gitee.com/ascend/memfabric_hybrid.git
     cd memfabric_hybrid
     git submodule init
-    git submodule update --recursive
+    git submodule update --recursive 3rdparty/rapidjson
     mkdir -p build
     cd build 
     cmake -DBUILD_PYTHON=$PYEXPAND_TYPE -DBUILD_OPEN_ABI=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..

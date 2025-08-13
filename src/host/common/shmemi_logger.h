@@ -159,7 +159,7 @@ private:
         }                                        \
     } while (0)
 
-#define SHM_MULTIPLY_OVERFLOW_ASSERT(A, B, MAX, RET)                         \
+#define SHM_ASSERT_MULTIPLY_OVERFLOW(A, B, MAX, RET)                         \
     do {                                                                     \
         if ((A) <= 0 || (B) <= 0 || (MAX) <= 0) {                                  \
             SHM_LOG_ERROR("INVALID PARAM " << #A << " " << #B << " " << #MAX);           \

@@ -40,10 +40,10 @@ namespace shm {
             {NULL},                                  /* roce_heap_base */               \
             SIZE_MAX,                                /* heap_size */                   \
             {NULL},                                  /* team_pools */                  \
-            NULL,                                    /* sync_pool */                  \
-            NULL,                                    /* sync_counter */                \
-            NULL,                                    /* core_sync_pool */             \
-            NULL,                                    /* core_sync_counter */          \
+            0,                                       /* sync_pool */                  \
+            0,                                       /* sync_counter */                \
+            0,                                       /* core_sync_pool */             \
+            0,                                       /* core_sync_counter */          \
             false,                                   /* shmem_is_shmem_initialized */ \
             false,                                   /* shmem_is_shmem_created */     \
             {0, 16 * 1024, 0},                       /* shmem_mte_config */           \
@@ -249,7 +249,7 @@ void shmem_rank_exit(int status){
 int32_t shmem_init_attr(shmem_init_attr_t *attributes)
 {
     int32_t ret;
-    
+
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
     SHMEM_CHECK_RET(shm::shm_out_logger::Instance().set_log_level(shm::g_log_level));
     SHMEM_CHECK_RET(shm::check_attr(attributes));

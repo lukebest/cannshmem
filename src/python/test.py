@@ -8,6 +8,24 @@ import shmem as ash
 g_ash_size = 1024 * 1024 * 1024
 g_malloc_size = 8 * 1024 * 1024
 
+def decypt_handler_test(input_cipher):
+    return input_cipher
+
+def run_register_decrypt_tests():
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+    # 1. test init
+    ret = ash.shmem_init(rank, world_size, g_ash_size)
+    if ret != 0:
+        raise ValueError('[ERROR] shmem_init failed')
+
+    # 2. test register
+    ret = ash.register_decrypt_handler(decypt_handler_test)
+    print(f'rank[{rank}]: register hander ret={ret}')
+
+    # 3. test finialize
+    _ = ash.shmem_finialize()
+
 
 def run_tests():
     rank = dist.get_rank()
@@ -38,4 +56,5 @@ if __name__ == "__main__":
     torch.npu.set_device(local_rank)
     dist.init_process_group(backend="hccl", rank=local_rank)
     run_tests()
+    run_register_decrypt_tests()
     print("test.py running success!")

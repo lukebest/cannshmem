@@ -237,6 +237,11 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     return SHMEM_SUCCESS;
 }
 
+int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler handler)
+{
+    return smem_register_decrypt_handler(handler);
+}
+
 int32_t shmem_finalize()
 {
     SHMEM_CHECK_RET(shm::shmemi_team_finalize());

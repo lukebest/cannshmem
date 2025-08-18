@@ -21,6 +21,10 @@ namespace py = pybind11;
 
 namespace shm {
 namespace {
+
+static py::function g_py_decrypt_func;
+static constexpr size_t MAX_CIPHER_LEN (10 * 1024 * 1024);
+
 inline std::string get_connect_url()
 {
     auto address = std::getenv("SHMEM_MASTER_ADDR");
@@ -144,6 +148,40 @@ void DefineShmemInitStatus(py::module_ &m)
         .value("INVALID", SHMEM_STATUS_INVALID);
 }
 
+static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)
+{
+    if (cipherTextLen > MAX_CIPHER_LEN || !g_py_decrypt_func || g_py_decrypt_func.is_none()) {
+        std::cerr << "input cipher len is too long or decrypt func invalid." << std::endl;
+        return -1;
+    }
+
+    try {
+        py::str py_cipher = py::str(cipherText, cipherTextLen);
+        std::string plain = py::cast<std::string>(g_py_decrypt_func(py_cipher).cast<py::str>());
+        if (plain.size() >= plainTextLen) {
+            std::cerr << "output cipher len is too long" << std::endl;
+            return -1;
+        }
+
+        std::copy(plain.begin(), plain.end(), plainText);
+        plainText[plain.size()] = '\0';
+        plainTextLen = plain.size();
+        return 0;
+    } catch (const py::error_already_set &e) {
+        return -1;
+    }
+}
+
+int32_t register_python_decrypt_handler(py::function py_decrypt_func)
+{
+    if (!py_decrypt_func || py_decrypt_func.is_none()) {
+        return shmem_register_decrypt_handler(nullptr);
+    }
+
+    g_py_decrypt_func = py_decrypt_func;
+    return shmem_register_decrypt_handler(py_decrypt_handler_wrapper);
+}
+
 PYBIND11_MODULE(_pyshmem, m)
 {
     DefineShmemAttr(m);
@@ -209,6 +247,17 @@ Arguments:
     value(int): Value of data operation engine type.
 Returns:
     On success, returns 0. On error, error code on failure.
+    )");
+
+    m.def("register_decrypt_handler", &shm::register_python_decrypt_handler, py::call_guard<py::gil_scoped_release>(),
+          py::arg("py_decrypt_func"), R"(
+Register a Python decrypt handler.
+Parameters:
+    py_decrypt_func (callable): Python function that accepts (str cipher_text) and returns (str plain_text)
+        cipher_text: the encrypted text (private key password)
+        plain_text: the decrypted text (private key password)
+Returns:
+    None
     )");
 
     m.def(

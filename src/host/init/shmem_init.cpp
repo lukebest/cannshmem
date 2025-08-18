@@ -91,18 +91,18 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     int32_t device_id;
     SHMEM_CHECK_RET(aclrtGetDevice(&device_id));
 
-    status = smem_api::smem_init(DEFAULT_FLAG);
+    status = smem_init(DEFAULT_FLAG);
     if (status != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("smem_init Failed");
         return SHMEM_SMEM_ERROR;
     }
     smem_shm_config_t config;
-    status = smem_api::smem_shm_config_init(&config);
+    status = smem_shm_config_init(&config);
     if (status != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("smem_shm_config_init Failed");
         return SHMEM_SMEM_ERROR;
     }
-    status = smem_api::smem_shm_init(attributes->ip_port, attributes->n_ranks, attributes->my_rank, device_id,
+    status = smem_shm_init(attributes->ip_port, attributes->n_ranks, attributes->my_rank, device_id,
              &config);
     if (status != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("smem_shm_init Failed");
@@ -113,7 +113,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     config.shmCreateTimeout = attributes->option_attr.shm_create_timeout;
     config.controlOperationTimeout = attributes->option_attr.control_operation_timeout;
 
-    g_smem_handle = smem_api::smem_shm_create(DEFAULT_ID, attributes->n_ranks, attributes->my_rank, g_state.heap_size,
+    g_smem_handle = smem_shm_create(DEFAULT_ID, attributes->n_ranks, attributes->my_rank, g_state.heap_size,
                   static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type),DEFAULT_FLAG, &gva);
 
     if (g_smem_handle == nullptr || gva == nullptr) {
@@ -123,7 +123,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     g_state.heap_base = (void *) ((uintptr_t) gva + g_state.heap_size * attributes->my_rank);
     uint32_t reach_info = 0;
     for (int32_t i = 0; i < g_state.npes; i++) {
-        status = smem_api::smem_shm_topo_can_reach(g_smem_handle, i, &reach_info);
+        status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
         if (reach_info & SMEMS_DATA_OP_MTE) {
             g_state.p2p_heap_base[i] = (void *) ((uintptr_t) gva + g_state.heap_size * i);
         } else {
@@ -155,7 +155,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
 int32_t shmemi_control_barrier_all()
 {
     SHM_ASSERT_RETURN(g_smem_handle != nullptr, SHMEM_INVALID_PARAM);
-    return smem_api::smem_shm_control_barrier(g_smem_handle);
+    return smem_shm_control_barrier(g_smem_handle);
 }
 
 int32_t update_device_state()
@@ -163,7 +163,7 @@ int32_t update_device_state()
     if (!g_state.is_shmem_created) {
         return SHMEM_NOT_INITED;
     }
-    return smem_api::smem_shm_set_extra_context(g_smem_handle, (void *) &g_state, sizeof(shmemi_device_host_state_t));
+    return smem_shm_set_extra_context(g_smem_handle, (void *) &g_state, sizeof(shmemi_device_host_state_t));
 }
 
 int32_t check_attr(shmem_init_attr_t *attributes)
@@ -179,17 +179,6 @@ int32_t check_attr(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("local_mem_size:" << attributes->local_mem_size << " cannot be less or equal 0");
         return SHMEM_INVALID_VALUE;
     }
-    return SHMEM_SUCCESS;
-}
-
-int32_t shmemi_load_lib()
-{
-    auto ret = shm::smem_api::load_library("");
-    if (ret != SHMEM_SUCCESS) {
-        SHM_LOG_ERROR("load smem library failed, please set LD_LIBRARY_PATH, ret: " << ret);
-        return ret;
-    }
-
     return SHMEM_SUCCESS;
 }
 
@@ -257,8 +246,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(shm::shmemi_options_init());
 
     SHMEM_CHECK_RET(shm::shmemi_state_init_attr(attributes));
-    SHMEM_CHECK_RET(shm::shmemi_load_lib());
-    SHMEM_CHECK_RET(shm::smem_api::smem_set_log_level(int(shm::g_log_level)));
+    SHMEM_CHECK_RET(smem_set_log_level(int(shm::g_log_level)));
     SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes));
     SHMEM_CHECK_RET(shm::update_device_state());
 
@@ -266,24 +254,29 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes));
     SHMEM_CHECK_RET(shm::update_device_state());
     SHMEM_CHECK_RET(shm::shmemi_sync_init());
-    SHMEM_CHECK_RET(shm::smem_api::smem_shm_register_exit(shm::g_smem_handle, &shmem_rank_exit));
+    SHMEM_CHECK_RET(smem_shm_register_exit(shm::g_smem_handle, &shmem_rank_exit));
     shm::g_state.is_shmem_initialized = true;
     SHMEM_CHECK_RET(shm::shmemi_control_barrier_all());
     return SHMEM_SUCCESS;
+}
+
+int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler handler)
+{
+    return smem_register_decrypt_handler(handler);
 }
 
 int32_t shmem_finalize()
 {
     SHMEM_CHECK_RET(shm::shmemi_team_finalize());
     if (shm::g_smem_handle != nullptr) {
-        int32_t status = shm::smem_api::smem_shm_destroy(shm::g_smem_handle, 0);
+        int32_t status = smem_shm_destroy(shm::g_smem_handle, 0);
         if (status != SHMEM_SUCCESS) {
             SHM_LOG_ERROR("smem_shm_destroy Failed");
             return SHMEM_SMEM_ERROR;
         }
         shm::g_smem_handle = nullptr;
     }
-    shm::smem_api::smem_un_init();
+    smem_uninit();
     return SHMEM_SUCCESS;
 }
 
@@ -308,5 +301,5 @@ void shmem_info_get_name(char *name)
 }
 
 void shmem_global_exit(int status){
-    shm::smem_api::smem_shm_global_exit(shm::g_smem_handle, status);
+    smem_shm_global_exit(shm::g_smem_handle, status);
 }

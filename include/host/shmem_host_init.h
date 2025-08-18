@@ -70,6 +70,14 @@ SHMEM_HOST_API int shmem_set_timeout(shmem_init_attr_t *attributes, uint32_t val
 SHMEM_HOST_API int shmem_init_attr(shmem_init_attr_t *attributes);
 
 /**
+ * @brief Register a decrypt key password handler.
+ *
+ * @param decrypt_handler decrypt function pointer
+ * @return Returns 0 on success or an error code on failure
+ */
+SHMEM_HOST_API int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler decrypt_handler);
+
+/**
  * @brief Release all resources used by the SHMEM library.
  *
  * @return Returns 0 on success or an error code on failure

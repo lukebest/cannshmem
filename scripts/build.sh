@@ -148,14 +148,14 @@ function fn_build_doxygen()
         return 0
     fi
     cd $THIRD_PARTY_DIR
-    wget --no-check-certificate https://github.com/doxygen/doxygen/releases/download/Release_1_9_3/doxygen-1.9.3.src.tar.gz
-    tar -xzvf doxygen-1.9.3.src.tar.gz
-    cd doxygen-1.9.3
+    wget --no-check-certificate https://github.com/doxygen/doxygen/releases/download/Release_1_9_6/doxygen-1.9.6.src.tar.gz
+    tar -xzvf doxygen-1.9.6.src.tar.gz
+    cd doxygen-1.9.6
     rm -rf build && mkdir build && cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=$THIRD_PARTY_DIR/doxygen
     cmake --build . --parallel $(nproc)
     cmake --install . > /dev/null
-    rm -rf $THIRD_PARTY_DIR/doxygen-1.9.3
+    rm -rf $THIRD_PARTY_DIR/doxygen-1.9.6
     cd ${PROJECT_ROOT}
 }
 

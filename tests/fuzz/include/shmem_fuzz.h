@@ -15,9 +15,13 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <type_traits>
 
 #include "acl/acl_base.h"
 #include "host/shmem_host_def.h"
+#include "secodefuzz/secodeFuzz.h"
+
+#undef inline
 
 #define MOCKER_CPP(api, TT) MOCKCPP_NS::mockAPI(#api, reinterpret_cast<TT>(api))
 
@@ -25,6 +29,7 @@
 constexpr int SHMEM_FUZZ_COUNT = 2;                     // 30_000_000;
 constexpr int SHMEM_FUZZ_RUNNING_SECONDS = 3 * 60 * 60; // 3小时，单位秒
 
+// fuzz变量ID (每个fuzz用例中都必须从0开始按顺序使用)
 constexpr int FUZZ_VALUE_0_ID = 0;
 constexpr int FUZZ_VALUE_1_ID = 1;
 constexpr int FUZZ_VALUE_2_ID = 2;
@@ -35,6 +40,47 @@ constexpr int FUZZ_VALUE_6_ID = 6;
 constexpr int FUZZ_VALUE_7_ID = 7;
 constexpr int FUZZ_VALUE_8_ID = 8;
 constexpr int FUZZ_VALUE_9_ID = 9;
+
+// fuzz数字类型约束
+template <class T>
+inline constexpr bool IS_FUZZ_NUMBER_TYPE = std::is_same_v<T, uint8_t> || std::is_same_v<T, uint16_t> ||
+                                            std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t> ||
+                                            std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t> ||
+                                            std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t> ||
+                                            std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>;
+
+// fuzz获取数字类型变异值
+template <class T, std::enable_if_t<IS_FUZZ_NUMBER_TYPE<T>, bool> = true>
+inline T fuzz_get_number(int id, T init_value)
+{
+    if constexpr (std::is_same_v<T, uint8_t>) {
+        return *(T *)DT_SetGetU8V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        return *(T *)DT_SetGetU16V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+        return *(T *)DT_SetGetU32V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+        return *(T *)DT_SetGetU64V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, int8_t>) {
+        return *(T *)DT_SetGetS8V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+        return *(T *)DT_SetGetS16V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+        return *(T *)DT_SetGetS32V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, int64_t>) {
+        return *(T *)DT_SetGetS64V3(id, init_value);
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+        return *(T *)DT_SetGetFloat32(id, &init_value);
+    } else if constexpr (std::is_same_v<T, int64_t>) {
+        return *(T *)DT_SetGetFloat64(id, &init_value);
+    }
+}
+
+// fuzz获取数字类型范围变异值 (secodefuzz只支持i32类型的范围变异)
+inline int32_t fuzz_get_ranged_number(int id, int32_t init_value, int32_t min, int32_t max)
+{
+    return *(int32_t *)DT_SetGetNumberRangeV3(id, init_value, min, max);
+}
 
 constexpr uint64_t KiB = 1024;
 constexpr uint64_t MiB = 1024 * KiB;

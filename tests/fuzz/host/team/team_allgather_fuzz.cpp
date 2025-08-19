@@ -108,8 +108,7 @@ TEST_F(ShmemTeamAllGatherFuzz, shmem_team_all_gather_success)
     uint64_t seed = 0;
     DT_FUZZ_START(seed, SHMEM_FUZZ_COUNT, fuzzName, 0)
     {
-        uint32_t trans_count = *(uint32_t *)DT_SetGetU32V3(FUZZ_VALUE_0_ID, 16);
-        trans_count = 16 + trans_count % 16;
+        uint32_t trans_count = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 16, 16, 32);
         shmem_fuzz_multi_task(
             [&](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_scope scope(rank_id, n_ranks, local_mem_size);

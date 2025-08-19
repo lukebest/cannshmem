@@ -36,10 +36,8 @@ TEST_F(ShmemHostHeapFuzz, shmem_malloc_free_success)
     {
         const int process_count = shmem_fuzz_gnpu_num();
         uint64_t local_mem_size = 1 * GiB;
-        uint64_t alloc_size_0 = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_0_ID, 10 * MiB);
-        uint64_t alloc_size_1 = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_1_ID, 100 * MiB);
-        alloc_size_0 = alloc_size_0 % (local_mem_size / 2);
-        alloc_size_1 = alloc_size_1 % (local_mem_size / 2);
+        uint64_t alloc_size_0 = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 10 * MiB, 1 * MiB, local_mem_size / 2);
+        uint64_t alloc_size_1 = fuzz_get_ranged_number(FUZZ_VALUE_1_ID, 100 * MiB, 1 * MiB, local_mem_size / 2);
         shmem_fuzz_multi_task(
             [&](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_scope scope(rank_id, n_ranks, local_mem_size);
@@ -63,10 +61,8 @@ TEST_F(ShmemHostHeapFuzz, shmem_calloc_free_success)
     {
         const int process_count = shmem_fuzz_gnpu_num();
         uint64_t local_mem_size = 1 * GiB;
-        uint64_t alloc_size_0 = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_0_ID, 10 * MiB);
-        uint64_t alloc_size_1 = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_1_ID, 100 * MiB);
-        alloc_size_0 = alloc_size_0 % (local_mem_size / 2);
-        alloc_size_1 = alloc_size_1 % (local_mem_size / 2);
+        uint64_t alloc_size_0 = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 10 * MiB, 1 * MiB, local_mem_size / 2);
+        uint64_t alloc_size_1 = fuzz_get_ranged_number(FUZZ_VALUE_1_ID, 100 * MiB, 1 * MiB, local_mem_size / 2);
         shmem_fuzz_multi_task(
             [&](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_scope scope(rank_id, n_ranks, local_mem_size);

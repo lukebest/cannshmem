@@ -67,8 +67,7 @@ TEST_F(ShmemHostPtrFuzz, shmem_get_ptr_success)
     {
         const int process_count = shmem_fuzz_gnpu_num();
         uint64_t local_mem_size = 1 * GiB;
-        uint64_t int_count = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_0_ID, 1024);
-        int_count = 1024 + int_count % 1024;
+        uint64_t int_count = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 2, 2, 1024);
         shmem_fuzz_multi_task(
             [&](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_scope scope(rank_id, n_ranks, local_mem_size);
@@ -105,9 +104,8 @@ TEST_F(ShmemHostPtrFuzz, shmem_mte_set_ub_params_success)
         const int process_count = shmem_fuzz_gnpu_num();
         uint64_t local_mem_size = 1 * GiB;
         uint64_t offset = 1;
-        uint32_t ub_size = *(uint32_t *)DT_SetGetU32V3(FUZZ_VALUE_0_ID, 256);
+        uint32_t ub_size = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 256, 256, 512);
         uint32_t event_id = 0;
-        ub_size = 256 + ub_size % 256;
         shmem_fuzz_multi_task(
             [&](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_scope scope(rank_id, n_ranks, local_mem_size);

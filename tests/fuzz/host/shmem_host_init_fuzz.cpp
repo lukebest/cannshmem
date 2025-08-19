@@ -35,8 +35,7 @@ TEST_F(ShmemHostFuzz, shmem_init_success)
     DT_FUZZ_START(seed, SHMEM_FUZZ_COUNT, fuzzName, 0)
     {
         const int process_count = shmem_fuzz_gnpu_num();
-        uint64_t local_mem_size = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_0_ID, 1);
-        local_mem_size = (local_mem_size % 1024) * 2 * MiB;
+        uint64_t local_mem_size = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 1, 1, 512) * 2 * MiB;
         shmem_fuzz_multi_task(
             [](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 aclrtStream stream = nullptr;
@@ -56,8 +55,7 @@ TEST_F(ShmemHostFuzz, shmem_init_custom_attr_success)
     DT_FUZZ_START(seed, SHMEM_FUZZ_COUNT, fuzzName, 0)
     {
         const int process_count = shmem_fuzz_gnpu_num();
-        uint64_t local_mem_size = *(uint64_t *)DT_SetGetU64V3(FUZZ_VALUE_0_ID, 1);
-        local_mem_size = (local_mem_size % 1024) * 2 * MiB;
+        uint64_t local_mem_size = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 1, 1, 512) * 2 * MiB;
         shmem_fuzz_multi_task(
             [](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_attr_t *attributes;

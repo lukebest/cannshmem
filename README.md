@@ -75,6 +75,8 @@ bash scripts/build.sh
 bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
 ```
 
+注：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
+
 ## 功能自测用例
 
  - 共享内存库接口单元测试

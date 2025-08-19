@@ -6,15 +6,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-file(GLOB_RECURSE TEST_KERNEL_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*_kernel.cpp")
-
 set(CMAKE_C_COMPILER bisheng)
 set(CMAKE_CXX_COMPILER bisheng)
 
-add_library(shmem_unittest_device SHARED ${TEST_KERNEL_FILES} $<TARGET_OBJECTS:shmem_device>)
-target_link_options(shmem_unittest_device PRIVATE --cce-fatobj-link)
-target_compile_options(shmem_unittest_device PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
-target_include_directories(shmem_unittest_device PRIVATE
+file(GLOB_RECURSE FUZZ_KERNEL_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
+add_library(shmem_fuzztest_device SHARED ${FUZZ_KERNEL_FILES} $<TARGET_OBJECTS:shmem_device>)
+target_link_options(shmem_fuzztest_device PRIVATE --cce-fatobj-link)
+target_compile_options(shmem_fuzztest_device PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
+target_include_directories(shmem_fuzztest_device PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
     ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device
     ${PROJECT_SOURCE_DIR}/tests/unittest/include

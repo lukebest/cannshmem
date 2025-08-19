@@ -6,15 +6,16 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-add_subdirectory(device)
-add_subdirectory(host)
-
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 
-add_executable(shmem_unittest $<TARGET_OBJECTS:shmem_unittest_host>)
-target_link_directories(shmem_unittest PRIVATE
+add_subdirectory(host)
+add_subdirectory(device)
+
+add_executable(shmem_fuzztest $<TARGET_OBJECTS:shmem_fuzztest_host>)
+target_link_directories(shmem_fuzztest PRIVATE
     ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/lib
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/lib
+    ${PROJECT_SOURCE_DIR}/3rdparty/secodefuzz/lib
 )
-target_link_libraries(shmem_unittest PRIVATE shmem_unittest_device gtest gcov mf_smem)
+target_link_libraries(shmem_fuzztest PRIVATE shmem_fuzztest_device mf_smem gtest gcov Secodefuzz)

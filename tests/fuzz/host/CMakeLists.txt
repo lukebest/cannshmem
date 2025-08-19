@@ -6,24 +6,27 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-# Compile host source files here with coverage feature ON
-file(GLOB_RECURSE SHMEM_HOST_FILES ${PROJECT_SOURCE_DIR}/src/host/*.cpp)
-list(FILTER SHMEM_HOST_FILES EXCLUDE REGEX "python_wrapper")
-
-file(GLOB_RECURSE TEST_HOST_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*_test.cpp")
-
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 
-add_library(shmem_unittest_host OBJECT ${SHMEM_HOST_FILES} ${TEST_HOST_FILES})
-target_compile_options(shmem_unittest_host PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS})
-target_compile_options(shmem_unittest_host PRIVATE -g -fprofile-arcs -ftest-coverage)
-target_include_directories(shmem_unittest_host PRIVATE
+file(GLOB_RECURSE SHMEM_HOST_FILES ${PROJECT_SOURCE_DIR}/src/host/*.cpp)
+list(FILTER SHMEM_HOST_FILES EXCLUDE REGEX "python_wrapper")
+
+file(GLOB_RECURSE FUZZ_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+
+add_library(shmem_fuzztest_host OBJECT ${SHMEM_HOST_FILES} ${FUZZ_SOURCE_FILES})
+target_compile_options(shmem_fuzztest_host PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS})
+target_compile_options(shmem_fuzztest_host PRIVATE
+    -g -fprofile-arcs -ftest-coverage
+    -fsanitize-coverage=trace-pc
+)
+target_include_directories(shmem_fuzztest_host PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
     ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host
     ${PROJECT_SOURCE_DIR}/src/host
     ${PROJECT_SOURCE_DIR}/src/device
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/include
+    ${PROJECT_SOURCE_DIR}/3rdparty/secodefuzz/include
     ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
-    ${PROJECT_SOURCE_DIR}/tests/unittest/include
+    ${PROJECT_SOURCE_DIR}/tests/fuzz/include
 )

@@ -292,7 +292,7 @@ void shmem_info_get_name(char *name)
     SHM_ASSERT_RET_VOID(name != nullptr);
     std::ostringstream oss;
     oss << "SHMEM v" << SHMEM_VENDOR_MAJOR_VER << "." << SHMEM_VENDOR_MINOR_VER << "." << SHMEM_VENDOR_PATCH_VER;
-    const char *version_str = oss.str().c_str();
+    auto version_str = oss.str();
     size_t i;
     for (i = 0; i < SHMEM_MAX_NAME_LEN - 1 && version_str[i] != '\0'; i++) {
         name[i] = version_str[i];

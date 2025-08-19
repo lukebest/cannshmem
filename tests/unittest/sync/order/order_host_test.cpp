@@ -15,17 +15,8 @@
 #include "acl/acl.h"
 #include "shmem_api.h"
 #include "shmemi_host_common.h"
-
-extern int64_t test_gnpu_num;
-extern const char* test_global_ipport;
-extern int test_first_npu;
-
-void test_mutil_task(std::function<void(int32_t, int32_t, uint64_t)> func, uint64_t local_mem_size, int32_t process_count);
-void test_init(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size, aclrtStream *st);
-void test_finalize(aclrtStream stream, int32_t device_id);
-
-void quiet_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks);
-void fence_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks);
+#include "unittest_main_test.h"
+#include "order_kernel.h"
 
 static void test_quiet_order(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size) {
     aclrtStream stream;

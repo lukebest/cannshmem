@@ -9,6 +9,7 @@
  */
 #include "kernel_operator.h"
 #include "shmem_api.h"
+#include "barrier_kernel.h"
 
 extern "C" SHMEM_GLOBAL void increase(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
     shmemx_set_ffts_config(config);

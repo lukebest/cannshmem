@@ -13,10 +13,7 @@
 #include <gtest/gtest.h>
 #include "shmemi_host_common.h"
 #include <gtest/gtest.h>
-extern int test_gnpu_num;
-extern const char* test_global_ipport;
-extern int test_first_npu;
-extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count);
+#include "unittest_main_test.h"
 
 namespace shm {
 extern shmem_init_attr_t g_attr;

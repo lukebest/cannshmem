@@ -9,6 +9,7 @@
  */
 #include "kernel_operator.h"
 #include "shmem_api.h"
+#include "shmem_ptr_kernel.h"
 
 class kernel_ptr_test {
 public:

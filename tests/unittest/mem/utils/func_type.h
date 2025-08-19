@@ -1,3 +1,6 @@
+#ifndef FUNC_TYPE_H
+#define FUNC_TYPE_H
+
 #define SHMEM_FUNC_TYPE_HOST(FUNC)   \
     FUNC(half, op::fp16_t);          \
     FUNC(float, float);              \
@@ -27,3 +30,4 @@
     FUNC(uint64, uint64_t);          \
     FUNC(char, char);                \
     FUNC(bfloat16, bfloat16_t)
+#endif

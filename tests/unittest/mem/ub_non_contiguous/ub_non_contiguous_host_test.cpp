@@ -17,12 +17,7 @@
 #include "bfloat16.h"
 #include "fp16_t.h"
 #include "../utils/func_type.h"
-
-extern int test_gnpu_num;
-extern int test_first_npu;
-extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int processCount);
-extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
-extern void test_finalize(aclrtStream stream, int device_id);
+#include "unittest_main_test.h"
 
 #define TEST_FUNC(NAME, TYPE)                                                                                                                                    \
     extern void test_ub_##NAME##_non_contiguous_put(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev_ptr, int repeat, int length);  \

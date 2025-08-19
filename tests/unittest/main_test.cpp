@@ -11,6 +11,7 @@
 #include <iostream>
 #include "acl/acl.h"
 #include "shmem_api.h"
+#include "unittest_main_test.h"
 
 int test_global_ranks;
 int test_gnpu_num;
@@ -49,7 +50,8 @@ void test_finalize(aclrtStream stream, int device_id)
     EXPECT_EQ(aclFinalize(), 0);
 }
 
-void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count){
+void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count)
+{
     pid_t pids[process_count];
     int status[process_count];
     for (int i = 0; i < process_count; ++i) {
@@ -69,7 +71,8 @@ void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t loca
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
     test_global_ranks = std::atoi(argv[1]);
     test_global_ipport = argv[2];
     test_gnpu_num = std::atoi(argv[3]);

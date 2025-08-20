@@ -23,7 +23,7 @@ for lib in ["libshmem.so"]:
 
 from ._pyshmem import shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
     shmem_ptr, my_pe, pe_count, register_decrypt_handler, mte_set_ub_params, \
-    team_split_strided, team_translate_pe, team_destroy
+    team_split_strided, team_translate_pe, team_destroy, set_conf_store_tls
 
 __all__ = [
     'shmem_init',
@@ -34,6 +34,7 @@ __all__ = [
     'my_pe',
     'pe_count',
     'register_decrypt_handler',
+    'set_conf_store_tls',
     'mte_set_ub_params',
     'team_split_strided',
     'team_translate_pe',

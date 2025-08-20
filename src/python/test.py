@@ -26,6 +26,23 @@ def run_register_decrypt_tests():
     # 3. test finialize
     _ = ash.shmem_finialize()
 
+def run_set_tls_info():
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+    
+    # 1. test set tls info
+    ret = ash.set_conf_store_tls(False, "")
+
+    # 2. test init
+    ret = ash.shmem_init(rank, world_size, g_ash_size)
+    if ret != 0:
+        raise ValueError('[ERROR] shmem_init failed')
+
+    print(f'rank[{rank}]: register hander ret={ret}')
+
+    # 3. test finialize
+    _ = ash.shmem_finialize()
+
 
 def run_tests():
     rank = dist.get_rank()

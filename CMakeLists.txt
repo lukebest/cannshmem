@@ -32,6 +32,10 @@ endif()
 
 option(USE_UNIT_TEST "USE_UNIT_TEST" OFF)
 message(STATUS "USE_UNIT_TEST:${USE_UNIT_TEST}")
+
+option(USE_FUZZ_TEST "USE_FUZZ_TEST" OFF)
+message(STATUS "USE_FUZZ_TEST:${USE_FUZZ_TEST}")
+
 set(ASCEND_DRIVER_PATH /usr/local/Ascend/driver)
 
 set(CMAKE_COMPILER bisheng)
@@ -84,6 +88,10 @@ add_subdirectory(src)
 
 if(USE_UNIT_TEST)
     add_subdirectory(tests/unittest)
+endif()
+
+if(USE_FUZZ_TEST)
+    add_subdirectory(tests/fuzz)
 endif()
 
 add_subdirectory(examples)

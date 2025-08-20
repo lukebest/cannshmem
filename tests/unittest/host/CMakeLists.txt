@@ -20,8 +20,7 @@ target_compile_options(shmem_unittest_host PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS})
 target_compile_options(shmem_unittest_host PRIVATE -g -fprofile-arcs -ftest-coverage)
 target_include_directories(shmem_unittest_host PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
-    ${PROJECT_SOURCE_DIR}/3rdparty/memfabric_hybrid/output/smem/include
-    ${PROJECT_SOURCE_DIR}/3rdparty/memfabric_hybrid/output/smem/include/smem/host
+    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host
     ${PROJECT_SOURCE_DIR}/src/host
     ${PROJECT_SOURCE_DIR}/src/device
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/include

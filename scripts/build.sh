@@ -22,6 +22,8 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
 VERSION="1.0.0"
 OUTPUT_DIR=$PROJECT_ROOT/install
+rm -rf $OUTPUT_DIR
+mkdir -p $OUTPUT_DIR
 THIRD_PARTY_DIR=$PROJECT_ROOT/3rdparty
 mkdir -p $THIRD_PARTY_DIR
 RELEASE_DIR=$PROJECT_ROOT/ci/release
@@ -37,18 +39,18 @@ GEN_DOC=OFF
 cann_default_path="/usr/local/Ascend/ascend-toolkit"
 
 cd ${PROJECT_ROOT}
+git submodule init
+
 function fn_build()
 {
     fn_build_memfabric
-    cd $THIRD_PARTY_DIR; [[ ! -d "catlass" ]] && git clone https://gitee.com/ascend/catlass; cd ..
+    git submodule update --recursive 3rdparty/catlass
 
-    rm -rf build
+    [ -d build ] && rm -rf build
     mkdir -p build
-    rm -rf install
-
 
     cd build
-    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     make install -j8
     cd -
 }
@@ -65,6 +67,7 @@ function fn_make_run_package()
         echo "it is not system of x86_64 or aarch64"
         exit 1
     fi
+
     branch=$(git symbolic-ref -q --short HEAD || git describe --tags --exact-match 2> /dev/null || echo $branch)
     commit_id=$(git rev-parse HEAD)
     mkdir -p $OUTPUT_DIR
@@ -86,18 +89,12 @@ EOF
     sed -i "s!VERSION_PLACEHOLDER!${VERSION}!" $OUTPUT_DIR/install.sh
     sed -i "s!VERSION_PLACEHOLDER!${VERSION}!" $OUTPUT_DIR/scripts/uninstall.sh
 
-    mkdir -p $OUTPUT_DIR/memfabric_hybrid/lib
-    mkdir -p $OUTPUT_DIR/memfabric_hybrid/include
-    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/hybm/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
-    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
-    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/include/smem $OUTPUT_DIR/memfabric_hybrid/include
+    chmod +x $OUTPUT_DIR/*.sh
 
-    chmod +x $OUTPUT_DIR/*
     makeself_dir=${ASCEND_HOME_PATH}/toolkit/tools/op_project_templates/ascendc/customize/cmake/util/makeself/
     ${makeself_dir}/makeself.sh --header ${makeself_dir}/makeself-header.sh \
         --help-header $PROJECT_ROOT/scripts/help.info --gzip --complevel 4 --nomd5 --sha256 --chown \
         ${OUTPUT_DIR} $RELEASE_DIR/$ARCH/SHMEM_${VERSION}_linux-${ARCH}.run "SHMEM-api" ./install.sh
-    [ -d "$OUTPUT_DIR/$ARCH" ] && rm -rf "$OUTPUT_DIR/$ARCH"
     mv $RELEASE_DIR/$ARCH $OUTPUT_DIR
     echo "SHMEM_${VERSION}_linux-${ARCH}.run is successfully generated in $OUTPUT_DIR"
 }
@@ -107,9 +104,8 @@ function fn_build_googletest()
     if [ -d "$THIRD_PARTY_DIR/googletest/lib" ]; then
         return 0
     fi
-    cd $THIRD_PARTY_DIR
-    [[ ! -d "googletest" ]] && git clone --branch v1.14.0 --depth 1 https://github.com/google/googletest.git
-    cd googletest
+    git submodule update --recursive 3rdparty/googletest
+    cd $THIRD_PARTY_DIR/googletest
     rm -rf build && mkdir build && cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=$THIRD_PARTY_DIR/googletest -DCMAKE_SKIP_RPATH=TRUE -DCMAKE_CXX_FLAGS="-fPIC"
     cmake --build . --parallel $(nproc)
@@ -119,27 +115,56 @@ function fn_build_googletest()
     cd ${PROJECT_ROOT}
 }
 
+function fn_build_secodefuzz()
+{
+    if [ -f "$THIRD_PARTY_DIR/secodefuzz/lib/libSecodefuzz.a" ] && [ -f "$THIRD_PARTY_DIR/secodefuzz/include/secodefuzz/secodeFuzz.h" ]; then
+        return 0
+    fi
+    cd $THIRD_PARTY_DIR
+
+    # Need to replace git link before build fuzz test
+    [[ ! -d "secodefuzz" ]] && git clone --branch v2.4.8 --depth 1 secodefuzz.git
+    cd secodefuzz
+
+    # build secodefuzz
+    # -- HACK: enable PIC
+    sed -i 's/cmake ../cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON ../g' ./build.sh
+    # -- HACK: remove signal handlers, to support running multi-task tests.
+    sed -i 's/#define HAS_SIGNAL/#undef HAS_SIGNAL/g' ./Secodefuzz/secodeFuzz.h
+    bash build.sh
+    if [ $? -ne 0 ]; then
+        echo "secodefuzz build failed."
+        return 1
+    fi
+
+    # install lib and headers into target directory
+    mkdir -p "$THIRD_PARTY_DIR/secodefuzz/lib"
+    cp ./examples/out-bin-x64/out/* "$THIRD_PARTY_DIR/secodefuzz/lib"
+    cp ./examples/out-bin-x64/libSecodefuzz.a "$THIRD_PARTY_DIR/secodefuzz/lib"
+    mkdir -p "$THIRD_PARTY_DIR/secodefuzz/include/secodefuzz"
+    cp ./Secodefuzz/secodeFuzz.h "$THIRD_PARTY_DIR/secodefuzz/include/secodefuzz"
+    echo "secodefuzz is successfully installed to $THIRD_PARTY_DIR/secodefuzz"
+    cd ${PROJECT_ROOT}
+}
+
 function fn_build_memfabric()
 {
     if [ -d "$THIRD_PARTY_DIR/memfabric_hybrid/output/smem/lib64" ]; then
-        return 0
-    fi
-    if [ -d "$THIRD_PARTY_DIR/memfabric_hybrid" ]; then
-        rm -rf "$THIRD_PARTY_DIR/memfabric_hybrid"
+        echo "Memfabric_hybrid already build"
+    else
+        git submodule update 3rdparty/memfabric_hybrid # not with recursive
+        cd $THIRD_PARTY_DIR/memfabric_hybrid
+        bash script/build.sh $BUILD_TYPE OFF OFF $PYEXPAND_TYPE
+        find output
+        cd ${PROJECT_ROOT}
     fi
 
-    cd $THIRD_PARTY_DIR
-    git clone -b master https://gitee.com/ascend/memfabric_hybrid.git
-    cd memfabric_hybrid
-    git submodule init
-    git submodule update --recursive
-    mkdir -p build
-    cd build
-    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE -DBUILD_OPEN_ABI=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-    make install -j16
-    ls -l ../output/smem
-    echo "Memfabric_hybrid is successfully installed to $THIRD_PARTY_DIR/memfabric_hybrid"
-    cd ${PROJECT_ROOT}
+    mkdir -p $OUTPUT_DIR/memfabric_hybrid/lib
+    mkdir -p $OUTPUT_DIR/memfabric_hybrid/include
+    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/hybm/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
+    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
+    cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/include/smem $OUTPUT_DIR/memfabric_hybrid/include
+    echo "Memfabric_hybrid is successfully installed to $OUTPUT_DIR/memfabric_hybrid"
 }
 
 function fn_build_doxygen()
@@ -216,10 +241,20 @@ while [[ $# -gt 0 ]]; do
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_UNIT_TEST=ON"
             shift
             ;;
+        -fuzz)
+            fn_build_secodefuzz
+            fn_build_googletest
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_FUZZ_TEST=ON"
+            shift
+            ;;
         -debug)
             BUILD_TYPE=Debug
             fn_build_googletest
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_UNIT_TEST=ON"
+            shift
+            ;;
+        -compiledb)
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             shift
             ;;
         -python_extension)
@@ -230,6 +265,11 @@ while [[ $# -gt 0 ]]; do
             fn_build_doxygen
             fn_build_sphinx
             GEN_DOC=ON
+            shift
+            ;;
+        -python_extension)
+            PYEXPAND_TYPE=ON
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DBUILD_PYTHON=ON"
             shift
             ;;
         -onlygendoc)

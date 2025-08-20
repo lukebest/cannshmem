@@ -28,6 +28,21 @@ extern "C" {
 */
 
 /**
+* @brief The state of the SHMEM host OP type.
+*/
+enum shmemi_op_t{
+    SHMEMI_OP_PUT = 0,
+    SHMEMI_OP_P,
+    SHMEMI_OP_PUT_SIGNAL,
+    SHMEMI_OP_GET,
+    SHMEMI_OP_G,
+    // SHMEMI_OP_FENCE,
+    // SHMEMI_OP_AMO,
+    // SHMEMI_OP_QUIET,
+    // SHMEMI_OP_SENTINEL = INT_MAX,
+};
+
+/**
  * @brief Team's index.
 */
 enum shmem_team_index_t{
@@ -40,6 +55,8 @@ enum shmem_team_index_t{
 */
 enum data_op_engine_type_t {
     SHMEM_DATA_OP_MTE = 0x01,
+    SHMEM_DATA_OP_SDMA = 0x02,
+    SHMEM_DATA_OP_ROCE = 0x03,
 };
 
 /**
@@ -54,13 +71,20 @@ enum {
  * @brief signal compare ops, used by signalee in p2p synchronization
  */
 enum {
-    SHMEM_CMP_EQ,
+    SHMEM_CMP_EQ = 0,
     SHMEM_CMP_NE,
     SHMEM_CMP_GT,
     SHMEM_CMP_GE,
     SHMEM_CMP_LT,
     SHMEM_CMP_LE
 };
+
+/**
+ * @brief Reserved for future use.
+ */
+typedef struct {
+    int num_contexts;
+} shmem_team_config_t;
 
 /**@} */ // end of group_enums
 

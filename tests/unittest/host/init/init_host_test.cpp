@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <iostream>
+#include <sstream>
 #include <unistd.h>
 #include <acl/acl.h>
 #include <gtest/gtest.h>
@@ -187,6 +188,41 @@ void test_shmem_init_set_config(int rank_id, int n_ranks, uint64_t local_mem_siz
     }
 }
 
+void test_shmem_global_exit(int rank_id, int n_ranks, uint64_t local_mem_size) {
+  uint32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+  int status = SHMEM_SUCCESS;
+  EXPECT_EQ(aclInit(nullptr), 0);
+  EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
+  shmem_init_attr_t* attributes;
+  shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
+
+  shmem_set_data_op_engine_type(attributes, SHMEM_DATA_OP_MTE);
+  shmem_set_timeout(attributes, 50);
+  EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+  EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
+
+  status = shmem_init_attr(attributes);
+  EXPECT_EQ(status, SHMEM_SUCCESS);
+  EXPECT_EQ(shm::g_state.mype, rank_id);
+  EXPECT_EQ(shm::g_state.npes, n_ranks);
+  EXPECT_NE(shm::g_state.heap_base, nullptr);
+  EXPECT_NE(shm::g_state.p2p_heap_base[rank_id], nullptr);
+  EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
+  EXPECT_NE(shm::g_state.team_pools[0], nullptr);
+
+  EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+  EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
+
+  status = shmem_init_status();
+  EXPECT_EQ(status, SHMEM_STATUS_IS_INITIALIZED);
+  shmem_global_exit(0);
+  EXPECT_EQ(aclrtResetDevice(device_id), 0);
+  EXPECT_EQ(aclFinalize(), 0);
+  if (::testing::Test::HasFailure()){
+    exit(1);
+  }
+}
+
 TEST(TestInitAPI, TestShmemInit)
 {   
     const int process_count = test_gnpu_num;
@@ -234,4 +270,51 @@ TEST(TestInitAPI, TestSetConfig)
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_init_set_config, local_mem_size, process_count);
+}
+
+TEST(TestInitAPI, TestInfoGetVersion)
+{
+    int major = 0;
+    int minor = 0;
+    shmem_info_get_version(&major, &minor);
+    EXPECT_EQ(major, SHMEM_MAJOR_VERSION);
+    EXPECT_EQ(minor, SHMEM_MINOR_VERSION);
+}
+
+TEST(TestInitAPI, TestInfoGetVersionNull)
+{
+    int major = 0;
+    shmem_info_get_version(&major, nullptr);
+    EXPECT_EQ(major, 0);
+}
+
+TEST(TestInitAPI, TestInfoGetName)
+{
+    char name[256];
+    shmem_info_get_name(name);
+    EXPECT_TRUE(strlen(name) > 0);
+
+    const char* template_str = "SHMEM v%s.%s.%s";
+    char expect[256];
+    snprintf(expect, 256, template_str, std::to_string(SHMEM_VENDOR_MAJOR_VER).c_str(),
+             std::to_string(SHMEM_VENDOR_MINOR_VER).c_str(),
+             std::to_string(SHMEM_VENDOR_PATCH_VER).c_str());
+
+    for (size_t i = 0; i < strlen(expect); i++) {
+        EXPECT_EQ(expect[i], name[i]);
+    }
+}
+
+TEST(TestInitAPI, TestInfoGetNameNull)
+{
+    char *input = nullptr;
+    shmem_info_get_name(input);
+    EXPECT_EQ(input, nullptr);
+}
+
+TEST(TestInitAPI, TestShmemGlobalExit)
+{
+  const int process_count = test_gnpu_num;
+  uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+  test_mutil_task(test_shmem_global_exit, local_mem_size, process_count);
 }

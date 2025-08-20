@@ -160,6 +160,9 @@ int32_t check_attr(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("my_rank:" << attributes->my_rank << " and n_ranks: " << attributes->n_ranks <<
             " cannot be less 0 , n_ranks still cannot be equal 0");
         return SHMEM_INVALID_VALUE;
+    } else if (attributes->n_ranks > SHMEM_MAX_RANKS) {
+        SHM_LOG_ERROR("n_ranks: " << attributes->n_ranks << " cannot be more than " << SHMEM_MAX_RANKS);
+        return SHMEM_INVALID_VALUE;
     } else if (attributes->my_rank >= attributes->n_ranks) {
         SHM_LOG_ERROR("n_ranks:" << attributes->n_ranks << " cannot be less than my_rank:" << attributes->my_rank);
         return SHMEM_INVALID_PARAM;

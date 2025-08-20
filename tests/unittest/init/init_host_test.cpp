@@ -92,6 +92,25 @@ void test_shmem_init_invalid_rank_id(int rank_id, int n_ranks, uint64_t local_me
     }
 }
 
+void test_shmem_init_invalid_n_ranks(int rank_id, int n_ranks, uint64_t local_mem_size) {
+    int en_ranks = SHMEM_MAX_RANKS + 1;
+    uint32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+    int status = SHMEM_SUCCESS;
+    EXPECT_EQ(aclInit(nullptr), 0);
+    EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
+    shmem_init_attr_t* attributes;
+    shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
+    status = shmem_init_attr(attributes);
+    EXPECT_EQ(status, SHMEM_INVALID_VALUE);
+    status = shmem_init_status();
+    EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
+    EXPECT_EQ(aclrtResetDevice(device_id), 0);
+    EXPECT_EQ(aclFinalize(), 0);
+    if (::testing::Test::HasFailure()){
+        exit(1);
+    }
+}
+
 void test_shmem_init_rank_id_over_size(int rank_id, int n_ranks, uint64_t local_mem_size) {
     uint32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     int status = SHMEM_SUCCESS;
@@ -203,6 +222,13 @@ TEST(TestInitAPI, TestShmemInitErrorInvalidRankId)
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_init_invalid_rank_id, local_mem_size, process_count);
+}
+
+TEST(TestInitAPI, TestShmemInitErrorInvalidNRanks)
+{   
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task(test_shmem_init_invalid_n_ranks, local_mem_size, process_count);
 }
 
 TEST(TestInitAPI, TestShmemInitErrorRankIdOversize)

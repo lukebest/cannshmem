@@ -101,6 +101,40 @@ int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_me
     }
     return ret;
 }
+
+static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)
+{
+    if (cipherTextLen > MAX_CIPHER_LEN || !g_py_decrypt_func || g_py_decrypt_func.is_none()) {
+        std::cerr << "input cipher len is too long or decrypt func invalid." << std::endl;
+        return -1;
+    }
+
+    try {
+        py::str py_cipher = py::str(cipherText, cipherTextLen);
+        std::string plain = py::cast<std::string>(g_py_decrypt_func(py_cipher).cast<py::str>());
+        if (plain.size() >= plainTextLen) {
+            std::cerr << "output cipher len is too long" << std::endl;
+            return -1;
+        }
+
+        std::copy(plain.begin(), plain.end(), plainText);
+        plainText[plain.size()] = '\0';
+        plainTextLen = plain.size();
+        return 0;
+    } catch (const py::error_already_set &e) {
+        return -1;
+    }
+}
+
+int32_t register_python_decrypt_handler(py::function py_decrypt_func)
+{
+    if (!py_decrypt_func || py_decrypt_func.is_none()) {
+        return shmem_register_decrypt_handler(nullptr);
+    }
+
+    g_py_decrypt_func = py_decrypt_func;
+    return shmem_register_decrypt_handler(py_decrypt_handler_wrapper);
+}
 }
 }
 
@@ -146,40 +180,6 @@ void DefineShmemInitStatus(py::module_ &m)
         .value("SHM_CREATED", SHMEM_STATUS_SHM_CREATED)
         .value("INITIALIZED", SHMEM_STATUS_IS_INITIALIZED)
         .value("INVALID", SHMEM_STATUS_INVALID);
-}
-
-static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)
-{
-    if (cipherTextLen > MAX_CIPHER_LEN || !g_py_decrypt_func || g_py_decrypt_func.is_none()) {
-        std::cerr << "input cipher len is too long or decrypt func invalid." << std::endl;
-        return -1;
-    }
-
-    try {
-        py::str py_cipher = py::str(cipherText, cipherTextLen);
-        std::string plain = py::cast<std::string>(g_py_decrypt_func(py_cipher).cast<py::str>());
-        if (plain.size() >= plainTextLen) {
-            std::cerr << "output cipher len is too long" << std::endl;
-            return -1;
-        }
-
-        std::copy(plain.begin(), plain.end(), plainText);
-        plainText[plain.size()] = '\0';
-        plainTextLen = plain.size();
-        return 0;
-    } catch (const py::error_already_set &e) {
-        return -1;
-    }
-}
-
-int32_t register_python_decrypt_handler(py::function py_decrypt_func)
-{
-    if (!py_decrypt_func || py_decrypt_func.is_none()) {
-        return shmem_register_decrypt_handler(nullptr);
-    }
-
-    g_py_decrypt_func = py_decrypt_func;
-    return shmem_register_decrypt_handler(py_decrypt_handler_wrapper);
 }
 
 PYBIND11_MODULE(_pyshmem, m)

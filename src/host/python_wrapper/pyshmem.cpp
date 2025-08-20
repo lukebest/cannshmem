@@ -344,7 +344,27 @@ Arguments:
 
     m.def("my_pe", &shmem_my_pe, py::call_guard<py::gil_scoped_release>(), R"(Get my PE number.)");
 
+    m.def(
+        "team_my_pe",
+        [](int team_id) {
+            return shmem_team_my_pe(team_id);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("team_id"),
+        R"(
+Get my PE number in specific team.
+    )");
+
     m.def("pe_count", &shmem_n_pes, py::call_guard<py::gil_scoped_release>(), R"(Get number of PEs.)");
+
+    m.def(
+        "team_n_pes",
+        [](int team_id) {
+            return shmem_team_n_pes(team_id);
+        },
+        py::call_guard<py::gil_scoped_release>(), py::arg("team_id"),
+        R"(
+Get number of PEs in specific team.
+    )");
 
     m.def("mte_set_ub_params", &shmem_mte_set_ub_params, py::call_guard<py::gil_scoped_release>(), py::arg("offset"),
           py::arg("size"), py::arg("event"), R"(

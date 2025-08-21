@@ -223,6 +223,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
     
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
+    SHMEM_CHECK_RET(shm::shmem_set_log_level(shm::ERROR_LEVEL));
     SHMEM_CHECK_RET(shm::check_attr(attributes));
     SHMEM_CHECK_RET(shm::version_compatible());
     SHMEM_CHECK_RET(shm::shmemi_options_init());
@@ -253,6 +254,22 @@ int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))
 
 int32_t shmem_set_log_level(int level)
 {
+    // use env first, input level secondly, user may change level from env instead call func
+    const char* in_level = std::getenv("SHMEM_LOG_LEVEL");
+    if (in_level != nullptr) {
+        auto tmp_level = std::string(in_level);
+        if (tmp_level == "DEBUG") {
+            level = shm::DEBUG_LEVEL;
+        } else if (tmp_level == "INFO") {
+            level = shm::INFO_LEVEL;
+        } else if (tmp_level = "WARN") {
+            level = shm::WARN_LEVEL;
+        } else if (tmp_level = "ERROR") {
+            level = shm::ERROR_LEVEL;
+        } else if (tmp_level == "FATAL") {
+            level = shm::FATAL_LEVEL;
+        }
+    }
     return smem_set_log_level(level);
 }
 

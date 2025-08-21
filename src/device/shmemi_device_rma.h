@@ -18,7 +18,7 @@
 
 #define SHMEMI_TYPENAME_PREPARE_RMA_P(NAME, TYPE)                                                            \
     void shmemi_prepare_and_post_rma_##NAME##_p(const char *api_name, uint8_t* dst_ptr, TYPE value, int pe,  \
-                                                      aclrtStream acl_strm, size_t block_size)               \
+                                                      aclrtStream acl_strm, size_t block_size);              \
    
 SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_PREPARE_RMA_P)
 #undef SHMEMI_TYPENAME_PREPARE_RMA_P

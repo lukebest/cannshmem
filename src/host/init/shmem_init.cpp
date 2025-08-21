@@ -23,6 +23,7 @@ namespace shm {
 #define DEFAULT_MY_PE (-1)
 #define DEFAULT_N_PES (-1)
 
+constexpr int DEFAULT_FLAG = 0;
 constexpr int DEFAULT_ID = 0;
 constexpr int DEFAULT_TIMEOUT = 120;
 constexpr int DEFAULT_TEVENT = 0;
@@ -114,7 +115,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     config.controlOperationTimeout = attributes->option_attr.control_operation_timeout;
 
     g_smem_handle = smem_shm_create(DEFAULT_ID, attributes->n_ranks, attributes->my_rank, g_state.heap_size,
-                  static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type),DEFAULT_FLAG, &gva);
+                  static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type), DEFAULT_FLAG, &gva);
 
     if (g_smem_handle == nullptr || gva == nullptr) {
         SHM_LOG_ERROR("smem_shm_create Failed");
@@ -217,7 +218,8 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
     shm::g_attr.n_ranks = n_ranks;
     shm::g_attr.ip_port = shm::g_ipport;
     shm::g_attr.local_mem_size = local_mem_size;
-    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, DEFAULT_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_TIMEOUT};
+    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT, 
+                               shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT};
     shm::g_attr_init = true;
     return SHMEM_SUCCESS;
 }

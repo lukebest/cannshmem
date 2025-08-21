@@ -7,56 +7,59 @@
 #include "shmem_api.h"
 #include "unittest/utils/func_type.h"
 
-#define KERNEL_UB_PUT_NUM(NAME, TYPE)                                                                                                           \
-    class kernel_ub_##NAME##_put_num {                                                                                                          \
-    public:                                                                                                                                     \
-        __aicore__ inline kernel_ub_##NAME##_put_num() {}                                                                                       \
-        __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)                                                                                   \
-        {                                                                                                                                       \
-            gva_gm = (__gm__ TYPE *)gva;                                                                                                        \
-            dev_gm = (__gm__ TYPE *)dev;                                                                                                        \
-                                                                                                                                                \
-            rank = shmem_my_pe();                                                                                                               \
-            rank_size = shmem_n_pes();                                                                                                          \
-                                                                                                                                                \
-            /* set GM Buffer */                                                                                                                 \
-            src_gm.SetGlobalBuffer(dev_gm);                                                                                                     \
-            dst_gm.SetGlobalBuffer(gva_gm);                                                                                                     \
-                                                                                                                                                \
-            /* 1x4096 Bytes Buffer */                                                                                                           \
-            pipe.InitBuffer(buf_queue, 1, 4096);                                                                                                \
-        }                                                                                                                                       \
-        __aicore__ inline void Process()                                                                                                        \
-        {                                                                                                                                       \
-            int total_size = 512;                                                                                                               \
-            int local_size = 128;                                                                                                               \
-                                                                                                                                                \
-            AscendC::LocalTensor<TYPE> buf_tensor = buf_queue.AllocTensor<TYPE>();                                                              \
-            uintptr_t addr = static_cast<uintptr_t>(buf_tensor.address_.bufferAddr);                                                            \
-            __ubuf__ TYPE *buf = (__ubuf__ TYPE *)addr;                                                                                         \
-            AscendC::DataCopy(buf_tensor, src_gm, total_size);                                                                                  \
-                                                                                                                                                \
-            AscendC::SetFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID0);                                                                         \
-            AscendC::WaitFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID0);                                                                        \
-                                                                                                                                                \
-            shmem_mte_put_mem_nbi(dst_gm, buf_tensor, local_size, (rank + 1) % rank_size, EVENT_ID0);                                           \
-            shmem_mte_put_mem_nbi(gva_gm + local_size * 1, buf + local_size * 1, local_size, (rank + 1) % rank_size, EVENT_ID0);                \
-                                                                                                                                                \
-            shmem_put_##NAME##_mem_nbi(dst_gm[local_size * 2], buf_tensor[local_size * 2], local_size, (rank + 1) % rank_size);                 \
-            shmem_put_##NAME##_mem_nbi(gva_gm + local_size * 3, buf + local_size * 3, local_size, (rank + 1) % rank_size);                      \
-                                                                                                                                                \
-            buf_queue.FreeTensor(buf_tensor);                                                                                                   \
-        }                                                                                                                                       \
-    private:                                                                                                                                    \
-        AscendC::TPipe pipe;                                                                                                                    \
-        AscendC::TQue<AscendC::TPosition::VECIN, 2> buf_queue;                                                                                  \
-                                                                                                                                                \
-        AscendC::GlobalTensor<TYPE> src_gm, dst_gm;                                                                                             \
-        __gm__ TYPE *gva_gm;                                                                                                                    \
-        __gm__ TYPE *dev_gm;                                                                                                                    \
-                                                                                                                                                \
-        int64_t rank;                                                                                                                           \
-        int64_t rank_size;                                                                                                                      \
+#define KERNEL_UB_PUT_NUM(NAME, TYPE)                                                                   \
+    class kernel_ub_##NAME##_put_num {                                                                  \
+    public:                                                                                             \
+        __aicore__ inline kernel_ub_##NAME##_put_num() {}                                               \
+        __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)                                           \
+        {                                                                                               \
+            gva_gm = (__gm__ TYPE *)gva;                                                                \
+            dev_gm = (__gm__ TYPE *)dev;                                                                \
+                                                                                                        \
+            rank = shmem_my_pe();                                                                       \
+            rank_size = shmem_n_pes();                                                                  \
+                                                                                                        \
+            /* set GM Buffer */                                                                         \
+            src_gm.SetGlobalBuffer(dev_gm);                                                             \
+            dst_gm.SetGlobalBuffer(gva_gm);                                                             \
+                                                                                                        \
+            /* 1x4096 Bytes Buffer */                                                                   \
+            pipe.InitBuffer(buf_queue, 1, 4096);                                                        \
+        }                                                                                               \
+        __aicore__ inline void Process()                                                                \
+        {                                                                                               \
+            int total_size = 512;                                                                       \
+            int local_size = 128;                                                                       \
+                                                                                                        \
+            AscendC::LocalTensor<TYPE> buf_tensor = buf_queue.AllocTensor<TYPE>();                      \
+            uintptr_t addr = static_cast<uintptr_t>(buf_tensor.address_.bufferAddr);                    \
+            __ubuf__ TYPE *buf = (__ubuf__ TYPE *)addr;                                                 \
+            AscendC::DataCopy(buf_tensor, src_gm, total_size);                                          \
+                                                                                                        \
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID0);                                 \
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID0);                                \
+                                                                                                        \
+            shmem_mte_put_mem_nbi(dst_gm, buf_tensor, local_size, (rank + 1) % rank_size, EVENT_ID0);   \
+            shmem_mte_put_mem_nbi(gva_gm + local_size * 1, buf + local_size * 1, local_size,            \
+                            (rank + 1) % rank_size, EVENT_ID0);                                         \
+                                                                                                        \
+            shmem_put_##NAME##_mem_nbi(dst_gm[local_size * 2], buf_tensor[local_size * 2],              \
+                                 local_size, (rank + 1) % rank_size);                                   \
+            shmem_put_##NAME##_mem_nbi(gva_gm + local_size * 3, buf + local_size * 3,                   \
+                                 local_size, (rank + 1) % rank_size);                                   \
+                                                                                                        \
+            buf_queue.FreeTensor(buf_tensor);                                                           \
+        }                                                                                               \
+    private:                                                                                            \
+        AscendC::TPipe pipe;                                                                            \
+        AscendC::TQue<AscendC::TPosition::VECIN, 2> buf_queue;                                          \
+                                                                                                        \
+        AscendC::GlobalTensor<TYPE> src_gm, dst_gm;                                                     \
+        __gm__ TYPE *gva_gm;                                                                            \
+        __gm__ TYPE *dev_gm;                                                                            \
+                                                                                                        \
+        int64_t rank;                                                                                   \
+        int64_t rank_size;                                                                              \
     }
 
 SHMEM_FUNC_TYPE_KERNEL(KERNEL_UB_PUT_NUM);
@@ -79,58 +82,61 @@ SHMEM_FUNC_TYPE_KERNEL(UB_PUT_NUM_TEST);
 
 SHMEM_FUNC_TYPE_KERNEL(TEST_UB_PUT);
 
-#define KERNEL_UB_GET_NUM(NAME, TYPE)                                                                                                                   \
-    class kernel_ub_##NAME##_get_num {                                                                                                                  \
-    public:                                                                                                                                             \
-        __aicore__ inline kernel_ub_##NAME##_get_num() {}                                                                                               \
-        __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)                                                                                           \
-        {                                                                                                                                               \
-            gva_gm = (__gm__ TYPE *)gva;                                                                                                                \
-            dev_gm = (__gm__ TYPE *)dev;                                                                                                                \
-                                                                                                                                                        \
-            rank = shmem_my_pe();                                                                                                                       \
-            rank_size = shmem_n_pes();                                                                                                                  \
-                                                                                                                                                        \
-            /* set GM Buffer */                                                                                                                         \
-            src_gm.SetGlobalBuffer(gva_gm);                                                                                                             \
-            dst_gm.SetGlobalBuffer(dev_gm);                                                                                                             \
-                                                                                                                                                        \
-            /* 1x4096 Bytes Buffer */                                                                                                                   \
-            pipe.InitBuffer(buf_queue, 1, 4096);                                                                                                        \
-        }                                                                                                                                               \
-        __aicore__ inline void Process()                                                                                                                \
-        {                                                                                                                                               \
-            int total_size = 512;                                                                                                                       \
-            int local_size = 128;                                                                                                                       \
-                                                                                                                                                        \
-            AscendC::LocalTensor<TYPE> buf_tensor = buf_queue.AllocTensor<TYPE>();                                                                      \
-            uintptr_t addr = static_cast<uintptr_t>(buf_tensor.address_.bufferAddr);                                                                    \
-            __ubuf__ TYPE *buf = (__ubuf__ TYPE *)addr;                                                                                                 \
-                                                                                                                                                        \
-            shmem_mte_get_mem_nbi(buf, gva_gm, local_size, (rank + 1) % rank_size, EVENT_ID0);                                                          \
-            shmem_mte_get_mem_nbi(buf_tensor[local_size * 1], src_gm[local_size * 1], local_size, (rank + 1) % rank_size, EVENT_ID0);                   \
-                                                                                                                                                        \
-            shmem_get_##NAME##_mem_nbi(buf + local_size * 2, gva_gm + local_size * 2, local_size, (rank + 1) % rank_size);                              \
-            shmem_get_##NAME##_mem_nbi(buf_tensor[local_size * 3], src_gm[local_size * 3], local_size, (rank + 1) % rank_size);                         \
-                                                                                                                                                        \
-            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);                                                                                    \
-            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);                                                                                   \
-                                                                                                                                                        \
-            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(EVENT_ID0);                                                                                    \
-            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(EVENT_ID0);                                                                                   \
-                                                                                                                                                        \
-            AscendC::DataCopy(dst_gm, buf_tensor, total_size);                                                                                          \
-            buf_queue.FreeTensor(buf_tensor);                                                                                                           \
-        }                                                                                                                                               \
-    private:                                                                                                                                            \
-        AscendC::TPipe pipe;                                                                                                                            \
-        AscendC::TQue<AscendC::TPosition::VECIN, 2> buf_queue;                                                                                          \
-        AscendC::GlobalTensor<TYPE> src_gm, dst_gm;                                                                                                     \
-        __gm__ TYPE *gva_gm;                                                                                                                            \
-        __gm__ TYPE *dev_gm;                                                                                                                            \
-                                                                                                                                                        \
-        int64_t rank;                                                                                                                                   \
-        int64_t rank_size;                                                                                                                              \
+#define KERNEL_UB_GET_NUM(NAME, TYPE)                                                             \
+    class kernel_ub_##NAME##_get_num {                                                            \
+    public:                                                                                       \
+        __aicore__ inline kernel_ub_##NAME##_get_num() {}                                         \
+        __aicore__ inline void Init(GM_ADDR gva, GM_ADDR dev)                                     \
+        {                                                                                         \
+            gva_gm = (__gm__ TYPE *)gva;                                                          \
+            dev_gm = (__gm__ TYPE *)dev;                                                          \
+                                                                                                  \
+            rank = shmem_my_pe();                                                                 \
+            rank_size = shmem_n_pes();                                                            \
+                                                                                                  \
+            /* set GM Buffer */                                                                   \
+            src_gm.SetGlobalBuffer(gva_gm);                                                       \
+            dst_gm.SetGlobalBuffer(dev_gm);                                                       \
+                                                                                                  \
+            /* 1x4096 Bytes Buffer */                                                             \
+            pipe.InitBuffer(buf_queue, 1, 4096);                                                  \
+        }                                                                                         \
+        __aicore__ inline void Process()                                                          \
+        {                                                                                         \
+            int total_size = 512;                                                                 \
+            int local_size = 128;                                                                 \
+                                                                                                  \
+            AscendC::LocalTensor<TYPE> buf_tensor = buf_queue.AllocTensor<TYPE>();                \
+            uintptr_t addr = static_cast<uintptr_t>(buf_tensor.address_.bufferAddr);              \
+            __ubuf__ TYPE *buf = (__ubuf__ TYPE *)addr;                                           \
+                                                                                                  \
+            shmem_mte_get_mem_nbi(buf, gva_gm, local_size, (rank + 1) % rank_size, EVENT_ID0);    \
+            shmem_mte_get_mem_nbi(buf_tensor[local_size * 1], src_gm[local_size * 1],             \
+                            local_size, (rank + 1) % rank_size, EVENT_ID0);                       \
+                                                                                                  \
+            shmem_get_##NAME##_mem_nbi(buf + local_size * 2, gva_gm + local_size * 2,             \
+                                 local_size, (rank + 1) % rank_size);                             \
+            shmem_get_##NAME##_mem_nbi(buf_tensor[local_size * 3], src_gm[local_size * 3],        \
+                                 local_size, (rank + 1) % rank_size);                             \
+                                                                                                  \
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);                              \
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);                             \
+                                                                                                  \
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(EVENT_ID0);                              \
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(EVENT_ID0);                             \
+                                                                                                  \
+            AscendC::DataCopy(dst_gm, buf_tensor, total_size);                                    \
+            buf_queue.FreeTensor(buf_tensor);                                                     \
+        }                                                                                         \
+    private:                                                                                      \
+        AscendC::TPipe pipe;                                                                      \
+        AscendC::TQue<AscendC::TPosition::VECIN, 2> buf_queue;                                    \
+        AscendC::GlobalTensor<TYPE> src_gm, dst_gm;                                               \
+        __gm__ TYPE *gva_gm;                                                                      \
+        __gm__ TYPE *dev_gm;                                                                      \
+                                                                                                  \
+        int64_t rank;                                                                             \
+        int64_t rank_size;                                                                        \
     }
 
 SHMEM_FUNC_TYPE_KERNEL(KERNEL_UB_GET_NUM);

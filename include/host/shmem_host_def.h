@@ -17,12 +17,53 @@ extern "C" {
 #endif
 
 /**
+* @brief Standard RMA Types and Names valid on Host
+*
+* |NAME       | TYPE      |
+* |-----------|-----------|
+* |float      | float     |
+* |double     | double    |
+* |int8       | int8      |
+* |int16      | int16     |
+* |int32      | int32     |
+* |int64      | int64     |
+* |uint8      | uint8     |
+* |uint16     | uint16    |
+* |uint32     | uint32    |
+* |uint64     | uint64    |
+* |char       | char      |
+*/
+#define SHMEM_TYPE_FUNC(FUNC)        \
+    FUNC(float, float);              \
+    FUNC(double, double);            \
+    FUNC(int8, int8_t);              \
+    FUNC(int16, int16_t);            \
+    FUNC(int32, int32_t);            \
+    FUNC(int64, int64_t);            \
+    FUNC(uint8, uint8_t);            \
+    FUNC(uint16, uint16_t);          \
+    FUNC(uint32, uint32_t);          \
+    FUNC(uint64, uint64_t);          \
+    FUNC(char, char)
+// FUNC(half, half);
+// FUNC(bfloat16, bfloat16_t);
+
+/**
  * @defgroup group_macros Macros
  * @{
 */
 /// \def SHMEM_HOST_API
 /// \brief A macro that identifies a function on the host side.
 #define SHMEM_HOST_API   __attribute__((visibility("default")))
+
+/// \def SHMEM_XXX_VERSION
+/// \brief macros that define current version info
+#define SHMEM_MAJOR_VERSION 1
+#define SHMEM_MINOR_VERSION 1
+#define SHMEM_MAX_NAME_LEN 256
+#define SHMEM_VENDOR_MAJOR_VER 1
+#define SHMEM_VENDOR_MINOR_VER 1
+#define SHMEM_VENDOR_PATCH_VER 1
 /**@} */ // end of group_macros
 
 /**
@@ -94,6 +135,16 @@ typedef struct {
     uint64_t local_mem_size; 
     shmem_init_optional_attr_t option_attr;  
 } shmem_init_attr_t;
+
+/**
+ * @brief Callback function of private key password decryptor, see shmem_register_decrypt_handler
+ *
+ * @param cipherText       [in] the encrypted text(private password)
+ * @param cipherTextLen    [in] the length of encrypted text
+ * @param plainText        [out] the decrypted text(private password)
+ * @param plaintextLen     [out] the length of plainText
+ */
+typedef int (*shmem_decrypt_handler)(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen);
 
 /**@} */ // end of group_structs
 

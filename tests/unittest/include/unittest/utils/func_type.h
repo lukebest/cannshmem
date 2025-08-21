@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025 All rights reserved.
+ */
+#ifndef UT_FUNC_TYPE_H
+#define UT_FUNC_TYPE_H
+
 #define SHMEM_FUNC_TYPE_HOST(FUNC)   \
     FUNC(half, op::fp16_t);          \
     FUNC(float, float);              \
@@ -27,3 +33,5 @@
     FUNC(uint64, uint64_t);          \
     FUNC(char, char);                \
     FUNC(bfloat16, bfloat16_t)
+
+#endif  // UT_FUNC_TYPE_H

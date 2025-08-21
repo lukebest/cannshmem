@@ -98,6 +98,37 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size) {
         ASSERT_EQ(invalid_odd_even, -1);
     }
 
+    // #################### 2d子通信域切分测试 ############################
+    shmem_team_t team_x;
+    shmem_team_t team_y;
+    int x_range = 2;
+    int y_range = n_ranks / 2;
+    int errorCode = shmem_team_split_2d(SHMEM_TEAM_WORLD, x_range, &team_x, &team_y);
+    ASSERT_EQ(errorCode, 0);
+
+    // #################### host侧取值测试 ##############################
+    ASSERT_EQ(shmem_team_n_pes(team_x), x_range);
+    ASSERT_EQ(shmem_team_n_pes(team_y), y_range);
+    ASSERT_EQ(shmem_n_pes(), n_ranks);
+    ASSERT_EQ(shmem_my_pe(), rank_id);
+
+    int local_x_idx = shmem_team_my_pe(team_x);
+    int global_x_idx = shmem_team_translate_pe(team_x, local_x_idx, SHMEM_TEAM_WORLD);
+    ASSERT_EQ(global_x_idx, rank_id);
+
+    int back_x_local = shmem_team_translate_pe(SHMEM_TEAM_WORLD, rank_id, team_x);
+    ASSERT_EQ(back_x_local, local_x_idx);
+
+    int local_y_idx = shmem_team_my_pe(team_y);
+    int global_y_idx = shmem_team_translate_pe(team_y, local_y_idx, SHMEM_TEAM_WORLD);
+    ASSERT_EQ(global_y_idx, rank_id);
+
+    int back_y_local = shmem_team_translate_pe(SHMEM_TEAM_WORLD, rank_id, team_y);
+    ASSERT_EQ(back_y_local, local_y_idx);
+
+    int x_to_y_id = shmem_team_translate_pe(team_x, local_x_idx, team_y);
+    ASSERT_NE(x_to_y_id, -1);
+
     // #################### device代码测试 ##############################
 
     auto status = test_get_device_state(stream, (uint8_t *)shm::g_state.heap_base, rank_id, n_ranks, team_odd, stride);
@@ -113,11 +144,46 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size) {
     }
 }
 
-
-
 TEST(TestTeamApi, TestShmemTeam)
 {   
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_team, local_mem_size, process_count);
+}
+
+void test_shmem_team_config(int rank_id, int n_ranks, uint64_t local_mem_size)
+{
+    int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+    aclrtStream stream;
+    test_init(rank_id, n_ranks, local_mem_size, &stream);
+    ASSERT_NE(stream, nullptr);
+
+    shmem_team_t team_odd;
+    int start = 0;
+    int stride = 1;
+    int team_size = 8;
+    int ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
+    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(team_odd >= 0 && team_odd < SHMEM_MAX_TEAMS);
+
+    shmem_team_config_t config;
+    config.num_contexts = 1;
+    ret = shmem_team_get_config(team_odd, &config);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(config.num_contexts, 0);
+
+    shmem_team_destroy(team_odd);
+
+    std::cerr << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
+    test_finalize(stream, device_id);
+    if (::testing::Test::HasFailure()) {
+        exit(1);
+    }
+}
+
+TEST(TestTeamApi, TestShmemTeamConfig)
+{
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task(test_shmem_team_config, local_mem_size, process_count);
 }

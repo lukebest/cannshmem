@@ -15,6 +15,7 @@
 
 namespace shm {
 extern shmemi_device_host_state_t g_state;
+extern shmemi_host_state_t g_state_host;
 
 int32_t update_device_state(void);
 

@@ -223,7 +223,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
     
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
-    SHMEM_CHECK_RET(shm::shmem_set_log_level(shm::ERROR_LEVEL));
+    SHMEM_CHECK_RET(shmem_set_log_level(shm::ERROR_LEVEL));
     SHMEM_CHECK_RET(shm::check_attr(attributes));
     SHMEM_CHECK_RET(shm::version_compatible());
     SHMEM_CHECK_RET(shm::shmemi_options_init());
@@ -262,9 +262,9 @@ int32_t shmem_set_log_level(int level)
             level = shm::DEBUG_LEVEL;
         } else if (tmp_level == "INFO") {
             level = shm::INFO_LEVEL;
-        } else if (tmp_level = "WARN") {
+        } else if (tmp_level == "WARN") {
             level = shm::WARN_LEVEL;
-        } else if (tmp_level = "ERROR") {
+        } else if (tmp_level == "ERROR") {
             level = shm::ERROR_LEVEL;
         } else if (tmp_level == "FATAL") {
             level = shm::FATAL_LEVEL;

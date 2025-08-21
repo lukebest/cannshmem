@@ -279,6 +279,7 @@ int32_t shmem_finalize()
         }
         shm::g_smem_handle = nullptr;
     }
+    smem_shm_uninit(0);
     smem_uninit();
     return SHMEM_SUCCESS;
 }

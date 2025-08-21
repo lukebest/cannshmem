@@ -247,6 +247,7 @@ int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler handler)
 
 int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))
 {
+    shm::shm_out_logger::Instance().set_extern_log_func(func, true);
     return smem_set_extern_logger(func);
 }
 

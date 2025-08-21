@@ -69,9 +69,6 @@ public:
 
         for (int i = 0; i < rank_size; i++) {
             shmem_get_float_mem(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
-            // shmem_mte_get_mem_nbi(dev_gm + 16 * i, gva_gm, buf, (uint32_t)256, 16, i % rank_size, EVENT_ID0);
-            // AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-            // AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         }
 
         buf_queue.FreeTensor(buf_tensor);

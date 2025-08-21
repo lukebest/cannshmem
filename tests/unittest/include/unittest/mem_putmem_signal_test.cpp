@@ -89,7 +89,7 @@ static void host_test_putmem_signal(uint32_t rank_id, int sig_op)
     }
     std::cout <<"[ end " <<p_name;
     for (int i = 0; i < 32; i++) {
-      std::cout << output[i] << " ";
+        std::cout << output[i] << " ";
     }
     std::cout << std::endl;
     std::cout << "signal : "<< output_signal[0] << " ";
@@ -117,8 +117,7 @@ void host_test_shmem_mem_signal(int rank_id, int n_ranks, uint64_t local_mem_siz
 class HostPutmemSignalNbi {
 public:
     inline HostPutmemSignalNbi() {}
-    inline void Init(float *gva, float *dev, uint8_t *sig_addr_, int32_t signal_,
-                    int64_t rank_, int sig_op_)
+    inline void Init(float *gva, float *dev, uint8_t *sig_addr_, int32_t signal_, int64_t rank_, int sig_op_)
     {
         gva_gm = static_cast<float *>(gva);
         dev_gm = static_cast<float *>(dev);
@@ -214,7 +213,7 @@ TEST(TestMemHostApi, TestShmemPutMemSignal)
 {
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
-    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
+    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize) {
                     host_test_shmem_mem_signal(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
                     }, local_mem_size, process_count);
 }
@@ -223,7 +222,7 @@ TEST(TestMemHostApi, TestShmemPutMemSignalNbi)
 {
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
-    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
+    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize) {
                     host_test_shmem_mem_signal_nbi(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
                     }, local_mem_size, process_count);
 }

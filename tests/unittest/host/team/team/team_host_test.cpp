@@ -176,7 +176,7 @@ void test_shmem_team_config(int rank_id, int n_ranks, uint64_t local_mem_size)
 
     std::cerr << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }

@@ -34,7 +34,6 @@ public:
     inline void Process()
     {
         shmem_putmem(gva_gm, dev_gm, element_size, rank);
-        
     }
 private:
     void *gva_gm;
@@ -57,17 +56,16 @@ public:
         element_each_rank = element_each_rank_;
         rank_size = rank_size_;
     }
-    inline void Process(bool is_nbi=false)
+    inline void Process(bool is_nbi = false)
     {
         if (is_nbi) {
             for (int i = 0; i < rank_size; i++) {
                 shmem_get_float_mem_nbi(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
-                // TODO: how to sync in host process instead of barrier_all
+                // how to sync in host process instead of barrier_all
                 // AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
                 // AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
             }
-        }
-        else {
+        } else {
             for (int i = 0; i < rank_size; i++) {
                 shmem_get_float_mem(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
             }
@@ -119,7 +117,6 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
     host_test_putmem(ptr, dev_ptr, rank_id, input_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(2);
-    // shmem_barrier_all();
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -132,7 +129,6 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
     host_test_getmem<float>((float*)ptr, (float*)dev_ptr, rank_id, 16, rank_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(2);
-    // shmem_barrier_all();
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -143,15 +139,17 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
     std::cout << std::endl;
     // for gtest
     int32_t flag = 0;
-    for (int i = 0; i < total_size; i++){
+    for (int i = 0; i < total_size; i++) {
         int stage = i / 16;
-        if (input[i] != (stage + 10)) flag = 1;
+        if (input[i] != (stage + 10)) {
+            flag = 1;
+        }
     }
     ASSERT_EQ(flag, 0);
 }
 
 
-void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_mem_size) 
+void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_mem_size)
 {
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
@@ -161,7 +159,7 @@ void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_
     host_test_put_get_mem(rank_id, n_ranks, local_mem_size);
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }
@@ -200,7 +198,7 @@ void test_host_shmem_int32_p_and_g(int rank_id, int n_ranks, uint64_t local_mem_
     host_test_int32_g_and_p(rank_id, n_ranks, local_mem_size);
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }

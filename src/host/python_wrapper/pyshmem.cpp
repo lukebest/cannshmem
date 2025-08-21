@@ -92,7 +92,7 @@ int32_t set_timeout(shmem_init_attr_t &attributes, uint32_t value)
 }
 
 int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size, const char *ip_port,
-                            shmem_init_attr_t &attributes)
+                             shmem_init_attr_t &attributes)
 {
     shmem_init_attr_t *attr_ptr = &attributes;
     int ret = shmem_set_attr(my_rank, n_ranks, local_mem_size, ip_port, &attr_ptr);
@@ -102,7 +102,8 @@ int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_me
     return ret;
 }
 
-static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)
+static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextLen, char *plainText,
+                                      size_t &plainTextLen)
 {
     if (cipherTextLen > MAX_CIPHER_LEN || !g_py_decrypt_func || g_py_decrypt_func.is_none()) {
         std::cerr << "input cipher len is too long or decrypt func invalid." << std::endl;
@@ -425,7 +426,7 @@ Returns:
 
     m.def(
         "shmem_team_get_config",
-        [](int team){
+        [](int team) {
             shmem_team_config_t team_config;
             auto ret = shmem_team_get_config(team, &team_config);
             if (ret != 0) {
@@ -517,45 +518,29 @@ Returns:
 #define PYBIND_SHMEM_TYPENAME_P(NAME, TYPE)                                                 \
     {                                                                                       \
         std::string funcName = "shmem_" #NAME "_p";                                         \
-        m.def(                                                                              \
-            funcName.c_str(),                                                               \
-            [](intptr_t dst, const TYPE value, int pe) {                                    \
-                auto dst_addr = (TYPE*)dst;                                                 \
-                shmem_##NAME##_p(dst_addr, value, pe);                                      \
-            },                                                                              \
+        m.def(funcName.c_str(),                                                             \
+            [](intptr_t dst, const TYPE value, int pe) {auto dst_addr = (TYPE*)dst;         \
+                shmem_##NAME##_p(dst_addr, value, pe);},                                    \
             py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("value"),     \
             py::arg("pe"), R"(                                                              \
-    Provide a low latency put capability for single element of most basic types             \
-                                                                                            \
-    Arguments:                                                                              \
-        dst               [in] Symmetric address of the destination data on local PE.       \
-        value             [in] The element to be put.                                       \
-        pe                [in] The number of the remote PE.                                 \
-        )");                                                                                \
+    Provide a low latency put capability for single element of most basic types)");         \
     }
 
 
 SHMEM_TYPE_FUNC(PYBIND_SHMEM_TYPENAME_P)
 #undef PYBIND_SHMEM_TYPENAME_P
 
-#define PYBIND_SHMEM_TYPENAME_G(NAME, TYPE)                                                 \
-    {                                                                                       \
-        std::string funcName = "shmem_" #NAME "_g";                                         \
-        m.def(                                                                              \
-            funcName.c_str(),                                                               \
-            [](intptr_t src, int pe) {                                    \
-                auto src_addr = (TYPE*)src;                                                 \
-                return shmem_##NAME##_g(src_addr, pe);                                      \
-            },                                                                              \
-            py::call_guard<py::gil_scoped_release>(), py::arg("src"),     \
-            py::arg("pe"), R"(                                                              \
-    Provide a low latency get single element of most basic types.             \
-                                                                                            \
-    Arguments:                                                                              \
-        src               [in] Symmetric address of the destination data on local PE.  \
-        pe                [in] The number of the remote PE.                            \
-        A single element of type specified in the input pointer.                             \
-        )");                                                                                \
+#define PYBIND_SHMEM_TYPENAME_G(NAME, TYPE)                                                      \
+    {                                                                                            \
+        std::string funcName = "shmem_" #NAME "_g";                                              \
+        m.def(                                                                                   \
+            funcName.c_str(),                                                                    \
+            [](intptr_t src, int pe) {                                                           \
+                auto src_addr = (TYPE*)src;                                                      \
+                return shmem_##NAME##_g(src_addr, pe);                                           \
+            },                                                                                   \
+            py::call_guard<py::gil_scoped_release>(), py::arg("src"),                            \
+            py::arg("pe"), R"(Provide a low latency get single element of most basic types.)");  \
     }
 
 
@@ -624,14 +609,14 @@ Get runtime ffts config. This config should be passed to MIX Kernel and set by M
     m.def(
         "shmem_putmem_signal_nbi",
         [](intptr_t dst, intptr_t src, size_t elem_size, intptr_t sig,
-           int32_t signal, int sig_op, int pe) {
-          auto dst_addr = (void*)dst;
-          auto src_addr = (void*)src;
-          auto sig_addr = (void*)sig;
-          shmem_putmem_signal_nbi(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
+        int32_t signal, int sig_op, int pe) {
+        auto dst_addr = (void*)dst;
+        auto src_addr = (void*)src;
+        auto sig_addr = (void*)sig;
+        shmem_putmem_signal_nbi(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
         },
         py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
-        py::arg("elem_size"),py::arg("sig"), py::arg("signal"),py::arg("sig_op"), py::arg("pe"),  R"(
+        py::arg("elem_size"), py::arg("sig"), py::arg("signal"), py::arg("sig_op"), py::arg("pe"),  R"(
     Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
 
     Arguments:
@@ -648,14 +633,14 @@ Get runtime ffts config. This config should be passed to MIX Kernel and set by M
     m.def(
         "shmem_putmem_signal",
         [](intptr_t dst, intptr_t src, size_t elem_size, intptr_t sig,
-           int32_t signal, int sig_op, int pe) {
-          auto dst_addr = (void*)dst;
-          auto src_addr = (void*)src;
-          auto sig_addr = (void*)sig;
-          shmem_putmem_signal(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
+        int32_t signal, int sig_op, int pe) {
+        auto dst_addr = (void*)dst;
+        auto src_addr = (void*)src;
+        auto sig_addr = (void*)sig;
+        shmem_putmem_signal(dst_addr, src_addr, elem_size, sig_addr, signal, sig_op, pe);
         },
         py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("src"),
-        py::arg("elem_size"),py::arg("sig"), py::arg("signal"),py::arg("sig_op"), py::arg("pe"),  R"(
+        py::arg("elem_size"), py::arg("sig"), py::arg("signal"), py::arg("sig_op"), py::arg("pe"),  R"(
     Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE
 
     Arguments:

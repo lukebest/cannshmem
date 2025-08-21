@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,7 +10,8 @@
 #include "kernel_operator.h"
 #include "shmem_api.h"
 
-extern "C" SHMEM_GLOBAL void increase(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
+extern "C" SHMEM_GLOBAL void increase(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
+{
     shmemx_set_ffts_config(config);
     
 #ifdef __DAV_C220_CUBE__
@@ -29,7 +30,8 @@ extern "C" SHMEM_GLOBAL void increase(uint64_t config, GM_ADDR addr, int rank_id
 #endif
 }
 
-extern "C" SHMEM_GLOBAL void increase_vec(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
+extern "C" SHMEM_GLOBAL void increase_vec(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
+{
     shmemx_set_ffts_config(config);
 
 #ifdef __DAV_C220_VEC__
@@ -42,7 +44,9 @@ extern "C" SHMEM_GLOBAL void increase_vec(uint64_t config, GM_ADDR addr, int ran
 #endif
 }
 
-extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, int rank_id, int rank_size, shmem_team_t team_id) {
+extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, int rank_id, int rank_size,
+                                               shmem_team_t team_id)
+{
     shmemx_set_ffts_config(config);
     
 #ifdef __DAV_C220_CUBE__
@@ -63,7 +67,9 @@ extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, in
 #endif
 }
 
-extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr, int rank_id, int rank_size, shmem_team_t team_id) {
+extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr, int rank_id,
+                                                   int rank_size, shmem_team_t team_id)
+{
     shmemx_set_ffts_config(config);
 
 #ifdef __DAV_C220_VEC__
@@ -78,18 +84,24 @@ extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr
 #endif
 }
 
-void increase_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void increase_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     increase<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }
 
-void increase_vec_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void increase_vec_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     increase_vec<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }
 
-void increase_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size, shmem_team_t team_id) {
+void increase_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
+                          int rank_size, shmem_team_t team_id)
+{
     increase_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }
 
-void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size, shmem_team_t team_id) {
+void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
+                              int rank_size, shmem_team_t team_id)
+{
     increase_vec_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }

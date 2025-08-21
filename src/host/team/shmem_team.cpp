@@ -212,8 +212,8 @@ int32_t shmem_team_split_strided(
     shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
 
     if (pe_start >= SHMEM_MAX_RANKS || pe_stride >= SHMEM_MAX_RANKS || pe_size > SHMEM_MAX_RANKS) {
-        SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size <<
-            " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
+                      << " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
@@ -223,22 +223,24 @@ int32_t shmem_team_split_strided(
     int32_t global_pe_end = global_pe_start + global_pe_stride * (pe_size - 1);
 
     if (pe_start < 0 || pe_start >= src_team->size || pe_size <= 0 || pe_size > src_team->size || pe_stride < 1) {
-        SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size <<
-            " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
+                      << " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
     if (global_pe_start >= shmem_n_pes() || global_pe_end >= shmem_n_pes()) {
-        SHM_LOG_ERROR("create team failed, large than world size, pe_start:" << pe_start << " pe_size:" << pe_size <<
-            " pe_stride:" << pe_stride << " world_size:" << shmem_n_pes() << " parent:" << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, large than world size, pe_start:" << pe_start << " pe_size:" << pe_size
+                      << " pe_stride:" << pe_stride << " world_size:" << shmem_n_pes() << " parent:"
+                      << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
     my_team.mype = (global_pe - global_pe_start) / global_pe_stride;
 
     if (global_pe < global_pe_start || (global_pe - global_pe_start)  % global_pe_stride || my_team.mype >= pe_size) {
-        SHM_LOG_ERROR("create team failed, mype is invalid, pe_start:" << pe_start << " pe_size:" << pe_size <<
-            " pe_stride:" << pe_stride << " mype:" << my_team.mype << " parent:" << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, mype is invalid, pe_start:" << pe_start << " pe_size:" << pe_size
+                      << " pe_stride:" << pe_stride << " mype:" << my_team.mype << " parent:"
+                      << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
@@ -304,10 +306,10 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
 
     for (int i = 0; i < x_team_counts; ++i) {
         shmem_team_t my_xteam;
-        int x_size = (i == x_team_counts - 1 && src_size % x_range) ? src_size % x_range: x_range;
+        int x_size = (i == x_team_counts - 1 && src_size % x_range) ? src_size % x_range : x_range;
         errorCode = shmem_team_split_strided(parent_team, start, 1, x_size, &my_xteam);
         if (errorCode != 0) {
-            SHM_LOG_WARN("create x-axis team " << i + 1 << " of " << x_team_counts << " failed");
+            SHM_LOG_WARN("create x-axis team " << (i + 1) << " of " << x_team_counts << " failed");
         }
 
         start += x_range;
@@ -327,11 +329,11 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
         shmem_team_t my_yteam;
         int remainder = src_size % x_range;
         int y_range = src_size / x_range;
-        int y_size = (remainder && i < remainder) ? y_range + 1: y_range;
+        int y_size = (remainder && i < remainder) ? (y_range + 1) : y_range;
     
         errorCode = shmem_team_split_strided(parent_team, start, x_range, y_size, &my_yteam);
         if (errorCode != 0) {
-            SHM_LOG_WARN("create y-axis team " << i + 1 << " of " << y_team_counts << " failed");
+            SHM_LOG_WARN("create y-axis team " << (i + 1) << " of " << y_team_counts << " failed");
         }
 
         start += 1;

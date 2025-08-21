@@ -8,8 +8,10 @@ import shmem as ash
 g_ash_size = 1024 * 1024 * 1024
 g_malloc_size = 8 * 1024 * 1024
 
+
 def decypt_handler_test(input_cipher):
     return input_cipher
+
 
 def run_register_decrypt_tests():
     rank = dist.get_rank()
@@ -46,12 +48,12 @@ def run_tests():
     if not (my_pe == rank and pe_count == world_size):
         raise ValueError('[ERROR] pe/world failed')
     # 4. test team
-    # team_x, team_y = ash.team_split_2d(0, 2)
     my_team_pe, team_pe_count = ash.team_my_pe(0), ash.team_n_pes(0)
     print(f'x: rank[{rank}]: t_my_pe:{my_team_pe} and t_pe_count:{team_pe_count}')
 
     # 5. test finialize
     _ = ash.shmem_finialize()
+
 
 def exit_test():
     rank = dist.get_rank()
@@ -62,6 +64,7 @@ def exit_test():
         raise ValueError('[ERROR] aclshmem_init failed')
     if rank == 0:
         ash.shmem_global_exit(0)
+
 
 if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])

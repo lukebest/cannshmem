@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
 #include <iostream>
 #include <string>
 #include <vector>
@@ -20,8 +23,8 @@ public:
     inline void Init(float *gva, float *dev, uint8_t *sig_addr_, int32_t signal_,
                      int64_t rank_, int sig_op_)
     {
-        gva_gm = (float *)gva;
-        dev_gm = (float *)dev;
+        gva_gm = static_cast<float *>(gva);
+        dev_gm = static_cast<float *>(dev);
         sig_addr = sig_addr_;
 
         signal = signal_;
@@ -54,7 +57,7 @@ static void host_test_putmem_signal(uint32_t rank_id, int sig_op)
     size_t input_size = 32 * sizeof(float);
     std::string p_name = std::to_string(rank_id) + "] ";
     std::vector<float> input(32, rank_id);
-    for(int i = 0; i < 32; i++){
+    for (int i = 0; i < 32; i++) {
         input[i] = i + 1;
     }
     std::cout <<"[begin "  <<p_name;
@@ -79,8 +82,10 @@ static void host_test_putmem_signal(uint32_t rank_id, int sig_op)
     ASSERT_EQ(aclrtMemcpy(output.data(), 64, ptr, 64, ACL_MEMCPY_DEVICE_TO_HOST), 0);
     ASSERT_EQ(aclrtMemcpy(output_signal.data(), 1, signal_addr, 1, ACL_MEMCPY_DEVICE_TO_HOST), 0);
     int32_t flag = 0;
-    for (int i = 0; i < 4; i++){
-      if (output[i] != input[i]) flag = 1;
+    for (int i = 0; i < 4; i++) {
+        if (output[i] != input[i]) {
+            flag = 1;
+        }
     }
     std::cout <<"[ end " <<p_name;
     for (int i = 0; i < 32; i++) {
@@ -93,7 +98,8 @@ static void host_test_putmem_signal(uint32_t rank_id, int sig_op)
     ASSERT_EQ(output_signal[0], 6);
 }
 
-void host_test_shmem_mem_signal(int rank_id, int n_ranks, uint64_t local_mem_size, int sig_op) {
+void host_test_shmem_mem_signal(int rank_id, int n_ranks, uint64_t local_mem_size, int sig_op)
+{
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
     test_init(rank_id, n_ranks, local_mem_size, &stream);
@@ -102,7 +108,7 @@ void host_test_shmem_mem_signal(int rank_id, int n_ranks, uint64_t local_mem_siz
 
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }
@@ -110,109 +116,114 @@ void host_test_shmem_mem_signal(int rank_id, int n_ranks, uint64_t local_mem_siz
 
 class HostPutmemSignalNbi {
 public:
-  inline HostPutmemSignalNbi() {}
-  inline void Init(float *gva, float *dev, uint8_t *sig_addr_, int32_t signal_,
-                   int64_t rank_, int sig_op_)
-  {
-    gva_gm = (float *)gva;
-    dev_gm = (float *)dev;
-    sig_addr = sig_addr_;
+    inline HostPutmemSignalNbi() {}
+    inline void Init(float *gva, float *dev, uint8_t *sig_addr_, int32_t signal_,
+                    int64_t rank_, int sig_op_)
+    {
+        gva_gm = static_cast<float *>(gva);
+        dev_gm = static_cast<float *>(dev);
+        sig_addr = sig_addr_;
 
-    signal = signal_;
-    rank = rank_;
-    sig_op = sig_op_;
-  }
-  inline void Process()
-  {
-    shmem_put_float_mem_signal_nbi(gva_gm, dev_gm, 16, sig_addr, signal, sig_op, rank);
-  }
+        signal = signal_;
+        rank = rank_;
+        sig_op = sig_op_;
+    }
+    inline void Process()
+    {
+        shmem_put_float_mem_signal_nbi(gva_gm, dev_gm, 16, sig_addr, signal, sig_op, rank);
+    }
 private:
-  float *gva_gm;
-  float *dev_gm;
-  uint8_t *sig_addr;
-  int32_t signal;
-  int sig_op;
-  int64_t rank;
+    float *gva_gm;
+    float *dev_gm;
+    uint8_t *sig_addr;
+    int32_t signal;
+    int sig_op;
+    int64_t rank;
 };
 
 void putmem_signal_test_nbi(float *gva, float *dev, uint8_t *sig_addr, int32_t signal,
-                        int64_t rank, int sig_op)
+                            int64_t rank, int sig_op)
 {
-  HostPutmemSignal op;
-  op.Init(gva, dev, sig_addr, signal, rank, sig_op);
-  op.Process();
+    HostPutmemSignal op;
+    op.Init(gva, dev, sig_addr, signal, rank, sig_op);
+    op.Process();
 }
 
 static void host_test_putmem_signal_nbi(uint32_t rank_id, int sig_op)
 {
-  size_t input_size = 32 * sizeof(float);
-  std::string p_name = std::to_string(rank_id) + "] ";
-  std::vector<float> input(32, rank_id);
-  for(int i = 0; i < 32; i++){
-    input[i] = i + 1;
-  }
-  std::cout <<"[begin "  <<p_name;
-  for (int i = 0; i < 32; i++) {
-    std::cout << input[i] << " ";
-  }
-  std::vector<float> output(32, 0);
-  std::vector<int32_t> output_signal(1, 0);
+    size_t input_size = 32 * sizeof(float);
+    std::string p_name = std::to_string(rank_id) + "] ";
+    std::vector<float> input(32, rank_id);
+    for (int i = 0; i < 32; i++) {
+        input[i] = i + 1;
+    }
+    std::cout <<"[begin "  <<p_name;
+    for (int i = 0; i < 32; i++) {
+        std::cout << input[i] << " ";
+    }
+    std::vector<float> output(32, 0);
+    std::vector<int32_t> output_signal(1, 0);
 
-  void *dev_ptr;
-  void *signal_addr;
-  ASSERT_EQ(aclrtMalloc(&dev_ptr, input_size, ACL_MEM_MALLOC_NORMAL_ONLY), 0);
-  ASSERT_EQ(aclrtMemcpy(dev_ptr, 64, input.data(), 64, ACL_MEMCPY_HOST_TO_DEVICE), 0);
-  ASSERT_EQ(aclrtMalloc(&signal_addr, 32, ACL_MEM_MALLOC_NORMAL_ONLY), 0);
-  void *ptr = shmem_malloc(1024);
-  int32_t signal = 6;
-  putmem_signal_test_nbi((float *)ptr, (float *)dev_ptr, (uint8_t *)signal_addr,
-                     signal, rank_id, sig_op);
-  ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
-  sleep(2);
+    void *dev_ptr;
+    void *signal_addr;
+    ASSERT_EQ(aclrtMalloc(&dev_ptr, input_size, ACL_MEM_MALLOC_NORMAL_ONLY), 0);
+    ASSERT_EQ(aclrtMemcpy(dev_ptr, 64, input.data(), 64, ACL_MEMCPY_HOST_TO_DEVICE), 0);
+    ASSERT_EQ(aclrtMalloc(&signal_addr, 32, ACL_MEM_MALLOC_NORMAL_ONLY), 0);
+    void *ptr = shmem_malloc(1024);
+    int32_t signal = 6;
+    putmem_signal_test_nbi((float *)ptr, (float *)dev_ptr, (uint8_t *)signal_addr,
+                           signal, rank_id, sig_op);
+    ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
+    sleep(2);
 
-  ASSERT_EQ(aclrtMemcpy(output.data(), 64, ptr, 64, ACL_MEMCPY_DEVICE_TO_HOST), 0);
-  ASSERT_EQ(aclrtMemcpy(output_signal.data(), 1, signal_addr, 1, ACL_MEMCPY_DEVICE_TO_HOST), 0);
-  int32_t flag = 0;
-  for (int i = 0; i < 4; i++){
-    if (output[i] != input[i]) flag = 1;
-  }
-  std::cout <<"[ end " <<p_name;
-  for (int i = 0; i < 32; i++) {
-    std::cout << output[i] << " ";
-  }
-  std::cout << std::endl;
-  std::cout << "signal : "<< output_signal[0] << " ";
-  std::cout << std::endl;
-  ASSERT_EQ(flag, 0);
-  ASSERT_EQ(output_signal[0], 6);
+    ASSERT_EQ(aclrtMemcpy(output.data(), 64, ptr, 64, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    ASSERT_EQ(aclrtMemcpy(output_signal.data(), 1, signal_addr, 1, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    int32_t flag = 0;
+    for (int i = 0; i < 4; i++) {
+        if (output[i] != input[i]) {
+            flag = 1;
+        }
+    }
+    std::cout <<"[ end " <<p_name;
+    for (int i = 0; i < 32; i++) {
+        std::cout << output[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "signal : "<< output_signal[0] << " ";
+    std::cout << std::endl;
+    ASSERT_EQ(flag, 0);
+    ASSERT_EQ(output_signal[0], 6);
 }
 
-void host_test_shmem_mem_signal_nbi(int rank_id, int n_ranks, uint64_t local_mem_size, int sig_op) {
-  int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
-  aclrtStream stream;
-  test_init(rank_id, n_ranks, local_mem_size, &stream);
-  ASSERT_NE(stream, nullptr);
-  host_test_putmem_signal_nbi(rank_id, sig_op);
+void host_test_shmem_mem_signal_nbi(int rank_id, int n_ranks, uint64_t local_mem_size, int sig_op)
+{
+    int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
+    aclrtStream stream;
+    test_init(rank_id, n_ranks, local_mem_size, &stream);
+    ASSERT_NE(stream, nullptr);
+    host_test_putmem_signal_nbi(rank_id, sig_op);
 
-  std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
-  test_finalize(stream, device_id);
-  if (::testing::Test::HasFailure()){
-    exit(1);
-  }
+    std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
+    test_finalize(stream, device_id);
+    if (::testing::Test::HasFailure()) {
+        exit(1);
+    }
 }
 
-TEST(TestMemHostApi, TestShmemPutMemSignal){
-  const int process_count = test_gnpu_num;
-  uint64_t local_mem_size = 1024UL * 1024UL * 1024;
-  test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
-    host_test_shmem_mem_signal(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
-  }, local_mem_size, process_count);
+TEST(TestMemHostApi, TestShmemPutMemSignal)
+{
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
+                    host_test_shmem_mem_signal(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
+                    }, local_mem_size, process_count);
 }
 
-TEST(TestMemHostApi, TestShmemPutMemSignalNbi){
-  const int process_count = test_gnpu_num;
-  uint64_t local_mem_size = 1024UL * 1024UL * 1024;
-  test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
-    host_test_shmem_mem_signal_nbi(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
-  }, local_mem_size, process_count);
+TEST(TestMemHostApi, TestShmemPutMemSignalNbi)
+{
+    const int process_count = test_gnpu_num;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    test_mutil_task([](int rank_id, int n_rank, uint64_t local_memsize){
+                    host_test_shmem_mem_signal_nbi(rank_id, n_rank, local_memsize, SHMEM_SIGNAL_SET);
+                    }, local_mem_size, process_count);
 }

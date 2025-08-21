@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,15 +10,15 @@
 #ifndef SHMEMI_DEVICE_RMA_H
 #define SHMEMI_DEVICE_RMA_H
 
-#include <stdint.h>
-#include <stddef.h>  // for ptrdiff_t, size_t
+#include <cstdint>
+#include <cstddef>
 #include <acl/acl.h>
 #include "shmem_api.h"
 #include "host_device/shmem_types.h"
 
 #define SHMEMI_TYPENAME_PREPARE_RMA_P(NAME, TYPE)                                                            \
     void shmemi_prepare_and_post_rma_##NAME##_p(const char *api_name, uint8_t* dst_ptr, TYPE value, int pe,  \
-                                                      aclrtStream acl_strm, size_t block_size);              \
+                                                      aclrtStream acl_strm, size_t block_size)               \
    
 SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_PREPARE_RMA_P)
 #undef SHMEMI_TYPENAME_PREPARE_RMA_P

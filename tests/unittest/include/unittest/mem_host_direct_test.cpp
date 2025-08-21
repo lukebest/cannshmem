@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,12 +12,8 @@
 
 using namespace std;
 
-enum testType {
-    Int=0,
-    Float,
-    Char,
-    Void,
-};
+enum class testType { Int, Float, Char, Void};
+constexpr int Int = 1;
 
 extern int test_gnpu_num;
 extern int test_first_npu;
@@ -29,18 +28,17 @@ public:
     inline HostPutTest() {}
     inline void Init(uint8_t* gva, uint8_t* dev, int64_t rank_, int64_t rank_size_)
     {
-        gva_gm = (float *)gva;
-        dev_gm = (float *)dev;
+        gva_gm = static_cast<float *>(gva);
+        dev_gm = static_cast<float *>(dev);
 
         rank = rank_;
         rank_size = rank_size_;
     }
-    inline void Process(bool is_nbi=false)
+    inline void Process(bool is_nbi = false)
     {
         if (is_nbi) {
             shmem_put_float_mem_nbi(gva_gm, dev_gm, rank_size * 16, rank);
-        }
-        else {
+        } else {
             shmem_put_float_mem(gva_gm, dev_gm, rank_size * 16, rank);
         }
     }
@@ -58,23 +56,19 @@ public:
     inline HostGetTest() {}
     inline void Init(uint8_t* gva, uint8_t* dev, int64_t rank_, int64_t rank_size_)
     {
-        gva_gm = (float *)gva;
-        dev_gm = (float *)dev;
+        gva_gm = static_cast<float *>(gva);
+        dev_gm = static_cast<float *>(dev);
 
         rank = rank_;
         rank_size = rank_size_;
     }
-    inline void Process(bool is_nbi=false)
+    inline void Process(bool is_nbi = false)
     {
         if (is_nbi) {
             for (int i = 0; i < rank_size; i++) {
                 shmem_get_float_mem_nbi(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
-                // TODO: how to sync in host process instead of barrier_all
-                // AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-                // AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
             }
-        }
-        else {
+        } else {
             for (int i = 0; i < rank_size; i++) {
                 shmem_get_float_mem(dev_gm + 16 * i, gva_gm, 16, i % rank_size);
             }
@@ -88,8 +82,6 @@ private:
     int64_t rank_size;
 };
 
-
-/*  host test part (remind host only use put/getmem device API instead of put_int32/float_mem device API)*/
 void host_test_put_float(uint8_t* gva, uint8_t* dev, int64_t rank_, int64_t rank_size_, bool is_nbi = true)
 {
     HostPutTest op;
@@ -104,11 +96,10 @@ void host_test_get_float(uint8_t* gva, uint8_t* dev, int64_t rank_, int64_t rank
     op.Process(is_nbi);
 }
 
-
 static void host_test_put_get_32(uint8_t *gva, uint32_t rank_id, uint32_t rank_size, \
     bool is_nbi = true, testType test_type = testType::Float)
 {
-    int total_size = 16 * (int)rank_size;
+    int total_size = 16 * static_cast<int>(rank_size;)
     size_t input_size = total_size * sizeof(float);
 
     std::vector<float> input(total_size, 0);
@@ -131,7 +122,6 @@ static void host_test_put_get_32(uint8_t *gva, uint32_t rank_id, uint32_t rank_s
     }
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(2);
-    // shmem_barrier_all();
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -150,7 +140,6 @@ static void host_test_put_get_32(uint8_t *gva, uint32_t rank_id, uint32_t rank_s
     }
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(2);
-    // shmem_barrier_all();
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -161,7 +150,7 @@ static void host_test_put_get_32(uint8_t *gva, uint32_t rank_id, uint32_t rank_s
     std::cout << std::endl;
     // for gtest
     int32_t flag = 0;
-    for (int i = 0; i < total_size; i++){
+    for (int i = 0; i < total_size; i++) {
         int stage = i / 16;
         if (input[i] != (stage + 10)) flag = 1;
     }
@@ -184,7 +173,7 @@ void host_test_shmem_mem(int rank_id, int n_ranks, uint64_t local_mem_size, bool
     }
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }

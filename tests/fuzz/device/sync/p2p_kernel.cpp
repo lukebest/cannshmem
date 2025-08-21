@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,7 +10,8 @@
 #include "kernel_operator.h"
 #include "shmem_api.h"
 
-extern "C" SHMEM_GLOBAL void p2p_chain(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
+extern "C" SHMEM_GLOBAL void p2p_chain(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
+{
     shmemx_set_ffts_config(config);
     auto sig_addr = (__gm__ int32_t *)addr;
     int32_t val = *sig_addr;
@@ -43,6 +44,7 @@ extern "C" SHMEM_GLOBAL void p2p_chain(uint64_t config, GM_ADDR addr, int rank_i
     shmem_barrier_all();
 }
 
-void p2p_chain_do(void *stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void p2p_chain_do(void *stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     p2p_chain<<<1, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }

@@ -22,8 +22,9 @@ for lib in ["libshmem.so"]:
     ctypes.CDLL(os.path.join(libs_path, lib))
 
 from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
-    shmem_ptr, my_pe, pe_count, register_decrypt_handler, mte_set_ub_params, team_split_strided, team_split_2d, team_translate_pe, \
-    team_destroy, InitAttr, OpEngineType, shmem_set_attributes, shmem_set_data_op_engine_type, shmem_set_timeout, \
+    shmem_ptr, my_pe, pe_count, register_decrypt_handler, mte_set_ub_params, team_split_strided, team_split_2d, \
+    team_translate_pe, team_destroy, \
+    InitAttr, OpEngineType, shmem_set_attributes, shmem_set_data_op_engine_type, shmem_set_timeout, \
     InitStatus, shmem_calloc, shmem_align, shmem_init_status, get_ffts_config, team_my_pe, team_n_pes, \
     shmem_putmem_nbi, shmem_getmem_nbi, shmem_putmem, shmem_getmem, shmem_putmem_signal, shmem_putmem_signal_nbi, \
     shmem_info_get_version, shmem_info_get_name, \

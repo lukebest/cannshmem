@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
 #include <iostream>
 #include <string>
 #include <vector>
@@ -99,7 +102,7 @@ void host_test_getmem(T* gva, T* dev, int64_t rank_, size_t element_each_rank_, 
 
 static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem_size)
 {
-    int total_size = 16 * (int)rank_size;
+    int total_size = 16 * static_cast<int>(rank_size);
     size_t input_size = total_size * sizeof(float);
 
     std::vector<float> input(total_size, 0);
@@ -165,14 +168,13 @@ void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_
 
 void host_test_int32_g_and_p(int rank_id, int n_ranks, uint64_t local_mem_size)
 {
-    int total_size = (int)n_ranks;
+    int total_size = static_cast<int>(n_ranks);
     size_t input_size = total_size * sizeof(int);
 
-    int *ptr = (int*)shmem_malloc(1024);
+    int *ptr = static_cast<int*>(shmem_malloc(1024));
     shmem_int32_p(ptr, rank_id + 10, rank_id);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(2);
-    // shmem_barrier_all();
 
     int msg;
     ASSERT_EQ(aclrtMemcpy(&msg, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);

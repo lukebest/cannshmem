@@ -22,11 +22,11 @@ namespace shm {
 
 #define DEFAULT_MY_PE (-1)
 #define DEFAULT_N_PES (-1)
-#define DEFAULT_FLAG 0
-#define DEFAULT_ID 0
-#define DEFAULT_TIMEOUT 120
-#define DEFAULT_TEVENT 0
-#define DEFAULT_BLOCK_NUM 1
+
+constexpr int DEFAULT_ID = 0;
+constexpr int DEFAULT_TIMEOUT = 120;
+constexpr int DEFAULT_TEVENT = 0;
+constexpr int DEFAULT_BLOCK_NUM = 1;
 
 // initializer
 #define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                            \
@@ -230,7 +230,8 @@ int32_t shmem_init_status()
     else return SHMEM_STATUS_INVALID;
 }
 
-void shmem_rank_exit(int status){
+void shmem_rank_exit(int status)
+{
     SHM_LOG_DEBUG("shmem_rank_exit is work ,status: " << status);
     exit(status);
 }
@@ -300,6 +301,7 @@ void shmem_info_get_name(char *name)
     name[i] = '\0';
 }
 
-void shmem_global_exit(int status){
+void shmem_global_exit(int status)
+{
     smem_shm_global_exit(shm::g_smem_handle, status);
 }

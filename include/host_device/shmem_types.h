@@ -56,7 +56,7 @@ enum shmem_team_index_t{
 enum data_op_engine_type_t {
     SHMEM_DATA_OP_MTE = 0x01,
     SHMEM_DATA_OP_SDMA = 0x02,
-    SHMEM_DATA_OP_ROCE = 0x03,
+    SHMEM_DATA_OP_ROCE = 0x04,
 };
 
 /**

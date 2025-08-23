@@ -43,12 +43,20 @@ set(CMAKE_C_COMPILER ${CMAKE_COMPILER})
 set(CMAKE_CXX_COMPILER ${CMAKE_COMPILER})
 
 add_compile_options(
+    -D_FORTIFY_SOURCE=2
     -O2 -std=c++17
     -Wno-macro-redefined -Wno-ignored-attributes
     # avoid ascendc interference
     -DL2_CACHE_HINT
     -DTILING_KEY_VAR
+    -fstack-protector-strong
 )
+
+add_link_options(
+    -s
+    -Wl,-z,relro
+    -Wl,-z,now
+    )
 
 set(CMAKE_CCE_COMPILE_OPTIONS
     -xcce

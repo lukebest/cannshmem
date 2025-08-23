@@ -11,12 +11,12 @@
 #include "acl/acl.h"
 #include "shmem_api.h"
 
-using namespace AscendC;
-
 #undef inline
 #include "fp16_t.h"
 #include "bfloat16.h"
 #define inline inline attribute((always_inline))
+
+using namespace AscendC;
 
 using fp16_t = op::fp16_t;
 using bfloat16 = op::bfloat16;

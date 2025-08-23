@@ -22,7 +22,7 @@ target_include_directories(shmem_device
 file(GLOB_RECURSE SHMEM_HOST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/host/*.cpp)
 list(FILTER SHMEM_HOST_FILES EXCLUDE REGEX "python_wrapper")
 add_library(shmem_host OBJECT ${SHMEM_HOST_FILES})
-target_compile_options(shmem_host PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS})
+target_compile_options(shmem_host PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS} -ftrapv)
 target_include_directories(shmem_host
     PUBLIC
     ${PROJECT_SOURCE_DIR}/include/

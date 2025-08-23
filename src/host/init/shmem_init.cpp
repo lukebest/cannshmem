@@ -172,6 +172,9 @@ int32_t check_attr(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("my_rank:" << attributes->my_rank << " and n_ranks: " << attributes->n_ranks <<
             " cannot be less 0 , n_ranks still cannot be equal 0");
         return SHMEM_INVALID_VALUE;
+    } else if (attributes->n_ranks > SHMEM_MAX_RANKS) {
+        SHM_LOG_ERROR("n_ranks: " << attributes->n_ranks << " cannot be more than " << SHMEM_MAX_RANKS);
+        return SHMEM_INVALID_VALUE;
     } else if (attributes->my_rank >= attributes->n_ranks) {
         SHM_LOG_ERROR("n_ranks:" << attributes->n_ranks << " cannot be less than my_rank:" << attributes->my_rank);
         return SHMEM_INVALID_PARAM;
@@ -240,13 +243,12 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
 
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
-    SHMEM_CHECK_RET(shm::shm_out_logger::Instance().set_log_level(shm::g_log_level));
+    SHMEM_CHECK_RET(shmem_set_log_level(shm::ERROR_LEVEL));
     SHMEM_CHECK_RET(shm::check_attr(attributes));
     SHMEM_CHECK_RET(shm::version_compatible());
     SHMEM_CHECK_RET(shm::shmemi_options_init());
 
     SHMEM_CHECK_RET(shm::shmemi_state_init_attr(attributes));
-    SHMEM_CHECK_RET(smem_set_log_level(int(shm::g_log_level)));
     SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes));
     SHMEM_CHECK_RET(shm::update_device_state());
 
@@ -263,6 +265,38 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
 int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler handler)
 {
     return smem_register_decrypt_handler(handler);
+}
+
+int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))
+{
+    shm::shm_out_logger::Instance().set_extern_log_func(func, true);
+    return smem_set_extern_logger(func);
+}
+
+int32_t shmem_set_log_level(int level)
+{
+    // use env first, input level secondly, user may change level from env instead call func
+    const char* in_level = std::getenv("SHMEM_LOG_LEVEL");
+    if (in_level != nullptr) {
+        auto tmp_level = std::string(in_level);
+        if (tmp_level == "DEBUG") {
+            level = shm::DEBUG_LEVEL;
+        } else if (tmp_level == "INFO") {
+            level = shm::INFO_LEVEL;
+        } else if (tmp_level == "WARN") {
+            level = shm::WARN_LEVEL;
+        } else if (tmp_level == "ERROR") {
+            level = shm::ERROR_LEVEL;
+        } else if (tmp_level == "FATAL") {
+            level = shm::FATAL_LEVEL;
+        }
+    }
+    return smem_set_log_level(level);
+}
+
+int32_t shmem_set_conf_store_tls(bool enable, const char *tls_info, const uint32_t tls_info_len)
+{
+    return smem_set_conf_store_tls(enable, tls_info, tls_info_len);
 }
 
 int32_t shmem_finalize()

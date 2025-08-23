@@ -238,10 +238,8 @@ int32_t shmem_team_split_strided(
     my_team.mype = (global_pe - global_pe_start) / global_pe_stride;
 
     if (global_pe < global_pe_start || (global_pe - global_pe_start)  % global_pe_stride || my_team.mype >= pe_size) {
-        SHM_LOG_ERROR("create team failed, mype is invalid, pe_start:" << pe_start << " pe_size:" << pe_size
-                      << " pe_stride:" << pe_stride << " mype:" << my_team.mype << " parent:"
-                      << shm::team_config2string(src_team));
-        return SHMEM_INVALID_PARAM;
+        SHM_LOG_INFO("This PE is not a member of the new team.");
+        return 0;
     }
 
     my_team.start = global_pe_start;

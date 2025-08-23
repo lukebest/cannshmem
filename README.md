@@ -56,9 +56,9 @@ GLIBC >= 2.28
     ```
     出现提示`xxx install success!`则安装成功
 
-shmem 默认开启tls通信加密。如果想关闭，需要启动前手动设置环境变量：
-```
-export SMEM_CONF_STORE_TLS_ENABLE=0
+shmem 默认开启tls通信加密。如果需要关闭，需要调用接口主动关闭：
+```c
+int32_t ret = shmem_set_conf_store_tls(false, null, 0);
 ```
 具体细节详见安全声明章节
 
@@ -74,6 +74,8 @@ bash scripts/build.sh
 ```sh
 bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
 ```
+
+注：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
 
 ## 功能自测用例
 

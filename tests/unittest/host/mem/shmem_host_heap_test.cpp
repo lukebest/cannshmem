@@ -13,13 +13,7 @@
 
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
-
-extern int test_gnpu_num;
-extern int test_first_npu;
-extern const char *test_global_ipport;
-extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count);
-extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
-extern void test_finalize(aclrtStream stream, int device_id);
+#include "unittest_main_test.h"
 
 static uint8_t *const heap_memory_start = (uint8_t *)(ptrdiff_t)0x100000000UL;
 static uint64_t heap_memory_size = 4UL * 1024UL * 1024UL;

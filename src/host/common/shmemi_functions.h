@@ -38,14 +38,14 @@ public:
 inline bool funci::get_real_path(std::string &path)
 {
     if (path.empty() || path.size() > PATH_MAX) {
-        SHM_LOG_ERROR("Failed to get realpath of [" << path << "] as path is invalid");
+        SHM_LOG_ERROR("Failed to get realpath, path is invalid");
         return false;
     }
 
     /* It will allocate memory to store path */
     char *real_path = realpath(path.c_str(), nullptr);
     if (real_path == nullptr) {
-        SHM_LOG_ERROR("Failed to get realpath of [" << path << "] as error " << errno);
+        SHM_LOG_ERROR("Failed to get realpath, error " << errno);
         return false;
     }
 

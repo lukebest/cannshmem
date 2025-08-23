@@ -16,7 +16,7 @@
 #include "shmemi_host_common.h"
 #include "bfloat16.h"
 #include "fp16_t.h"
-#include "../utils/func_type.h"
+#include "func_type.h"
 #include "unittest_main_test.h"
 
 const int input_length = 16;

@@ -102,9 +102,12 @@ void test_shmem_init_invalid_n_ranks(int rank_id, int n_ranks, uint64_t local_me
     EXPECT_EQ(aclInit(nullptr), 0);
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
-    shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
-    status = shmem_init_attr(attributes);
+    status = shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
+
+    status = shmem_init_attr(attributes);
+    EXPECT_EQ(status, SHMEM_INVALID_PARAM);
+
     status = shmem_init_status();
     EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
@@ -212,6 +215,8 @@ void test_shmem_global_exit(int rank_id, int n_ranks, uint64_t local_mem_size) {
   int status = SHMEM_SUCCESS;
   EXPECT_EQ(aclInit(nullptr), 0);
   EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
+  status = shmem_set_conf_store_tls(false, nullptr, 0);
+  EXPECT_EQ(status, 0);
   shmem_init_attr_t* attributes;
   shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
 

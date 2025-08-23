@@ -18,4 +18,6 @@ target_include_directories(shmem_unittest_device PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
     ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device
     ${PROJECT_SOURCE_DIR}/tests/unittest/include
+    ${PROJECT_SOURCE_DIR}/tests/unittest/team/team/
+    ${PROJECT_SOURCE_DIR}/tests/unittest/team/team_allgather/
 )

@@ -43,7 +43,6 @@ set(CMAKE_C_COMPILER ${CMAKE_COMPILER})
 set(CMAKE_CXX_COMPILER ${CMAKE_COMPILER})
 
 add_compile_options(
-    -Xhost-start -ftrapv -Xhost-end
     -D_FORTIFY_SOURCE=2
     -O2 -std=c++17
     -Wno-macro-redefined -Wno-ignored-attributes

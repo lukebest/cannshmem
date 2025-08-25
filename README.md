@@ -74,7 +74,6 @@ bash scripts/build.sh
 ```sh
 bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
 ```
-
 注：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
 
 ## 功能自测用例
@@ -93,6 +92,52 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 # 8卡，ip:port 127.0.0.1:8666，运行所有*Init*用例
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
+
+## python侧test用例
+
+1. 在scripts目录下编译的时候，带上build python的选项
+
+```sh
+bash build.sh -python_extension
+```
+
+2. 在install目录下，source环境变量
+
+```sh
+source set_env.sh
+```
+
+3. 在src/python目录下，进行setup，获取到wheel安装包
+
+```sh
+python3 setup.py bdist_wheel
+```
+
+4. 在src/python/dist目录下，安装wheel包
+
+```sh
+pip3 install shmem-xxx.whl --force-reinstall
+```
+
+5. 设置是否开启TLS认证，默认开启，若关闭TLS认证，请使用如下接口
+
+```python
+import shmem as shm
+shm.set_conf_store_tls(False, "")   # 关闭tls认证
+```
+
+```python
+import shmem as shm
+tls_info = "xxx"
+shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
+```
+
+6. 使用torchrun运行测试demo
+
+```sh
+torchrun --nproco-per-node=k test.py // k为想运行的ranksize
+```
+看到日志中打印出“test.py running success!”即为demo运行成功
 
 ## 安全声明
 [安全声明](docs/security.md)

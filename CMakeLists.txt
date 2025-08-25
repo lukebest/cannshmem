@@ -86,7 +86,7 @@ link_directories(
     ${ASCEND_DRIVER_PATH}/lib64/driver
 )
 
-link_libraries(runtime stdc++ ascendcl m tiling_api platform c_sec dl nnopbase ascend_hal)
+link_libraries(runtime stdc++ ascendcl m tiling_api platform c_sec dl nnopbase ascend_hal pthread)
 
 # 添加子目录
 add_subdirectory(src)

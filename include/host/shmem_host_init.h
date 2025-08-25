@@ -30,7 +30,7 @@ SHMEM_HOST_API int shmem_init_status();
  * @param my_rank            [in] Current rank
  * @param n_ranks            [in] Total number of ranks
  * @param local_mem_size      [in] The size of shared memory currently occupied by current rank
- * @param ip_port            [in] The ip and port number of the sever, e.g. tcp://ip:port
+ * @param ip_port            [in] The ip and port number of the sever, e.g. tcp://ip:port Security warning: ip_port should be a null-terminated C string, unless it may result in out-of-bounds memory access
  * @param attributes        [out] Pointer to the default attributes used for initialization
  * @return Returns 0 on success or an error code on failure
  */

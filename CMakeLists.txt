@@ -31,8 +31,9 @@ else()
 endif()
 
 option(USE_UNIT_TEST "USE_UNIT_TEST" OFF)
+option(USE_EXAMPLES "USE_EXAMPLES" OFF)
 message(STATUS "USE_UNIT_TEST:${USE_UNIT_TEST}")
-
+message(STATUS "USE_EXAMPLES:${USE_EXAMPLES}")
 option(USE_FUZZ_TEST "USE_FUZZ_TEST" OFF)
 message(STATUS "USE_FUZZ_TEST:${USE_FUZZ_TEST}")
 
@@ -81,7 +82,7 @@ link_directories(
     ${ASCEND_DRIVER_PATH}/lib64/driver
 )
 
-link_libraries(runtime stdc++ ascendcl m tiling_api platform c_sec dl nnopbase ascend_hal)
+link_libraries(runtime stdc++ ascendcl m tiling_api platform c_sec dl nnopbase ascend_hal pthread)
 
 # 添加子目录
 add_subdirectory(src)
@@ -94,4 +95,6 @@ if(USE_FUZZ_TEST)
     add_subdirectory(tests/fuzz)
 endif()
 
-add_subdirectory(examples)
+if(USE_EXAMPLES)
+    add_subdirectory(examples)
+endif()

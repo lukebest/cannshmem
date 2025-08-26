@@ -23,6 +23,7 @@ namespace shm {
 namespace {
 
 static py::function g_py_decrypt_func;
+static py::function g_py_logger_func;
 static constexpr size_t MAX_CIPHER_LEN (10 * 1024 * 1024);
 
 inline std::string get_connect_url()
@@ -135,6 +136,19 @@ int32_t register_python_decrypt_handler(py::function py_decrypt_func)
     g_py_decrypt_func = py_decrypt_func;
     return shmem_register_decrypt_handler(py_decrypt_handler_wrapper);
 }
+
+static void bridge_logger(int level, const char* msg) {
+    if (g_py_logger_func) {
+        py::gil_scoped_acquire acquire;
+        g_py_logger_func(level, msg);
+    }
+}
+
+int32_t shmem_set_extern_logger_py(py::function pyfunc) {
+    g_py_logger_func = pyfunc;
+    return shmem_set_extern_logger(&bridge_logger);
+}
+
 int32_t shmem_set_conf_store_tls_info(bool enable, std::string &tls_info)
 {
     return shmem_set_conf_store_tls(enable, tls_info.c_str(), tls_info.size());
@@ -705,5 +719,19 @@ Arguments:
     team(int): team id
 Returns:
     On success, returns total number of PEs in the specified team. On error, -1 is returned.
+    )");
+
+    m.def("set_log_level", &shmem_set_log_level, py::call_guard<py::gil_scoped_release>(), py::arg("level"), R"(
+set all module log on level;
+
+Arguments:
+    level(int): the status which is provided to exit();
+    )");
+
+    m.def("set_extern_logger", &shm::shmem_set_extern_logger_py,py::call_guard<py::gil_scoped_release>(), py::arg("func"), R"(
+set log function of all module;
+
+Arguments:
+    func(void (*func)(int level, const char *msg)): function of log;
     )");
 }

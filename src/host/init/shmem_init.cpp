@@ -55,7 +55,6 @@ shmem_init_attr_t g_attr;
 static smem_shm_t g_smem_handle = nullptr;
 static bool g_attr_init = false;
 static char* g_ipport = nullptr;
-static shm::log_level g_log_level = shm::log_level::INFO_LEVEL;
 
 int32_t version_compatible()
 {
@@ -291,6 +290,7 @@ int32_t shmem_set_log_level(int level)
             level = shm::FATAL_LEVEL;
         }
     }
+    shm::shm_out_logger::Instance().set_log_level(level);
     return smem_set_log_level(level);
 }
 
@@ -310,6 +310,7 @@ int32_t shmem_finalize()
         }
         shm::g_smem_handle = nullptr;
     }
+    smem_shm_uninit(0);
     smem_uninit();
     return SHMEM_SUCCESS;
 }

@@ -290,7 +290,7 @@ int32_t shmem_set_log_level(int level)
             level = shm::FATAL_LEVEL;
         }
     }
-    shm::shm_out_logger::Instance().set_log_level(level);
+    shm::shm_out_logger::Instance().set_log_level(static_cast<shm::log_level>(level));
     return smem_set_log_level(level);
 }
 

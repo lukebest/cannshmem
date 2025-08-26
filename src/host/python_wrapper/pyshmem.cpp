@@ -54,20 +54,11 @@ inline std::string get_connect_url()
     return std::string("tcp://").append(address).append(":").append(std::to_string(port_long));
 }
 
-int shmem_initialize(int rank, int world_size, int64_t mem_size)
+int shmem_initialize(shmem_init_attr_t &attributes)
 {
-    shmem_init_attr_t attribute{
-        rank, world_size, "", static_cast<uint64_t>(mem_size), {0, SHMEM_DATA_OP_MTE, 120, 120, 120}};
-    auto url = get_connect_url();
-    if (url.empty()) {
-        std::cerr << "cannot get store connect URL(" << url << ") from ENV." << std::endl;
-        return -1;
-    }
-
-    attribute.ip_port = url.c_str();
-    auto ret = shmem_init_attr(&attribute);
+    auto ret = shmem_init_attr(&attributes);
     if (ret != 0) {
-        std::cerr << "initialize with mype: " << rank << ", npes: " << world_size << " failed: " << ret;
+        std::cerr << "initialize shmem failed, ret: " << ret;
         return ret;
     }
 
@@ -205,14 +196,11 @@ PYBIND11_MODULE(_pyshmem, m)
     DefineShmemAttr(m);
     DefineShmemInitStatus(m);
 
-    m.def("shmem_init", &shm::shmem_initialize, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
-          py::arg("npes"), py::arg("mem_size"), R"(
+    m.def("shmem_init", &shm::shmem_initialize, py::call_guard<py::gil_scoped_release>(), py::arg("attributes"), R"(
 Initialize share memory module.
 
 Arguments:
-    mype(int): local processing element index, range in [0, npes).
-    npes(int): total count of processing elements.
-    mem_size(int): memory size for each processing element in bytes.
+    attributes(InitAttr): attributes used to init shmem.
 Returns:
     returns zero on success. On error, -1 is returned.
     )");

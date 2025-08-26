@@ -23,7 +23,7 @@
 支持通过接口 `shmem_set_conf_store_tls` 配置TLS秘钥证书等，进行tls安全连接，建议用户开启TLS加密配置，保证通信通信安全。系统启动后，建议删除本地秘钥证书等信息敏感文件。调用该接口时，传入的文件路径不能包含英文分号、逗号、冒号。
 支持通过环境变量 `ACCLINK_CHECK_PERIOD_HOURS`和`ACCLINK_CERT_CHECK_AHEAD_DAYS` 配置证书检查周期与证书过期预警时间
 
-使用接口里子：
+使用接口例子：
 ```c
 // 配置关闭tls:
 smem_set_conf_store_tls(false, nullptr, 0);

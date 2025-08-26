@@ -14,6 +14,9 @@ def decypt_handler_test(input_cipher):
 def run_register_decrypt_tests():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:
@@ -47,6 +50,9 @@ def run_set_tls_info():
 def run_tests():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:
@@ -73,6 +79,9 @@ def run_tests():
 def exit_test():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:

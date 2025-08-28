@@ -14,8 +14,6 @@
 #include "internal/device/shmemi_device_common.h"
 #include "device/shmem_device_team.h"
 
-constexpr int ub_limit = 192 * 1024;
-
 /**
  * @brief Translate an local symmetric address to remote symmetric address on the specified PE.
  *

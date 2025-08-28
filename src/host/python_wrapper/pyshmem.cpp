@@ -86,11 +86,12 @@ int32_t set_timeout(shmem_init_attr_t &attributes, uint32_t value)
 int32_t shmem_set_attributes(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size, const char *ip_port,
                             shmem_init_attr_t &attributes)
 {
-    shmem_init_attr_t *attr_ptr = &attributes;
+    shmem_init_attr_t *attr_ptr = nullptr;
     int ret = shmem_set_attr(my_rank, n_ranks, local_mem_size, ip_port, &attr_ptr);
     if (ret != 0) {
         throw std::runtime_error("set shmem attributes failed");
     }
+    attributes = *attr_ptr;
     return ret;
 }
 

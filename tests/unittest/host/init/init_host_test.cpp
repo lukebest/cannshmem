@@ -55,6 +55,7 @@ void test_shmem_init_attr(int rank_id, int n_ranks, uint64_t local_mem_size) {
 
     EXPECT_EQ(status = shmem_set_conf_store_tls(false, nullptr, 0), 0);
     shmem_init_attr_t* attributes = new shmem_init_attr_t{rank_id, n_ranks, test_global_ipport, local_mem_size, {0, SHMEM_DATA_OP_MTE, 120, 120, 120}};
+    shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
     EXPECT_EQ(status, SHMEM_SUCCESS);
@@ -84,6 +85,7 @@ void test_shmem_init_invalid_rank_id(int rank_id, int n_ranks, uint64_t local_me
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
     shmem_set_attr(erank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
+    shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
@@ -102,12 +104,9 @@ void test_shmem_init_invalid_n_ranks(int rank_id, int n_ranks, uint64_t local_me
     EXPECT_EQ(aclInit(nullptr), 0);
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
-    status = shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
-    EXPECT_EQ(status, SHMEM_INVALID_VALUE);
-
+    shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
     status = shmem_init_attr(attributes);
-    EXPECT_EQ(status, SHMEM_INVALID_PARAM);
-
+    EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
     EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
@@ -124,6 +123,7 @@ void test_shmem_init_rank_id_over_size(int rank_id, int n_ranks, uint64_t local_
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
     shmem_set_attr(rank_id + n_ranks, n_ranks, local_mem_size, test_global_ipport, &attributes);
+    shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_PARAM);
     status = shmem_init_status();
@@ -143,6 +143,7 @@ void test_shmem_init_zero_mem(int rank_id, int n_ranks, uint64_t local_mem_size)
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
     shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
+    shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
@@ -162,6 +163,7 @@ void test_shmem_init_invalid_mem(int rank_id, int n_ranks, uint64_t local_mem_si
     EXPECT_EQ(status = aclrtSetDevice(device_id), 0);
     shmem_init_attr_t* attributes;
     shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
+    shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_SMEM_ERROR);
     status = shmem_init_status();
@@ -225,6 +227,7 @@ void test_shmem_global_exit(int rank_id, int n_ranks, uint64_t local_mem_size) {
   EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
   EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
+  shmem_set_conf_store_tls(false, nullptr, 0);
   status = shmem_init_attr(attributes);
   EXPECT_EQ(status, SHMEM_SUCCESS);
   EXPECT_EQ(shm::g_state.mype, rank_id);

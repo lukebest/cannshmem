@@ -3,6 +3,7 @@ SHMEM
 
 ## 介绍
 本系统主要面向昇腾平台上的模型和算子开发者，提供便携易用的多机多卡内存访问方式，方便用户开发在卡间同步数据，加速通信或通算融合类算子开发。  
+详细资料请参考[SHMEM](https://shmem-doc.pages.dev/)
 
 ## 软件架构
 共享内存库接口主要分为host和device接口部分：
@@ -31,7 +32,6 @@ cmake >= 3.19
 GLIBC >= 2.28
 
 ## 快速上手
-详细资料请参考[SHMEM](https://shmem-doc.pages.dev/)
  - 设置CANN环境变量<br>
     ```sh
     # root用户安装（默认路径）
@@ -63,7 +63,7 @@ export SMEM_CONF_STORE_TLS_ENABLE=0
 具体细节详见安全声明章节
 
 执行一个样例matmul_allreduce算子。  
-1.在shmem/目录编译:
+1.在源码shmem/目录编译:
 
 ```sh
 bash scripts/build.sh
@@ -91,6 +91,12 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 # 8卡，ip:port 127.0.0.1:8666，运行所有*Init*用例
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
+
+## 文档介绍
+- [api_demo](docs/api_demo.md) - api调用示例
+- [example](docs/example.md) - AllGather算子demo
+- [related_scripts](docs/related_scripts.md) - 相关脚本介绍
+- [Troubleshooting_FAQs](docs/Troubleshooting_FAQs.md) - 使用限制&常见问题
 
 ## 安全声明
 [安全声明](docs/security.md)

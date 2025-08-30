@@ -212,6 +212,11 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
         return SHMEM_INVALID_PARAM;
     }
     // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
+    if (ip_port == nullptr) {
+        SHM_LOG_ERROR("my_rank:" << my_rank << " ip_port is NULL!");
+        return SHMEM_INVALID_PARAM;
+    }
+    // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
     size_t ip_len = strlen(ip_port);
     shm::g_ipport = new (std::nothrow) char[ip_len + 1];
     if (shm::g_ipport == nullptr) {

@@ -29,6 +29,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -ranks)
             if [ -n "$2" ]; then
+                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo "Error: -ranks requires a numeric value."
+                    exit 1
+                fi
                 RANK_SIZE="$2"
                 if [ "$GNPU_NUM" -gt "$RANK_SIZE" ]; then
                     GNPU_NUM="$RANK_SIZE"
@@ -42,6 +46,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -frank)
             if [ -n "$2" ]; then
+                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo "Error: -frank requires a numeric value."
+                    exit 1
+                fi
                 FIRST_RANK="$2"
                 shift 2
             else
@@ -51,8 +59,13 @@ while [[ $# -gt 0 ]]; do
             ;;
         -ipport)
             if [ -n "$2" ]; then
-                IPPORT="$2"
-                shift 2
+                if [[ "$2" =~ ^[a-zA-z0-9.:/_-]+$ ]]; then
+                    IPPORT="$2"
+                    shift 2
+                else
+                    echo "Error: Invalid -ipport format, only alphanumeric and :/_- allowed"
+                    exit 1
+                fi
             else
                 echo "Error: -ipport requires a value."
                 exit 1
@@ -60,6 +73,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -gnpus)
             if [ -n "$2" ]; then
+                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo "Error: -gnpus requires a numeric value."
+                    exit 1
+                fi
                 GNPU_NUM="$2"
                 shift 2
             else
@@ -69,6 +86,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -fnpu)
             if [ -n "$2" ]; then
+                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo "Error: -fnpu requires a numeric value."
+                    exit 1
+                fi
                 FIRST_NPU="$2"
                 shift 2
             else
@@ -78,6 +99,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -test_filter)
             if [ -n "$2" ]; then
+                FILTERED_VALUE=$(echo "$2" | sed 's/[;&|]*//g')
+                if [ -z "$FILTERED_VALUE" ]; then
+                    echo "Invalid test_filter value"
+                    exit 1
+                fi
                 TEST_FILTER="*$2*"
                 shift 2
             else

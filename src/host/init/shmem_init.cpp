@@ -134,7 +134,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         } else {
             g_state.sdma_heap_base[i] = NULL;
         }
-        if (reach_info & SMEMS_DATA_OP_ROCE) {
+        if (reach_info & SMEMS_DATA_OP_RDMA) {
             g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         } else {
             g_state.roce_heap_base[i] = NULL;

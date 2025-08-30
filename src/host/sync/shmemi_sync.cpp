@@ -23,23 +23,27 @@ extern "C" int rtGetC2cCtrlAddr(uint64_t *config, uint32_t *len);
 namespace shm {
 static uint64_t ffts_config;
 
-int32_t shmemi_sync_init() {
+int32_t shmemi_sync_init()
+{
     uint32_t len;
     return rtGetC2cCtrlAddr(&ffts_config, &len);
 }
 
-} // namespace
+}  // namespace shm
 
-uint64_t shmemx_get_ffts_config() {
+uint64_t shmemx_get_ffts_config()
+{
     return shm::ffts_config;
 }
 
-void shmem_barrier(shmem_team_t tid) {
+void shmem_barrier(shmem_team_t tid)
+{
     // using default stream to do barrier
     shmemi_barrier_on_stream(tid, nullptr);
 }
 
-void shmem_barrier_all() {
+void shmem_barrier_all()
+{
     shmem_barrier(SHMEM_TEAM_WORLD);
 }
 

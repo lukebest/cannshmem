@@ -28,7 +28,7 @@ THIRD_PARTY_DIR=$PROJECT_ROOT/3rdparty
 mkdir -p $THIRD_PARTY_DIR
 RELEASE_DIR=$PROJECT_ROOT/ci/release
 
-BUILD_TYPE=Release
+BUILD_TYPE=RELEASE
 PYEXPAND_TYPE=OFF
 
 COMPILE_OPTIONS=""
@@ -87,7 +87,7 @@ EOF
     sed -i "s!VERSION_PLACEHOLDER!${VERSION}!" $OUTPUT_DIR/install.sh
     sed -i "s!VERSION_PLACEHOLDER!${VERSION}!" $OUTPUT_DIR/scripts/uninstall.sh
 
-    chmod +x $OUTPUT_DIR/*
+    chmod +x $OUTPUT_DIR/*.sh
 
     makeself_dir=${ASCEND_HOME_PATH}/toolkit/tools/op_project_templates/ascendc/customize/cmake/util/makeself/
     ${makeself_dir}/makeself.sh --header ${makeself_dir}/makeself-header.sh \

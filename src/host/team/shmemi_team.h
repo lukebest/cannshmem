@@ -18,6 +18,6 @@ int32_t shmemi_team_init(int32_t rank, int32_t size);
 
 int32_t shmemi_team_finalize();
 
-}
+}  // namespace shm
 
 #endif  // SHMEMI_TEAM_H

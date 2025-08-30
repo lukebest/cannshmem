@@ -10,6 +10,7 @@
 #include "kernel_operator.h"
 #include "device/shmem_device_def.h"
 #include "shmem_api.h"
+#include "team_allgather_kernel.h"
 
 extern "C" __global__ __aicore__ void device_team_all_gather_test(uint64_t config, GM_ADDR gva, int team_id)
 {

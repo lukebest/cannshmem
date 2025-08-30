@@ -13,20 +13,13 @@
 
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
-
-extern int test_gnpu_num;
-extern int test_first_npu;
-extern const char *test_global_ipport;
-extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count);
-extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
-extern void test_finalize(aclrtStream stream, int device_id);
+#include "unittest_main_test.h"
 
 static uint8_t *const heap_memory_start = (uint8_t *)(ptrdiff_t)0x100000000UL;
 static uint64_t heap_memory_size = 4UL * 1024UL * 1024UL;
 static aclrtStream heap_memory_stream;
 
 class ShareMemoryManagerTest : public testing::Test {
-
 protected:
     void Initialize(int rank_id, int n_ranks, uint64_t local_mem_size)
     {
@@ -126,7 +119,7 @@ TEST_F(ShareMemoryManagerTest, calloc_zero)
             aclrtStream stream;
             test_init(rank_id, n_ranks, local_mem_size, &stream);
             const size_t nmemb = 16;
-            auto ptr = static_cast<uint32_t*>(shmem_calloc(nmemb, 0UL));
+            auto ptr = static_cast<uint32_t *>(shmem_calloc(nmemb, 0UL));
             EXPECT_EQ(nullptr, ptr);
             test_finalize(stream, device_id);
         },
@@ -144,11 +137,13 @@ TEST_F(ShareMemoryManagerTest, calloc_one_piece_success)
             test_init(rank_id, n_ranks, local_mem_size, &stream);
             const size_t nmemb = 16;
             const size_t elemSize = sizeof(uint32_t);
-            auto ptr = static_cast<uint32_t*>(shmem_calloc(nmemb, elemSize));
+            auto ptr = static_cast<uint32_t *>(shmem_calloc(nmemb, elemSize));
             EXPECT_NE(nullptr, ptr);
             uint32_t *ptr_host;
-            ASSERT_EQ(aclrtMallocHost((void**)&ptr_host, sizeof(uint32_t) * nmemb), 0);
-            ASSERT_EQ(aclrtMemcpy(ptr_host, sizeof(uint32_t) * nmemb, ptr, sizeof(uint32_t) * nmemb, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+            ASSERT_EQ(aclrtMallocHost((void **)&ptr_host, sizeof(uint32_t) * nmemb), 0);
+            ASSERT_EQ(aclrtMemcpy(ptr_host, sizeof(uint32_t) * nmemb, ptr, sizeof(uint32_t) * nmemb,
+                                  ACL_MEMCPY_DEVICE_TO_HOST),
+                      0);
             for (size_t i = 0; i < nmemb; ++i) {
                 EXPECT_EQ(ptr_host[i], 0u);
             }
@@ -170,7 +165,7 @@ TEST_F(ShareMemoryManagerTest, calloc_full_space_success)
             auto ptr = shmem_calloc(nmemb, heap_memory_size / nmemb);
             EXPECT_NE(nullptr, ptr);
             uint32_t *ptr_host;
-            ASSERT_EQ(aclrtMallocHost((void**)&ptr_host, sizeof(uint32_t) * nmemb), 0);
+            ASSERT_EQ(aclrtMallocHost((void **)&ptr_host, sizeof(uint32_t) * nmemb), 0);
             ASSERT_EQ(aclrtMemcpy(ptr_host, heap_memory_size, ptr, heap_memory_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
             for (size_t i = 0; i < nmemb; ++i) {
                 EXPECT_EQ(ptr_host[i], 0u);

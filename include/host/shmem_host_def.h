@@ -33,17 +33,17 @@ extern "C" {
 * |uint64     | uint64    |
 * |char       | char      |
 */
-#define SHMEM_TYPE_FUNC(FUNC)        \
-    FUNC(float, float);              \
-    FUNC(double, double);            \
-    FUNC(int8, int8_t);              \
-    FUNC(int16, int16_t);            \
-    FUNC(int32, int32_t);            \
-    FUNC(int64, int64_t);            \
-    FUNC(uint8, uint8_t);            \
-    FUNC(uint16, uint16_t);          \
-    FUNC(uint32, uint32_t);          \
-    FUNC(uint64, uint64_t);          \
+#define SHMEM_TYPE_FUNC(FUNC) \
+    FUNC(float, float);       \
+    FUNC(double, double);     \
+    FUNC(int8, int8_t);       \
+    FUNC(int16, int16_t);     \
+    FUNC(int32, int32_t);     \
+    FUNC(int64, int64_t);     \
+    FUNC(uint8, uint8_t);     \
+    FUNC(uint16, uint16_t);   \
+    FUNC(uint32, uint32_t);   \
+    FUNC(uint64, uint64_t);   \
     FUNC(char, char)
 // FUNC(half, half);
 // FUNC(bfloat16, bfloat16_t);
@@ -54,7 +54,7 @@ extern "C" {
 */
 /// \def SHMEM_HOST_API
 /// \brief A macro that identifies a function on the host side.
-#define SHMEM_HOST_API   __attribute__((visibility("default")))
+#define SHMEM_HOST_API __attribute__((visibility("default")))
 
 /// \def SHMEM_XXX_VERSION
 /// \brief macros that define current version info
@@ -64,7 +64,7 @@ extern "C" {
 #define SHMEM_VENDOR_MAJOR_VER 1
 #define SHMEM_VENDOR_MINOR_VER 1
 #define SHMEM_VENDOR_PATCH_VER 1
-/**@} */ // end of group_macros
+/**@} */  // end of group_macros
 
 /**
  * @defgroup group_enums Enumerations
@@ -75,25 +75,25 @@ extern "C" {
  * @brief Error code for the SHMEM library.
 */
 enum shmem_error_code_t : int {
-    SHMEM_SUCCESS = 0,          ///< Task execution was successful.
-    SHMEM_INVALID_PARAM = -1,   ///< There is a problem with the parameters.
-    SHMEM_INVALID_VALUE = -2,   ///< There is a problem with the range of the value of the parameter.
-    SHMEM_SMEM_ERROR = -3,      ///< There is a problem with SMEM.
-    SHMEM_INNER_ERROR = -4,     ///< This is a problem caused by an internal error.
-    SHMEM_NOT_INITED = -5,      ///< This is a problem caused by an uninitialization.
+    SHMEM_SUCCESS = 0,         ///< Task execution was successful.
+    SHMEM_INVALID_PARAM = -1,  ///< There is a problem with the parameters.
+    SHMEM_INVALID_VALUE = -2,  ///< There is a problem with the range of the value of the parameter.
+    SHMEM_SMEM_ERROR = -3,     ///< There is a problem with SMEM.
+    SHMEM_INNER_ERROR = -4,    ///< This is a problem caused by an internal error.
+    SHMEM_NOT_INITED = -5,     ///< This is a problem caused by an uninitialization.
 };
 
 /**
  * @brief The state of the SHMEM library initialization.
 */
-enum shmem_init_status_t{
-    SHMEM_STATUS_NOT_INITIALIZED = 0,    ///< Uninitialized.
-    SHMEM_STATUS_SHM_CREATED,           ///< Shared memory heap creation is complete.
-    SHMEM_STATUS_IS_INITIALIZED,         ///< Initialization is complete.
-    SHMEM_STATUS_INVALID = INT_MAX,     ///< Invalid status code.
+enum shmem_init_status_t {
+    SHMEM_STATUS_NOT_INITIALIZED = 0,  ///< Uninitialized.
+    SHMEM_STATUS_SHM_CREATED,          ///< Shared memory heap creation is complete.
+    SHMEM_STATUS_IS_INITIALIZED,       ///< Initialization is complete.
+    SHMEM_STATUS_INVALID = INT_MAX,    ///< Invalid status code.
 };
 
-/**@} */ // end of group_enums
+/**@} */  // end of group_enums
 
 /**
  * @defgroup group_structs Structs
@@ -129,11 +129,11 @@ typedef struct {
  * - shmem_init_optional_attr_t option_attr: Optional Parameters.
 */
 typedef struct {
-    int my_rank;      
-    int n_ranks;  
-    const char* ip_port; 
-    uint64_t local_mem_size; 
-    shmem_init_optional_attr_t option_attr;  
+    int my_rank;
+    int n_ranks;
+    const char *ip_port;
+    uint64_t local_mem_size;
+    shmem_init_optional_attr_t option_attr;
 } shmem_init_attr_t;
 
 /**
@@ -144,9 +144,8 @@ typedef struct {
  * @param plainText        [out] the decrypted text(private password)
  * @param plaintextLen     [out] the length of plainText
  */
-typedef int (*shmem_decrypt_handler)(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen);
-
-/**@} */ // end of group_structs
+typedef int (*shmem_decrypt_handler)(const char *cipherText, size_t cipherTextLen, char *plainText,
+                                     size_t &plainTextLen);
 
 #ifdef __cplusplus
 }

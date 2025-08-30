@@ -85,8 +85,8 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
     shmem_team_world.team_idx = SHMEM_TEAM_WORLD;
     shmem_team_world.start = 0;
     shmem_team_world.stride = 1;
-    shmem_team_world.size = size;       // TODO state->npes
-    shmem_team_world.mype = rank;       // TODO state->mype
+    shmem_team_world.size = size;
+    shmem_team_world.mype = rank;
     g_team_mask |= 1ULL << SHMEM_TEAM_WORLD;
     SHMEM_CHECK_RET(device_team_update(SHMEM_TEAM_WORLD, &shmem_team_world));
 

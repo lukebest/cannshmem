@@ -15,6 +15,6 @@
 namespace shm {
 int32_t memory_manager_initialize(void *base, uint64_t size);
 void memory_manager_destroy();
-}
+}  // namespace shm
 
 #endif  // SHMEMI_MM_H

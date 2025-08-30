@@ -29,24 +29,24 @@ namespace shm {
 #define DEFAULT_BLOCK_NUM 1
 
 // initializer
-#define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                            \
-    {                                                                                 \
-        (1 << 16) + sizeof(shmemi_device_host_state_t),  /* version */                     \
-            (DEFAULT_MY_PE),                           /* mype */                       \
-            (DEFAULT_N_PES),                           /* npes */                       \
-            NULL,                                    /* heap_base */                   \
-            {NULL},                                  /* p2p_heap_base */                \
-            {NULL},                                  /* sdma_heap_base */               \
-            {NULL},                                  /* roce_heap_base */               \
-            SIZE_MAX,                                /* heap_size */                   \
-            {NULL},                                  /* team_pools */                  \
-            0,                                       /* sync_pool */                  \
-            0,                                       /* sync_counter */                \
-            0,                                       /* core_sync_pool */             \
-            0,                                       /* core_sync_counter */          \
-            false,                                   /* shmem_is_shmem_initialized */ \
-            false,                                   /* shmem_is_shmem_created */     \
-            {0, 16 * 1024, 0},                       /* shmem_mte_config */           \
+#define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                              \
+    {                                                                                    \
+        (1 << 16) + sizeof(shmemi_device_host_state_t), /* version */                    \
+            (DEFAULT_MY_PE),                            /* mype */                       \
+            (DEFAULT_N_PES),                            /* npes */                       \
+            NULL,                                       /* heap_base */                  \
+            {NULL},                                     /* p2p_heap_base */              \
+            {NULL},                                     /* sdma_heap_base */             \
+            {NULL},                                     /* roce_heap_base */             \
+            SIZE_MAX,                                   /* heap_size */                  \
+            {NULL},                                     /* team_pools */                 \
+            0,                                          /* sync_pool */                  \
+            0,                                          /* sync_counter */               \
+            0,                                          /* core_sync_pool */             \
+            0,                                          /* core_sync_counter */          \
+            false,                                      /* shmem_is_shmem_initialized */ \
+            false,                                      /* shmem_is_shmem_created */     \
+            {0, 16 * 1024, 0},                          /* shmem_mte_config */           \
     }
 
 shmemi_device_host_state_t g_state = SHMEM_DEVICE_HOST_STATE_INITIALIZER;
@@ -54,7 +54,7 @@ shmemi_host_state_t g_state_host = {nullptr, DEFAULT_TEVENT, DEFAULT_BLOCK_NUM};
 shmem_init_attr_t g_attr;
 static smem_shm_t g_smem_handle = nullptr;
 static bool g_attr_init = false;
-static char* g_ipport = nullptr;
+static char *g_ipport = nullptr;
 
 int32_t version_compatible()
 {
@@ -101,8 +101,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("smem_shm_config_init Failed");
         return SHMEM_SMEM_ERROR;
     }
-    status = smem_shm_init(attributes->ip_port, attributes->n_ranks, attributes->my_rank, device_id,
-             &config);
+    status = smem_shm_init(attributes->ip_port, attributes->n_ranks, attributes->my_rank, device_id, &config);
     if (status != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("smem_shm_init Failed");
         return SHMEM_SMEM_ERROR;
@@ -113,28 +112,29 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     config.controlOperationTimeout = attributes->option_attr.control_operation_timeout;
 
     g_smem_handle = smem_shm_create(DEFAULT_ID, attributes->n_ranks, attributes->my_rank, g_state.heap_size,
-                  static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type),DEFAULT_FLAG, &gva);
+                                    static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type),
+                                    DEFAULT_FLAG, &gva);
 
     if (g_smem_handle == nullptr || gva == nullptr) {
         SHM_LOG_ERROR("smem_shm_create Failed");
         return SHMEM_SMEM_ERROR;
     }
-    g_state.heap_base = (void *) ((uintptr_t) gva + g_state.heap_size * attributes->my_rank);
+    g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * attributes->my_rank);
     uint32_t reach_info = 0;
     for (int32_t i = 0; i < g_state.npes; i++) {
         status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
         if (reach_info & SMEMS_DATA_OP_MTE) {
-            g_state.p2p_heap_base[i] = (void *) ((uintptr_t) gva + g_state.heap_size * i);
+            g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         } else {
             g_state.p2p_heap_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_SDMA) {
-            g_state.sdma_heap_base[i] = (void *) ((uintptr_t) gva + g_state.heap_size * i);
+            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         } else {
             g_state.sdma_heap_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_ROCE) {
-            g_state.roce_heap_base[i] = (void *) ((uintptr_t) gva + g_state.heap_size * i);
+            g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         } else {
             g_state.roce_heap_base[i] = NULL;
         }
@@ -162,14 +162,14 @@ int32_t update_device_state()
     if (!g_state.is_shmem_created) {
         return SHMEM_NOT_INITED;
     }
-    return smem_shm_set_extra_context(g_smem_handle, (void *) &g_state, sizeof(shmemi_device_host_state_t));
+    return smem_shm_set_extra_context(g_smem_handle, (void *)&g_state, sizeof(shmemi_device_host_state_t));
 }
 
 int32_t check_attr(shmem_init_attr_t *attributes)
 {
     if ((attributes->my_rank < 0) || (attributes->n_ranks <= 0)) {
-        SHM_LOG_ERROR("my_rank:" << attributes->my_rank << " and n_ranks: " << attributes->n_ranks <<
-            " cannot be less 0 , n_ranks still cannot be equal 0");
+        SHM_LOG_ERROR("my_rank:" << attributes->my_rank << " and n_ranks: " << attributes->n_ranks
+                                 << " cannot be less 0 , n_ranks still cannot be equal 0");
         return SHMEM_INVALID_VALUE;
     } else if (attributes->n_ranks > SHMEM_MAX_RANKS) {
         SHM_LOG_ERROR("n_ranks: " << attributes->n_ranks << " cannot be more than " << SHMEM_MAX_RANKS);
@@ -184,7 +184,7 @@ int32_t check_attr(shmem_init_attr_t *attributes)
     return SHMEM_SUCCESS;
 }
 
-} // namespace shm
+}  // namespace shm
 
 int32_t shmem_set_data_op_engine_type(shmem_init_attr_t *attributes, data_op_engine_type_t value)
 {
@@ -217,7 +217,7 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
     if (shm::g_ipport == nullptr) {
         SHM_LOG_ERROR("my_rank:" << my_rank << " failed to allocate IP port string!");
         return SHMEM_INNER_ERROR;
-    } 
+    }
     std::copy(ip_port, ip_port + ip_len + 1, shm::g_ipport);
     if (shm::g_ipport == nullptr) {
         SHM_LOG_ERROR("my_rank:" << my_rank << " shm::g_ipport is nullptr!");
@@ -235,13 +235,18 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
 
 int32_t shmem_init_status()
 {
-    if (!shm::g_state.is_shmem_created) return SHMEM_STATUS_NOT_INITIALIZED;
-    else if (!shm::g_state.is_shmem_initialized) return SHMEM_STATUS_SHM_CREATED;
-    else if (shm::g_state.is_shmem_initialized) return SHMEM_STATUS_IS_INITIALIZED;
-    else return SHMEM_STATUS_INVALID;
+    if (!shm::g_state.is_shmem_created)
+        return SHMEM_STATUS_NOT_INITIALIZED;
+    else if (!shm::g_state.is_shmem_initialized)
+        return SHMEM_STATUS_SHM_CREATED;
+    else if (shm::g_state.is_shmem_initialized)
+        return SHMEM_STATUS_IS_INITIALIZED;
+    else
+        return SHMEM_STATUS_INVALID;
 }
 
-void shmem_rank_exit(int status){
+void shmem_rank_exit(int status)
+{
     SHM_LOG_DEBUG("shmem_rank_exit is work ,status: " << status);
     exit(status);
 }
@@ -284,7 +289,7 @@ int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))
 int32_t shmem_set_log_level(int level)
 {
     // use env first, input level secondly, user may change level from env instead call func
-    const char* in_level = std::getenv("SHMEM_LOG_LEVEL");
+    const char *in_level = std::getenv("SHMEM_LOG_LEVEL");
     if (in_level != nullptr) {
         auto tmp_level = std::string(in_level);
         if (tmp_level == "DEBUG") {
@@ -324,7 +329,7 @@ int32_t shmem_finalize()
     return SHMEM_SUCCESS;
 }
 
-void shmem_info_get_version(int *major, int* minor)
+void shmem_info_get_version(int *major, int *minor)
 {
     SHM_ASSERT_RET_VOID(major != nullptr && minor != nullptr);
     *major = SHMEM_MAJOR_VERSION;
@@ -344,6 +349,7 @@ void shmem_info_get_name(char *name)
     name[i] = '\0';
 }
 
-void shmem_global_exit(int status){
+void shmem_global_exit(int status)
+{
     smem_shm_global_exit(shm::g_smem_handle, status);
 }

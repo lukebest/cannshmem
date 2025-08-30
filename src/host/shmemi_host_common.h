@@ -29,4 +29,4 @@
 #include <smem_trans_def.h>
 #include <smem_trans.h>
 
-#endif // SHMEM_SHMEMI_HOST_COMMON_H
+#endif  // SHMEM_SHMEMI_HOST_COMMON_H

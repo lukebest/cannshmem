@@ -34,7 +34,8 @@ SHMEM_HOST_API int shmem_init_status();
  * @param attributes        [out] Pointer to the default attributes used for initialization
  * @return Returns 0 on success or an error code on failure
  */
-SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_size, const char* ip_port, shmem_init_attr_t **attributes);
+SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_size, const char *ip_port,
+                                  shmem_init_attr_t **attributes);
 
 /**
  * @brief Modify the data operation engine type in the attributes that will be used for initialization.
@@ -117,7 +118,7 @@ SHMEM_HOST_API int shmem_finalize();
  *
  * @param minor [OUT] minor version
  */
-SHMEM_HOST_API void shmem_info_get_version(int* major, int* minor);
+SHMEM_HOST_API void shmem_info_get_version(int *major, int *minor);
 
 /**
  * @brief returns the vendor defined name string.

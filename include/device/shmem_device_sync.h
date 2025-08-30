@@ -45,7 +45,8 @@ extern "C" {
  *
  * @param config              [config] ffts config, acquired by shmemx_get_ffts_config()
  */
-SHMEM_DEVICE void shmemx_set_ffts_config(uint64_t config) {
+SHMEM_DEVICE void shmemx_set_ffts_config(uint64_t config)
+{
     AscendC::SetSyncBaseAddr(config);
 }
 
@@ -57,7 +58,8 @@ SHMEM_DEVICE void shmemx_set_ffts_config(uint64_t config) {
  *
  * @param tid              [in] team to do barrier
  */
-SHMEM_DEVICE void shmem_barrier(shmem_team_t tid) {
+SHMEM_DEVICE void shmem_barrier(shmem_team_t tid)
+{
     shmemi_barrier<false>(tid);
 }
 
@@ -65,7 +67,8 @@ SHMEM_DEVICE void shmem_barrier(shmem_team_t tid) {
  * @fn SHMEM_DEVICE void shmem_barrier_all()
  * @brief shmem_barrier of all PEs.
  */
-SHMEM_DEVICE void shmem_barrier_all() {
+SHMEM_DEVICE void shmem_barrier_all()
+{
     shmem_barrier(SHMEM_TEAM_WORLD);
 }
 
@@ -74,7 +77,8 @@ SHMEM_DEVICE void shmem_barrier_all() {
  *
  * @param tid              [in] team to do barrier
  */
-SHMEM_DEVICE void shmemx_barrier_vec(shmem_team_t tid) {
+SHMEM_DEVICE void shmemx_barrier_vec(shmem_team_t tid)
+{
     shmemi_barrier<true>(tid);
 }
 
@@ -83,7 +87,8 @@ SHMEM_DEVICE void shmemx_barrier_vec(shmem_team_t tid) {
  *
  * @param tid              [in] team to do barrier
  */
-SHMEM_DEVICE void shmemx_barrier_all_vec() {
+SHMEM_DEVICE void shmemx_barrier_all_vec()
+{
     shmemx_barrier_vec(SHMEM_TEAM_WORLD);
 }
 
@@ -93,7 +98,8 @@ SHMEM_DEVICE void shmemx_barrier_all_vec() {
  *        Quiet operations issued on the CPU and the NPU only complete communication operations that were issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
  *
  */
-SHMEM_DEVICE void shmem_quiet() {
+SHMEM_DEVICE void shmem_quiet()
+{
     shmemi_quiet();
 }
 
@@ -103,7 +109,8 @@ SHMEM_DEVICE void shmem_quiet() {
  *        Fence operations issued on the CPU and the NPU only order communication operations that were issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
  *
  */
-SHMEM_DEVICE void shmem_fence() {
+SHMEM_DEVICE void shmem_fence()
+{
     shmemi_quiet();
 }
 
@@ -116,7 +123,8 @@ SHMEM_DEVICE void shmem_fence() {
  * @param sig_op                [in] Operation used to update sig_addr with signal. Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
  * @param pe                    [in] PE number of the remote PE.
  */
-SHMEM_DEVICE void shmemx_signal_op(__gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe) {
+SHMEM_DEVICE void shmemx_signal_op(__gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)
+{
     shmemix_signal_op(sig_addr, signal, sig_op, pe);
 }
 
@@ -128,7 +136,8 @@ SHMEM_DEVICE void shmemx_signal_op(__gm__ int32_t *sig_addr, int32_t signal, int
  * @param cmp_val               [in] The value against which the object pointed to by sig_addr will be compared.
  * @return Return the contents of the signal data object, sig_addr, at the calling PE that satisfies the wait condition.
  */
-SHMEM_DEVICE int32_t shmem_signal_wait_until(__gm__ int32_t *sig_addr, int cmp, int32_t cmp_val) {
+SHMEM_DEVICE int32_t shmem_signal_wait_until(__gm__ int32_t *sig_addr, int cmp, int32_t cmp_val)
+{
     return shmemi_signal_wait_until(sig_addr, cmp, cmp_val);
 }
 

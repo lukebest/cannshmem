@@ -4,12 +4,13 @@ import torch.distributed as dist
 import torch_npu
 import shmem as ash
 
-
 g_ash_size = 1024 * 1024 * 1024
 g_malloc_size = 8 * 1024 * 1024
 
+
 def decypt_handler_test(input_cipher):
     return input_cipher
+
 
 def run_register_decrypt_tests():
     rank = dist.get_rank()
@@ -29,10 +30,11 @@ def run_register_decrypt_tests():
     # 3. test finialize
     _ = ash.shmem_finialize()
 
+
 def run_set_tls_info():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
-    
+
     # 1. test set tls info
     ret = ash.set_conf_store_tls(False, "")
 
@@ -76,6 +78,7 @@ def run_tests():
     # 5. test finialize
     _ = ash.shmem_finialize()
 
+
 def exit_test():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
@@ -88,6 +91,7 @@ def exit_test():
         raise ValueError('[ERROR] aclshmem_init failed')
     if rank == 0:
         ash.shmem_global_exit(0)
+
 
 if __name__ == "__main__":
     local_rank = int(os.environ["LOCAL_RANK"])

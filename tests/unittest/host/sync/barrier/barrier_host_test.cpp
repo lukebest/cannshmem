@@ -19,7 +19,8 @@
 
 constexpr int32_t SHMEM_BARRIER_TEST_NUM = 3;
 
-static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size) {
+static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size)
+{
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
     test_init(rank_id, n_ranks, local_mem_size, &stream);
@@ -48,7 +49,8 @@ static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t lo
         std::cout << "[TEST] vec barriers test blackbox rank_id: " << rank_id << " time: " << i << std::endl;
         increase_vec_do(stream, shmemx_get_ffts_config(), (uint8_t *)addr_dev_vec, rank_id, n_ranks);
         ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-        ASSERT_EQ(aclrtMemcpy(addr_host_vec, sizeof(uint64_t), addr_dev_vec, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST), 0);
+        ASSERT_EQ(
+            aclrtMemcpy(addr_host_vec, sizeof(uint64_t), addr_dev_vec, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST), 0);
         ASSERT_EQ((*addr_host_vec), i);
         shm::shmemi_control_barrier_all();
     }
@@ -59,12 +61,13 @@ static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t lo
     shmem_free(addr_dev_vec);
 
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }
 
-static void test_barrier_black_box_odd_team(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size) {
+static void test_barrier_black_box_odd_team(int32_t rank_id, int32_t n_ranks, uint64_t local_mem_size)
+{
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
     test_init(rank_id, n_ranks, local_mem_size, &stream);
@@ -91,16 +94,20 @@ static void test_barrier_black_box_odd_team(int32_t rank_id, int32_t n_ranks, ui
             std::cout << "[TEST] barriers test blackbox rank_id: " << rank_id << " time: " << i << std::endl;
             increase_do_odd_team(stream, shmemx_get_ffts_config(), (uint8_t *)addr_dev, rank_id, n_ranks, team_odd);
             ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-            ASSERT_EQ(aclrtMemcpy(addr_host, sizeof(uint64_t), addr_dev, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST), 0);
+            ASSERT_EQ(aclrtMemcpy(addr_host, sizeof(uint64_t), addr_dev, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST),
+                      0);
             ASSERT_EQ((*addr_host), i);
             shm::shmemi_control_barrier_all();
         }
 
         for (int32_t i = 1; i <= SHMEM_BARRIER_TEST_NUM; i++) {
             std::cout << "[TEST] vec barriers test blackbox rank_id: " << rank_id << " time: " << i << std::endl;
-            increase_vec_do_odd_team(stream, shmemx_get_ffts_config(), (uint8_t *)addr_dev_vec, rank_id, n_ranks, team_odd);
+            increase_vec_do_odd_team(stream, shmemx_get_ffts_config(), (uint8_t *)addr_dev_vec, rank_id, n_ranks,
+                                     team_odd);
             ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-            ASSERT_EQ(aclrtMemcpy(addr_host_vec, sizeof(uint64_t), addr_dev_vec, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST), 0);
+            ASSERT_EQ(
+                aclrtMemcpy(addr_host_vec, sizeof(uint64_t), addr_dev_vec, sizeof(uint64_t), ACL_MEMCPY_DEVICE_TO_HOST),
+                0);
             ASSERT_EQ((*addr_host_vec), i);
             shm::shmemi_control_barrier_all();
         }
@@ -114,7 +121,7 @@ static void test_barrier_black_box_odd_team(int32_t rank_id, int32_t n_ranks, ui
     shmem_team_destroy(team_odd);
 
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }
@@ -132,4 +139,3 @@ TEST(TEST_SYNC_API, test_barrier_black_box_odd_team)
     uint64_t local_mem_size = 1024UL * 1024UL * 16;
     test_mutil_task(test_barrier_black_box_odd_team, local_mem_size, process_count);
 }
-

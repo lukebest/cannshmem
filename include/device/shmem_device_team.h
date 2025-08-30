@@ -47,9 +47,9 @@ SHMEM_DEVICE int shmem_n_pes(void)
  */
 SHMEM_DEVICE int shmem_team_my_pe(shmem_team_t team)
 {
-    if (team == SHMEM_TEAM_INVALID)
+    if (team == SHMEM_TEAM_INVALID) {
         return -1;
-    else {
+    } else {
         shmemi_team_t *src_team_ptr = shmemi_get_state()->team_pools[team];
         return (src_team_ptr != nullptr ? src_team_ptr->mype : -1);
     }
@@ -65,9 +65,9 @@ SHMEM_DEVICE int shmem_team_my_pe(shmem_team_t team)
  */
 SHMEM_DEVICE int shmem_team_n_pes(shmem_team_t team)
 {
-    if (team == SHMEM_TEAM_INVALID)
+    if (team == SHMEM_TEAM_INVALID) {
         return -1;
-    else {
+    } else {
         shmemi_team_t *src_team_ptr = shmemi_get_state()->team_pools[team];
         return (src_team_ptr != nullptr ? src_team_ptr->size : -1);
     }
@@ -85,13 +85,17 @@ SHMEM_DEVICE int shmem_team_n_pes(shmem_team_t team)
  */
 SHMEM_DEVICE int shmem_team_translate_pe(shmem_team_t src_team, int src_pe, shmem_team_t dest_team)
 {
-    if (src_team == SHMEM_TEAM_INVALID || dest_team == SHMEM_TEAM_INVALID) return -1;
+    if (src_team == SHMEM_TEAM_INVALID || dest_team == SHMEM_TEAM_INVALID) {
+        return -1;
+    }
     __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
 
     shmemi_team_t *src_team_ptr = device_state->team_pools[src_team];
     shmemi_team_t *dest_team_ptr = device_state->team_pools[dest_team];
 
-    if (src_pe > src_team_ptr->size) return -1;
+    if (src_pe > src_team_ptr->size) {
+        return -1;
+    }
 
     int global_pe = src_team_ptr->start + src_pe * src_team_ptr->stride;
     int pe_start = dest_team_ptr->start;
@@ -99,9 +103,10 @@ SHMEM_DEVICE int shmem_team_translate_pe(shmem_team_t src_team, int src_pe, shme
     int pe_size = dest_team_ptr->size;
 
     int n = (global_pe - pe_start) / pe_stride;
-    if (global_pe < pe_start || (global_pe - pe_start) % pe_stride || n >= pe_size)
+    if (global_pe < pe_start || (global_pe - pe_start) % pe_stride || n >= pe_size) {
         return -1;
-    
+    }
+
     return n;
 }
 

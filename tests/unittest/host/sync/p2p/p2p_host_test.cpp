@@ -17,7 +17,8 @@
 #include "unittest_main_test.h"
 #include "p2p_kernel.h"
 
-static void test_p2p(int rank_id, int rank_size, uint64_t local_mem_size) {
+static void test_p2p(int rank_id, int rank_size, uint64_t local_mem_size)
+{
     aclrtStream stream;
     test_init(rank_id, rank_size, local_mem_size, &stream);
 
@@ -29,7 +30,7 @@ static void test_p2p(int rank_id, int rank_size, uint64_t local_mem_size) {
 
     int32_t dev_id = rank_id % test_gnpu_num + test_first_npu;
     test_finalize(stream, dev_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }

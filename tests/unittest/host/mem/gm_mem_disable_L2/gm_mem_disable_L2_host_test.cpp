@@ -26,9 +26,8 @@ extern void test_finalize(aclrtStream stream, int device_id);
 const int input_length = 16;
 const int test_offset = 10;
 
-extern void test_shmemx_mte_put(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev_ptr);
-extern void test_shmemx_mte_get(uint32_t block_dim, void* stream, uint64_t config, uint8_t* gva, uint8_t* dev_ptr);
-
+extern void test_shmemx_mte_put(uint32_t block_dim, void *stream, uint64_t config, uint8_t *gva, uint8_t *dev_ptr);
+extern void test_shmemx_mte_get(uint32_t block_dim, void *stream, uint64_t config, uint8_t *gva, uint8_t *dev_ptr);
 
 static void test_shmemx_mte_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint32_t rank_size)
 {
@@ -61,12 +60,14 @@ static void test_shmemx_mte_put_get(aclrtStream stream, uint8_t *gva, uint32_t r
     int32_t flag = 0;
     for (int i = 0; i < total_size; i++) {
         int stage = i / input_length;
-        if (input[i] != static_cast<int8_t>(stage + test_offset)) flag = 1;
+        if (input[i] != static_cast<int8_t>(stage + test_offset))
+            flag = 1;
     }
     ASSERT_EQ(flag, 0);
 }
 
-void test_shmemx_mte_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
+void test_shmemx_mte_mem(int rank_id, int n_ranks, uint64_t local_mem_size)
+{
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
     test_init(rank_id, n_ranks, local_mem_size, &stream);

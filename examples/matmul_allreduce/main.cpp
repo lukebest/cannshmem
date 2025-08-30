@@ -12,7 +12,6 @@
 #include <iostream>
 #include <vector>
 
-
 // misc
 #include "helper.hpp"
 #include "golden.hpp"
@@ -29,7 +28,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-
 
 // from catlass
 #include "catlass/catlass.hpp"
@@ -65,7 +63,6 @@ using namespace AscendC;
 using namespace Catlass;
 using fp16_t = op::fp16_t;
 
-
 struct CoCTiling {
     uint32_t m = 0;
     uint32_t k = 0;
@@ -90,8 +87,8 @@ using LayoutB = layout::RowMajor;
 using LayoutC = layout::RowMajor;
 
 CATLASS_GLOBAL
-void ShmemMatmulAllReduce(
-    uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c, GM_ADDR symmetricPtr, CoCTiling cocTiling)
+void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c,
+                          GM_ADDR symmetricPtr, CoCTiling cocTiling)
 {
     // Set FFTS address
     shmemx_set_ffts_config(fftsAddr);
@@ -159,21 +156,18 @@ void ShmemMatmulAllReduce(
 
     AscendC::GlobalTensor<ElementStore> refC;
     refC.SetGlobalBuffer((__gm__ ElementStore *)c);
-    typename BlockAllReduceEpilogue::Params epilogueCommParams{
-            refC, layout::RowMajor(m, n, n),
-            0,
-            (__gm__ ElementC *)symmetricPtr,
-            commBlockShape, commProcessShape,
-            matmulBlockScheduler, commSwizzle};
+    typename BlockAllReduceEpilogue::Params epilogueCommParams{refC,
+                                                               layout::RowMajor(m, n, n),
+                                                               0,
+                                                               (__gm__ ElementC *)symmetricPtr,
+                                                               commBlockShape,
+                                                               commProcessShape,
+                                                               matmulBlockScheduler,
+                                                               commSwizzle};
 
     // Prepare params
-    typename MatmulAllReduceKernel::Params params{
-        problemShape, blockShape,
-        pValue, rank, rankSize,
-        a, layoutA,
-        b, layoutB,
-        symmetricPtr,
-        epilogueCommParams};
+    typename MatmulAllReduceKernel::Params params{problemShape, blockShape, pValue, rank, rankSize, a, layoutA, b,
+                                                  layoutB, symmetricPtr, epilogueCommParams};
 
     // Call kernel
     MatmulAllReduceKernel matmulCommKernel;
@@ -181,8 +175,9 @@ void ShmemMatmulAllReduce(
 }
 
 struct Options {
-    static constexpr auto helper = 
-       "Usage: matmul_allreduce m n k transA transB [--block m0 n0 k0 --ubMoveNum ubMoveNum --pValue pValue --split commNpuSplit commDataSplit lenPerLoop --swizzle swizzleOffset swizzleDirect]\n";
+    static constexpr auto helper =
+        "Usage: matmul_allreduce m n k transA transB [--block m0 n0 k0 --ubMoveNum ubMoveNum --pValue pValue --split "
+        "commNpuSplit commDataSplit lenPerLoop --swizzle swizzleOffset swizzleDirect]\n";
 
     uint32_t m = 0;
     uint32_t n = 0;
@@ -249,13 +244,15 @@ int main(int argc, char **argv)
     int rankId = atoi(argv[2]);
     std::string ipport = argv[3];
 
-    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId << " input_ip: " << ipport << std::endl;
+    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId << " input_ip: " << ipport
+              << std::endl;
 
     ACL_CHECK(aclInit(nullptr));
     int32_t deviceId = atoi(argv[4]) + rankId % gNpuNum;
     ACL_CHECK(aclrtSetDevice(deviceId));
     aclrtStream stream = nullptr;
     ACL_CHECK(aclrtCreateStream(&stream));
+    status = shmem_set_conf_store_tls(false, nullptr, 0);
     shmem_init_attr_t *attributes;
     status = shmem_set_attr(rankId, rankSize, gNpuMallocSpace, ipport.c_str(), &attributes);
     status = shmem_init_attr(attributes);
@@ -329,10 +326,11 @@ int main(int argc, char **argv)
     ACL_CHECK(aclrtSynchronizeStream(stream));
     std::cout << "Before calling MM_AR kernel " << std::endl;
     for (int i = 0; i < 1; i++) {
-        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(shmemx_get_ffts_config(), problemShape, aDevice, bDevice, cDevice, symmetricPtr, cocTiling);
+        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(shmemx_get_ffts_config(), problemShape, aDevice, bDevice,
+                                                             cDevice, symmetricPtr, cocTiling);
     }
     std::cout << "After calling MM_AR kernel " << std::endl;
-    
+
     ACL_CHECK(aclrtSynchronizeStream(stream));
 
     ACL_CHECK(aclrtMemcpy(cHost, cSize, cDevice, cSize, ACL_MEMCPY_DEVICE_TO_HOST));

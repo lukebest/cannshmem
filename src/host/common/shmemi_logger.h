@@ -33,6 +33,7 @@ enum log_level : int32_t {
     INFO_LEVEL,
     WARN_LEVEL,
     ERROR_LEVEL,
+    FATAL_LEVEL,
     BUTT_LEVEL /* no use */
 };
 
@@ -78,8 +79,8 @@ public:
         time_t time_stamp = tv.tv_sec;
         struct tm local_time {};
         if (strftime(str_time, sizeof str_time, "%Y-%m-%d %H:%M:%S.", localtime_r(&time_stamp, &local_time)) != 0) {
-            std::cout << str_time << std::setw(6) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level) << " "
-                      << syscall(SYS_gettid) << " " << oss.str() << std::endl;
+            std::cout << str_time << std::setw(6) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level)
+                      << " " << syscall(SYS_gettid) << " " << oss.str() << std::endl;
         } else {
             std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid) << " " << oss.str()
                       << std::endl;
@@ -107,9 +108,9 @@ private:
     }
 
 private:
-    const std::string m_log_level_desc[BUTT_LEVEL] = {"debug", "info", "warn", "error"};
+    const std::string m_log_level_desc[BUTT_LEVEL] = {"debug", "info", "warn", "error", "fatal"};
 
-    log_level m_log_level = INFO_LEVEL;
+    log_level m_log_level = ERROR_LEVEL;
     external_log m_log_func = nullptr;
 };
 }  // namespace shm
@@ -117,11 +118,11 @@ private:
 #ifndef SHM_LOG_FILENAME_SHORT
 #define SHM_LOG_FILENAME_SHORT (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
-#define SHM_OUT_LOG(LEVEL, ARGS)                                                         \
-    do {                                                                                 \
-        std::ostringstream oss;                                                          \
-        oss << "[SHMEM " << SHM_LOG_FILENAME_SHORT << ":" << __LINE__ << "] " << ARGS;   \
-        shm::shm_out_logger::Instance().log(LEVEL, oss);                                 \
+#define SHM_OUT_LOG(LEVEL, ARGS)                                                       \
+    do {                                                                               \
+        std::ostringstream oss;                                                        \
+        oss << "[SHMEM " << SHM_LOG_FILENAME_SHORT << ":" << __LINE__ << "] " << ARGS; \
+        shm::shm_out_logger::Instance().log(LEVEL, oss);                               \
     } while (0)
 
 #define SHM_LOG_DEBUG(ARGS) SHM_OUT_LOG(shm::DEBUG_LEVEL, ARGS)
@@ -159,26 +160,25 @@ private:
         }                                        \
     } while (0)
 
-#define SHM_ASSERT_MULTIPLY_OVERFLOW(A, B, MAX, RET)                         \
-    do {                                                                     \
-        if ((A) <= 0 || (B) <= 0 || (MAX) <= 0) {                                  \
-            SHM_LOG_ERROR("INVALID PARAM " << #A << " " << #B << " " << #MAX);           \
-            return RET;                                                      \
-        }                                                                    \
-        if ((A) > (MAX) / (B)) {                               \
-            SHM_LOG_ERROR("OVERFLOW " << #A << " * " << #B << " > " << #MAX);\
-            return RET;                                                      \
-        }                                                                    \
+#define SHM_ASSERT_MULTIPLY_OVERFLOW(A, B, MAX, RET)                           \
+    do {                                                                       \
+        if ((A) <= 0 || (B) <= 0 || (MAX) <= 0) {                              \
+            SHM_LOG_ERROR("INVALID PARAM " << #A << " " << #B << " " << #MAX); \
+            return RET;                                                        \
+        }                                                                      \
+        if ((A) > (MAX) / (B)) {                                               \
+            SHM_LOG_ERROR("OVERFLOW " << #A << " * " << #B << " > " << #MAX);  \
+            return RET;                                                        \
+        }                                                                      \
     } while (0)
 
 #define SHMEM_CHECK_RET(x)                                       \
     do {                                                         \
-        int32_t check_ret = x;                                    \
-        if (check_ret != 0) {                                     \
-            SHM_LOG_ERROR(" return shmem error: " << check_ret);   \
-            return check_ret;                                     \
+        int32_t check_ret = x;                                   \
+        if (check_ret != 0) {                                    \
+            SHM_LOG_ERROR(" return shmem error: " << check_ret); \
+            return check_ret;                                    \
         }                                                        \
     } while (0)
 
-
-#endif  //SHMEM_SHM_OUT_LOGGER_H
+#endif  // SHMEM_SHM_OUT_LOGGER_H

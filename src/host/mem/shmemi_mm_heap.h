@@ -20,7 +20,9 @@ struct memory_range {
     const uint64_t offset;
     const uint64_t size;
 
-    memory_range(uint64_t o, uint64_t s) noexcept : offset{o}, size{s} {}
+    memory_range(uint64_t o, uint64_t s) noexcept : offset{o}, size{s}
+    {
+    }
 };
 
 struct range_size_first_comparator {
@@ -41,7 +43,8 @@ public:
 
 private:
     static uint64_t allocated_size_align_up(uint64_t input_size) noexcept;
-    static bool alignment_matches(const memory_range &mr, uint64_t alignment, uint64_t size, uint64_t &head_skip) noexcept;
+    static bool alignment_matches(const memory_range &mr, uint64_t alignment, uint64_t size,
+                                  uint64_t &head_skip) noexcept;
     void reduce_size_in_lock(const std::map<uint64_t, uint64_t>::iterator &pos, uint64_t new_size) noexcept;
     bool expend_size_in_lock(const std::map<uint64_t, uint64_t>::iterator &pos, uint64_t new_size) noexcept;
 
@@ -53,6 +56,6 @@ private:
     std::map<uint64_t, uint64_t> address_used_tree_;
     std::set<memory_range, range_size_first_comparator> size_idle_tree_;
 };
-}
+}  // namespace shm
 
 #endif  // SHMEMI_MM_HEAP_H

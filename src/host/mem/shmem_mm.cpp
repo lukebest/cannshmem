@@ -30,7 +30,7 @@ void memory_manager_destroy()
 {
     shm_memory_heap.reset();
 }
-} // namespace shm
+}  // namespace shm
 
 void *shmem_malloc(size_t size)
 {

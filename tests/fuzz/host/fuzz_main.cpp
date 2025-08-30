@@ -23,7 +23,7 @@ int fuzz_gnpu_num;
 const char *fuzz_global_ip_port;
 int fuzz_first_rank;
 int fuzz_first_npu;
-}
+}  // namespace
 
 int shmem_fuzz_gnpu_num()
 {

@@ -239,7 +239,8 @@ uint64_t memory_heap::allocated_size_align_up(uint64_t input_size) noexcept
     return (input_size + align_size - 1UL) & align_size_mask;
 }
 
-bool memory_heap::alignment_matches(const memory_range &mr, uint64_t alignment, uint64_t size, uint64_t &head_skip) noexcept
+bool memory_heap::alignment_matches(const memory_range &mr, uint64_t alignment, uint64_t size,
+                                    uint64_t &head_skip) noexcept
 {
     if (mr.size < size) {
         return false;
@@ -296,4 +297,4 @@ bool memory_heap::expend_size_in_lock(const std::map<uint64_t, uint64_t>::iterat
 
     return true;
 }
-}
+}  // namespace shm

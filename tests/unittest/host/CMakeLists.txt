@@ -26,4 +26,10 @@ target_include_directories(shmem_unittest_host PRIVATE
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/include
     ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
     ${PROJECT_SOURCE_DIR}/tests/unittest/include
+    ${PROJECT_SOURCE_DIR}/tests/unittest/include/unittest/utils/
+    ${PROJECT_SOURCE_DIR}/tests/unittest/
+    ${PROJECT_SOURCE_DIR}/tests/unittest/team/team/
+    ${PROJECT_SOURCE_DIR}/tests/unittest/team/team_allgather/
+    ${PROJECT_SOURCE_DIR}/tests/fuzz/include
+    ${PROJECT_SOURCE_DIR}/tests/fuzz/device/sync
 )

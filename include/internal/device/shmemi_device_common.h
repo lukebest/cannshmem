@@ -15,6 +15,8 @@
 
 #include "smem_shm_aicore_base_api.h"
 
+constexpr int ub_limit = 192 * 1024;
+
 SHMEM_DEVICE __gm__ shmemi_device_host_state_t *shmemi_get_state() {
     return reinterpret_cast<__gm__ shmemi_device_host_state_t *>(smem_shm_get_extra_context_addr());
 }

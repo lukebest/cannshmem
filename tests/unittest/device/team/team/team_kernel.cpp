@@ -9,6 +9,7 @@
  */
 #include "kernel_operator.h"
 #include "shmem_api.h"
+#include "team_kernel.h"
 
 class kernel_state_test {
 public:

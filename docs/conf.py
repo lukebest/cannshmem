@@ -10,7 +10,8 @@
 import subprocess
 import warnings
 
-branch = subprocess.check_output(["/bin/bash", "-c", "git symbolic-ref -q --short HEAD || git describe --tags --exact-match 2> /dev/null || git rev-parse HEAD"]).strip().decode()
+branch = subprocess.check_output(["/bin/bash", "-c",
+                                  "git symbolic-ref -q --short HEAD || git describe --tags --exact-match 2> /dev/null || git rev-parse HEAD"]).strip().decode()
 project = "Shmem Guidebook"
 author = "xxx"
 copyright = "2025"

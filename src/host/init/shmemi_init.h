@@ -21,6 +21,6 @@ int32_t update_device_state(void);
 
 int32_t shmemi_control_barrier_all();
 
-}
+}  // namespace shm
 
-#endif // SHMEMI_INIT_H
+#endif  // SHMEMI_INIT_H

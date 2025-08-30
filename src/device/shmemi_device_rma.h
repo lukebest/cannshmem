@@ -16,19 +16,17 @@
 #include "shmem_api.h"
 #include "host_device/shmem_types.h"
 
-#define SHMEMI_TYPENAME_PREPARE_RMA_P(NAME, TYPE)                                                            \
-    void shmemi_prepare_and_post_rma_##NAME##_p(const char *api_name, uint8_t* dst_ptr, TYPE value, int pe,  \
-                                                      aclrtStream acl_strm, size_t block_size);              \
-   
+#define SHMEMI_TYPENAME_PREPARE_RMA_P(NAME, TYPE)                                                           \
+    void shmemi_prepare_and_post_rma_##NAME##_p(const char *api_name, uint8_t *dst_ptr, TYPE value, int pe, \
+                                                aclrtStream acl_strm, size_t block_size);
+
 SHMEM_TYPE_FUNC(SHMEMI_TYPENAME_PREPARE_RMA_P)
 #undef SHMEMI_TYPENAME_PREPARE_RMA_P
 
 // internal kernels calling
-int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool is_nbi,
-                                    uint8_t *lptr, uint8_t *rptr,
-                                    size_t n_elems, size_t elem_bytes, int pe,
-                                    uint8_t *sig_addr, int32_t signal, int sig_op,
-                                    ptrdiff_t lstride = 1, ptrdiff_t rstride = 1,
+int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool is_nbi, uint8_t *lptr, uint8_t *rptr,
+                                    size_t n_elems, size_t elem_bytes, int pe, uint8_t *sig_addr, int32_t signal,
+                                    int sig_op, ptrdiff_t lstride = 1, ptrdiff_t rstride = 1,
                                     aclrtStream acl_strm = nullptr, size_t block_size = 1);
 
 #endif

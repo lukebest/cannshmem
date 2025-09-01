@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ public:
         shmem_int32_p(gva_gm + 1, shmem_my_pe(), rank);
         shmem_int32_p(gva_gm + 2, shmem_team_my_pe(team_idx), rank);
         shmem_int32_p(gva_gm + 3, shmem_team_n_pes(team_idx), rank);
-        shmem_int32_p(gva_gm + 4, shmem_team_translate_pe(team_idx, shmem_team_n_pes(team_idx) - 1, SHMEM_TEAM_WORLD), rank);
+        shmem_int32_p(gva_gm + 4, shmem_team_translate_pe(team_idx, shmem_team_n_pes(team_idx) - 1,
+                      SHMEM_TEAM_WORLD), rank);
     }
 private:
     __gm__ int *gva_gm;

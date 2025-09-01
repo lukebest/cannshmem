@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -11,7 +11,8 @@
 #include "shmem_api.h"
 #include "order_kernel.h"
 
-extern "C" SHMEM_GLOBAL void quiet_order(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
+extern "C" SHMEM_GLOBAL void quiet_order(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
+{
     shmemx_set_ffts_config(config);
     __gm__ uint64_t *base = reinterpret_cast<__gm__ uint64_t*>(addr);
     if (rank_id == 0) {
@@ -36,7 +37,8 @@ extern "C" SHMEM_GLOBAL void quiet_order(uint64_t config, GM_ADDR addr, int rank
     }
 }
 
-extern "C" SHMEM_GLOBAL void fence_order(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
+extern "C" SHMEM_GLOBAL void fence_order(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
+{
     shmemx_set_ffts_config(config);
     __gm__ uint64_t *base = reinterpret_cast<__gm__ uint64_t*>(addr);
     if (rank_id == 0) {
@@ -62,10 +64,12 @@ extern "C" SHMEM_GLOBAL void fence_order(uint64_t config, GM_ADDR addr, int rank
     }
 }
 
-void quiet_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks) {
+void quiet_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks)
+{
     quiet_order<<<1, nullptr, stream>>>(config, addr, rank_id, n_ranks);
 }
 
-void fence_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks) {
+void fence_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks)
+{
     fence_order<<<1, nullptr, stream>>>(config, addr, rank_id, n_ranks);
 }

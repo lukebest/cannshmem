@@ -22,11 +22,12 @@ namespace shm {
 
 #define DEFAULT_MY_PE (-1)
 #define DEFAULT_N_PES (-1)
-#define DEFAULT_FLAG 0
-#define DEFAULT_ID 0
-#define DEFAULT_TIMEOUT 120
-#define DEFAULT_TEVENT 0
-#define DEFAULT_BLOCK_NUM 1
+
+constexpr int DEFAULT_FLAG = 0;
+constexpr int DEFAULT_ID = 0;
+constexpr int DEFAULT_TIMEOUT = 120;
+constexpr int DEFAULT_TEVENT = 0;
+constexpr int DEFAULT_BLOCK_NUM = 1;
 
 // initializer
 #define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                              \
@@ -133,7 +134,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         } else {
             g_state.sdma_heap_base[i] = NULL;
         }
-        if (reach_info & SMEMS_DATA_OP_ROCE) {
+        if (reach_info & SMEMS_DATA_OP_RDMA) {
             g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         } else {
             g_state.roce_heap_base[i] = NULL;
@@ -212,6 +213,11 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
         return SHMEM_INVALID_PARAM;
     }
     // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
+    if (ip_port == nullptr) {
+        SHM_LOG_ERROR("my_rank:" << my_rank << " ip_port is NULL!");
+        return SHMEM_INVALID_PARAM;
+    }
+    // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
     size_t ip_len = strlen(ip_port);
     shm::g_ipport = new (std::nothrow) char[ip_len + 1];
     if (shm::g_ipport == nullptr) {
@@ -228,7 +234,8 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
     shm::g_attr.n_ranks = n_ranks;
     shm::g_attr.ip_port = shm::g_ipport;
     shm::g_attr.local_mem_size = local_mem_size;
-    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, DEFAULT_TIMEOUT, DEFAULT_TIMEOUT, DEFAULT_TIMEOUT};
+    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT, 
+                               shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT};
     shm::g_attr_init = true;
     return SHMEM_SUCCESS;
 }

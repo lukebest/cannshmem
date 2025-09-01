@@ -31,8 +31,9 @@ else()
 endif()
 
 option(USE_UNIT_TEST "USE_UNIT_TEST" OFF)
+option(USE_EXAMPLES "USE_EXAMPLES" OFF)
 message(STATUS "USE_UNIT_TEST:${USE_UNIT_TEST}")
-
+message(STATUS "USE_EXAMPLES:${USE_EXAMPLES}")
 option(USE_FUZZ_TEST "USE_FUZZ_TEST" OFF)
 message(STATUS "USE_FUZZ_TEST:${USE_FUZZ_TEST}")
 
@@ -103,4 +104,6 @@ if(USE_FUZZ_TEST)
     add_subdirectory(tests/fuzz)
 endif()
 
-add_subdirectory(examples)
+if(USE_EXAMPLES)
+    add_subdirectory(examples)
+endif()

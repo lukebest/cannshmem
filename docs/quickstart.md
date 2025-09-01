@@ -100,8 +100,7 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
 
-## python侧test用例
-
+## python侧test用例     [python接口API列表](./doc/pythonAPI.md)
 1. 在scripts目录下编译的时候，带上build python的选项
 
 ```sh

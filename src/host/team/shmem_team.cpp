@@ -307,7 +307,7 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
         int x_size = (i == x_team_counts - 1 && src_size % x_range) ? src_size % x_range : x_range;
         errorCode = shmem_team_split_strided(parent_team, start, 1, x_size, &my_xteam);
         if (errorCode != 0) {
-            SHM_LOG_WARN("create x-axis team " << i + 1 << " of " << x_team_counts << " failed");
+            SHM_LOG_WARN("create x-axis team " << (i + 1) << " of " << x_team_counts << " failed");
         }
 
         start += x_range;
@@ -331,7 +331,7 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
 
         errorCode = shmem_team_split_strided(parent_team, start, x_range, y_size, &my_yteam);
         if (errorCode != 0) {
-            SHM_LOG_WARN("create y-axis team " << i + 1 << " of " << y_team_counts << " failed");
+            SHM_LOG_WARN("create y-axis team " << (i + 1) << " of " << y_team_counts << " failed");
         }
 
         start += 1;

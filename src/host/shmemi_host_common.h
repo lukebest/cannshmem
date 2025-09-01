@@ -23,7 +23,6 @@
 #include <smem_bm_def.h>
 #include <smem_bm.h>
 #include <smem.h>
-#include <smem_security.h>
 #include <smem_shm_def.h>
 #include <smem_shm.h>
 #include <smem_trans_def.h>

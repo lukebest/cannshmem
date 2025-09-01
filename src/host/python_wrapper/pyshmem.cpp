@@ -496,7 +496,7 @@ Arguments:
             int major = 0;
             int minor = 0;
             shmem_info_get_version(&major, &minor);
-            return major, minor;
+            return std::make_pair(major, minor);
         },
         py::call_guard<py::gil_scoped_release>(), R"(
 Returns the major and minor version.

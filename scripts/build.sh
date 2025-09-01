@@ -39,18 +39,16 @@ GEN_DOC=OFF
 cann_default_path="/usr/local/Ascend/ascend-toolkit"
 
 cd ${PROJECT_ROOT}
-git submodule init
+git submodule update --init 3rdparty/memfabric_hybrid
 
 function fn_build()
 {
     fn_build_memfabric
-    git submodule update --recursive 3rdparty/catlass
-
     [ -d build ] && rm -rf build
     mkdir -p build
 
     cd build
-    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
+    cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
     make install -j8
     cd -
 }
@@ -95,6 +93,7 @@ EOF
     ${makeself_dir}/makeself.sh --header ${makeself_dir}/makeself-header.sh \
         --help-header $PROJECT_ROOT/scripts/help.info --gzip --complevel 4 --nomd5 --sha256 --chown \
         ${OUTPUT_DIR} $RELEASE_DIR/$ARCH/SHMEM_${VERSION}_linux-${ARCH}.run "SHMEM-api" ./install.sh
+    [ -d "$OUTPUT_DIR/$ARCH" ] && rm -rf "$OUTPUT_DIR/$ARCH"
     mv $RELEASE_DIR/$ARCH $OUTPUT_DIR
     echo "SHMEM_${VERSION}_linux-${ARCH}.run is successfully generated in $OUTPUT_DIR"
 }
@@ -104,8 +103,10 @@ function fn_build_googletest()
     if [ -d "$THIRD_PARTY_DIR/googletest/lib" ]; then
         return 0
     fi
-    git submodule update --recursive 3rdparty/googletest
-    cd $THIRD_PARTY_DIR/googletest
+    cd $THIRD_PARTY_DIR
+    [[ ! -d "googletest" ]] && git clone --branch v1.14.0 --depth 1 https://github.com/google/googletest.git
+    cd googletest
+
     rm -rf build && mkdir build && cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=$THIRD_PARTY_DIR/googletest -DCMAKE_SKIP_RPATH=TRUE -DCMAKE_CXX_FLAGS="-fPIC"
     cmake --build . --parallel $(nproc)
@@ -164,7 +165,7 @@ function fn_build_memfabric()
     cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/hybm/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
     cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
     cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/include/smem $OUTPUT_DIR/memfabric_hybrid/include
-    echo "Memfabric_hybrid is successfully installed to $OUTPUT_DIR/memfabric_hybrid"
+    echo "Memfabric_hybrid is successfully installed to $THIRD_PARTY_DIR/memfabric_hybrid"
 }
 
 function fn_build_doxygen()
@@ -173,14 +174,14 @@ function fn_build_doxygen()
         return 0
     fi
     cd $THIRD_PARTY_DIR
-    wget --no-check-certificate https://github.com/doxygen/doxygen/releases/download/Release_1_9_3/doxygen-1.9.3.src.tar.gz
-    tar -xzvf doxygen-1.9.3.src.tar.gz
-    cd doxygen-1.9.3
+    wget --no-check-certificate https://github.com/doxygen/doxygen/releases/download/Release_1_9_6/doxygen-1.9.6.src.tar.gz
+    tar -xzvf doxygen-1.9.6.src.tar.gz
+    cd doxygen-1.9.6
     rm -rf build && mkdir build && cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=$THIRD_PARTY_DIR/doxygen
     cmake --build . --parallel $(nproc)
     cmake --install . > /dev/null
-    rm -rf $THIRD_PARTY_DIR/doxygen-1.9.3
+    rm -rf $THIRD_PARTY_DIR/doxygen-1.9.6
     cd ${PROJECT_ROOT}
 }
 
@@ -238,12 +239,14 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -uttests)
             fn_build_googletest
+            cd $THIRD_PARTY_DIR; [[ ! -d "catlass" ]] && git clone https://gitee.com/ascend/catlass; cd $PROJECT_ROOT
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_UNIT_TEST=ON"
             shift
             ;;
         -fuzz)
             fn_build_secodefuzz
             fn_build_googletest
+            cd $THIRD_PARTY_DIR; [[ ! -d "catlass" ]] && git clone https://gitee.com/ascend/catlass; cd $PROJECT_ROOT
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_FUZZ_TEST=ON"
             shift
             ;;
@@ -253,8 +256,9 @@ while [[ $# -gt 0 ]]; do
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_UNIT_TEST=ON"
             shift
             ;;
-        -compiledb)
-            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+        -examples)
+            cd $THIRD_PARTY_DIR; [[ ! -d "catlass" ]] && git clone https://gitee.com/ascend/catlass; cd $PROJECT_ROOT
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_EXAMPLES=ON"
             shift
             ;;
         -python_extension)
@@ -265,11 +269,6 @@ while [[ $# -gt 0 ]]; do
             fn_build_doxygen
             fn_build_sphinx
             GEN_DOC=ON
-            shift
-            ;;
-        -python_extension)
-            PYEXPAND_TYPE=ON
-            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DBUILD_PYTHON=ON"
             shift
             ;;
         -onlygendoc)

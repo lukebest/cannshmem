@@ -71,7 +71,6 @@ def run_tests():
     if not (my_pe == rank and pe_count == world_size):
         raise ValueError('[ERROR] pe/world failed')
     # 4. test team
-    # team_x, team_y = ash.team_split_2d(0, 2)
     my_team_pe, team_pe_count = ash.team_my_pe(0), ash.team_n_pes(0)
     print(f'x: rank[{rank}]: t_my_pe:{my_team_pe} and t_pe_count:{team_pe_count}')
 

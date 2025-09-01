@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 /*  
 This file provides device-side collective synchronization implementations, ensuring that:
 1. ALL VEC CORES of all ranks of a team reach a sychonization point before doing subsequent operations.
@@ -23,17 +23,20 @@ This file provides device-side collective synchronization implementations, ensur
 
 #include "kernel_operator.h"
 
-SHMEM_DEVICE 
-__gm__ shmemi_sync_bit *shmemi_get_core_sync_array() {
+const int SHIFT_MULTIPLIER = 2;
+SHMEM_DEVICE __gm__ shmemi_sync_bit *shmemi_get_core_sync_array()
+{
     return (__gm__ shmemi_sync_bit *)shmemi_get_state()->core_sync_pool;
 }
 
-SHMEM_DEVICE 
-__gm__ shmemi_sync_bit *shmemi_get_core_sync_counter() {
+SHMEM_DEVICE
+__gm__ shmemi_sync_bit *shmemi_get_core_sync_counter()
+{
     return (__gm__ shmemi_sync_bit *)shmemi_get_state()->core_sync_counter;
 }
 
-SHMEM_DEVICE void shmemi_barrier_core_soft() {
+SHMEM_DEVICE void shmemi_barrier_core_soft()
+{
 #ifdef __DAV_C220_VEC__
     auto sync_array = shmemi_get_core_sync_array();
     auto sync_counter = shmemi_get_core_sync_counter();
@@ -48,9 +51,10 @@ SHMEM_DEVICE void shmemi_barrier_core_soft() {
         int next = (idx + shift) % size;
 
         shmemi_signal_set((__gm__ int32_t *)(sync_array + next * SHMEM_LOG_MAX_AIV_PER_NPU + offset), count);
-        shmemi_signal_wait_until_eq_for_barrier((__gm__ int32_t *)(sync_array + idx * SHMEM_LOG_MAX_AIV_PER_NPU + offset), count);
+        shmemi_signal_wait_until_eq_for_barrier(
+            (__gm__ int32_t *)(sync_array + idx * SHMEM_LOG_MAX_AIV_PER_NPU + offset), count);
 
-        shift *= 2;
+        shift *= SHIFT_MULTIPLIER;
         offset++;
     }
 
@@ -59,8 +63,9 @@ SHMEM_DEVICE void shmemi_barrier_core_soft() {
 }
 
 /* Level 1: barrier between vec cores (within a device) */
-template<bool is_aiv_only = true>
-SHMEM_DEVICE void shmemi_barrier_core() {
+template <bool is_aiv_only = true>
+SHMEM_DEVICE void shmemi_barrier_core()
+{
 #ifdef __CCE_AICORE_ENABLE_MIX__
     AscendC::SyncAll<is_aiv_only>();
 #else
@@ -68,18 +73,20 @@ SHMEM_DEVICE void shmemi_barrier_core() {
 #endif
 }
 
-SHMEM_DEVICE 
-__gm__ shmemi_sync_bit *shmemi_get_team_sync_array(shmem_team_t team_idx) {
-    uint64_t addr = (uint64_t) shmemi_get_state()->sync_pool;
+SHMEM_DEVICE
+__gm__ shmemi_sync_bit *shmemi_get_team_sync_array(shmem_team_t team_idx)
+{
+    uint64_t addr = (uint64_t)shmemi_get_state()->sync_pool;
     addr += team_idx * SYNC_ARRAY_SIZE;
-    return (__gm__ shmemi_sync_bit *) addr;
+    return (__gm__ shmemi_sync_bit *)addr;
 }
 
-SHMEM_DEVICE 
-__gm__ shmemi_sync_bit *shmemi_get_team_sync_counter(shmem_team_t team_idx) {
-    uint64_t addr = (uint64_t) shmemi_get_state()->sync_counter;
+SHMEM_DEVICE
+__gm__ shmemi_sync_bit *shmemi_get_team_sync_counter(shmem_team_t team_idx)
+{
+    uint64_t addr = (uint64_t)shmemi_get_state()->sync_counter;
     addr += team_idx * SYNC_COUNTER_SIZE;
-    return (__gm__ shmemi_sync_bit *) addr;
+    return (__gm__ shmemi_sync_bit *)addr;
 }
 
 /* Level 2: barrier between devices (within a host)
@@ -155,7 +162,8 @@ The temporal and spatial complexity of this implementation are O(logN) and O(N),
   c. Optimize spatial complexity to O(logN).
 */
 
-SHMEM_DEVICE void shmemi_barrier_npu_v1(shmemi_team_t *team) {
+SHMEM_DEVICE void shmemi_barrier_npu_v1(shmemi_team_t *team)
+{
     if (AscendC::GetBlockIdx() != 0)
         return;
 
@@ -182,9 +190,9 @@ SHMEM_DEVICE void shmemi_barrier_npu_v1(shmemi_team_t *team) {
 
         // wait pre pe
         shmemi_signal_wait_until_eq_for_barrier((__gm__ int32_t *)(sync_array + pre_pe), count);
-        
-        shift *= 2;
-    } 
+
+        shift *= SHIFT_MULTIPLIER;
+    }
 
     shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
@@ -193,7 +201,8 @@ SHMEM_DEVICE void shmemi_barrier_npu_v1(shmemi_team_t *team) {
  *   
  *  An optimized version of shmemi_barrier_npu_v1, with temporal complexity reduced to O(log_{k}^{N}).
  */
-SHMEM_DEVICE void shmemi_barrier_npu_v2(shmemi_team_t *team) {
+SHMEM_DEVICE void shmemi_barrier_npu_v2(shmemi_team_t *team)
+{
     int vec_id = AscendC::GetBlockIdx();
     int vec_size = AscendC::GetBlockNum() * AscendC::GetTaskRation();
 
@@ -227,9 +236,9 @@ SHMEM_DEVICE void shmemi_barrier_npu_v2(shmemi_team_t *team) {
             // wait pre pe
             shmemi_signal_wait_until_eq_for_barrier((__gm__ int32_t *)(sync_array + pre_pe), count);
         }
-        
+
         shift *= k;
-    } 
+    }
 
     shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
@@ -239,7 +248,8 @@ SHMEM_DEVICE void shmemi_barrier_npu_v2(shmemi_team_t *team) {
  *  The temporal and spatial complexity of this implementation are O(N/K) and O(1), respectively. 
  *  Performs better than Group Dissemination Barrier at small scale (eg. 8 ranks).
  */
-SHMEM_DEVICE void shmemi_barrier_npu_v3(shmemi_team_t *team) {
+SHMEM_DEVICE void shmemi_barrier_npu_v3(shmemi_team_t *team)
+{
     int vec_id = AscendC::GetBlockIdx();
     int vec_size = AscendC::GetBlockNum() * AscendC::GetTaskRation();
 
@@ -270,11 +280,14 @@ SHMEM_DEVICE void shmemi_barrier_npu_v3(shmemi_team_t *team) {
     shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
 
-/* Level 3: barrier between hosts, TO BE IMPLEMENTED.*/ 
-SHMEM_DEVICE void shmemi_barrier_sys() {}
+/* Level 3: barrier between hosts, TO BE IMPLEMENTED.*/
+SHMEM_DEVICE void shmemi_barrier_sys()
+{
+}
 
-template<bool is_aiv_only = true>
-SHMEM_DEVICE void shmemi_barrier(shmem_team_t tid) {
+template <bool is_aiv_only = true>
+SHMEM_DEVICE void shmemi_barrier(shmem_team_t tid)
+{
     shmemi_team_t *team = shmemi_get_state()->team_pools[tid];
 
     int mype = shmemi_get_state()->team_pools[SHMEM_TEAM_WORLD]->mype;

@@ -32,20 +32,21 @@ public:
      * @param real_path     [out] realpath of the library
      * @return true if successful
      */
-    static bool get_library_real_path(const std::string &lib_dir_path, const std::string &lib_name, std::string &real_path);
+    static bool get_library_real_path(const std::string &lib_dir_path, const std::string &lib_name,
+                                      std::string &real_path);
 };
 
 inline bool funci::get_real_path(std::string &path)
 {
     if (path.empty() || path.size() > PATH_MAX) {
-        SHM_LOG_ERROR("Failed to get realpath of [" << path << "] as path is invalid");
+        SHM_LOG_ERROR("Failed to get realpath, path is invalid");
         return false;
     }
 
     /* It will allocate memory to store path */
     char *real_path = realpath(path.c_str(), nullptr);
     if (real_path == nullptr) {
-        SHM_LOG_ERROR("Failed to get realpath of [" << path << "] as error " << errno);
+        SHM_LOG_ERROR("Failed to get realpath, error " << errno);
         return false;
     }
 
@@ -55,7 +56,8 @@ inline bool funci::get_real_path(std::string &path)
     return true;
 }
 
-inline bool funci::get_library_real_path(const std::string &lib_dir_path, const std::string &lib_name, std::string &real_path)
+inline bool funci::get_library_real_path(const std::string &lib_dir_path, const std::string &lib_name,
+                                         std::string &real_path)
 {
     std::string tmp_full_path = lib_dir_path;
     if (!get_real_path(tmp_full_path)) {
@@ -79,13 +81,13 @@ inline bool funci::get_library_real_path(const std::string &lib_dir_path, const 
 
 #define DL_LOAD_SYM(TARGET_FUNC_VAR, TARGET_FUNC_TYPE, FILE_HANDLE, SYMBOL_NAME)           \
     do {                                                                                   \
-        (TARGET_FUNC_VAR) = (TARGET_FUNC_TYPE)dlsym((FILE_HANDLE), (SYMBOL_NAME));               \
-        if ((TARGET_FUNC_VAR) == nullptr) {                                                  \
+        (TARGET_FUNC_VAR) = (TARGET_FUNC_TYPE)dlsym((FILE_HANDLE), (SYMBOL_NAME));         \
+        if ((TARGET_FUNC_VAR) == nullptr) {                                                \
             SHM_LOG_ERROR("Failed to call dlsym to load SYMBOL_NAME, error" << dlerror()); \
-            dlclose((FILE_HANDLE));                                                          \
+            dlclose((FILE_HANDLE));                                                        \
             return false;                                                                  \
         }                                                                                  \
     } while (0)
 }  // namespace shm
 
-#endif  //SHMEM_SHM_FUNCTION_H
+#endif  // SHMEM_SHM_FUNCTION_H

@@ -34,7 +34,8 @@ SHMEM_HOST_API int shmem_init_status();
  * @param attributes        [out] Pointer to the default attributes used for initialization
  * @return Returns 0 on success or an error code on failure
  */
-SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_size, const char* ip_port, shmem_init_attr_t **attributes);
+SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_size, const char *ip_port,
+                                  shmem_init_attr_t **attributes);
 
 /**
  * @brief Modify the data operation engine type in the attributes that will be used for initialization.
@@ -78,6 +79,32 @@ SHMEM_HOST_API int shmem_init_attr(shmem_init_attr_t *attributes);
 SHMEM_HOST_API int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler decrypt_handler);
 
 /**
+ * @brief Set the log print function for the SHMEM library.
+ *
+ * @param func the logging function, takes level and msg as parameter
+ * @return Returns 0 on success or an error code on failure
+ */
+SHMEM_HOST_API int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg));
+
+/**
+ * @brief Set the logging level.
+ *
+ * @param level the logging level. 0-debug, 1-info, 2-warn, 3-error
+ * @return Returns 0 on success or an error code on failure
+ */
+SHMEM_HOST_API int32_t shmem_set_log_level(int level);
+
+/**
+ * @brief Initialize the config store tls info.
+ *
+ * @param enable whether to enable tls
+ * @param tls_info the format describle in memfabric SECURITYNOTE.md, if disabled tls_info won't be use
+ * @param tls_info_len length of tls_info, if disabled tls_info_len won't be use
+ * @return Returns 0 on success or an error code on failure
+ */
+SHMEM_HOST_API int32_t shmem_set_conf_store_tls(bool enable, const char *tls_info, const uint32_t tls_info_len);
+
+/**
  * @brief Release all resources used by the SHMEM library.
  *
  * @return Returns 0 on success or an error code on failure
@@ -91,7 +118,7 @@ SHMEM_HOST_API int shmem_finalize();
  *
  * @param minor [OUT] minor version
  */
-SHMEM_HOST_API void shmem_info_get_version(int* major, int* minor);
+SHMEM_HOST_API void shmem_info_get_version(int *major, int *minor);
 
 /**
  * @brief returns the vendor defined name string.

@@ -70,6 +70,7 @@ include目录下的头文件是按照如下文件层级进行组织的
 │    ├─example.md               // 使用样例
 │    ├─quickstart.md            // 快速开始
 │    ├─related_scripts.md       // 相关脚本介绍
+|    ├─pythonAPI.md             // shmem python api列表
 │    └─Troubleshooting_FAQs.md  // QA
 ```
 

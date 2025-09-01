@@ -9,6 +9,7 @@
  */
 #include "kernel_operator.h"
 #include "shmem_api.h"
+#include "order_kernel.h"
 
 extern "C" SHMEM_GLOBAL void quiet_order(uint64_t config, GM_ADDR addr, int rank_id, int rank_size)
 {

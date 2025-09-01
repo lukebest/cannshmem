@@ -100,8 +100,7 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
 
-## python侧test用例
-
+## python侧test用例     [python接口API列表](./doc/pythonAPI.md)
 1. 在scripts目录下编译的时候，带上build python的选项
 
 ```sh
@@ -126,13 +125,17 @@ python3 setup.py bdist_wheel
 pip3 install shmem-xxx.whl --force-reinstall
 ```
 
-5. 设置是否开启TLS认证，若不开启TLS认证，请使用如下环境变量，否则请传入TLS认证所需的对应信息
+5. 设置是否开启TLS认证，默认开启，若关闭TLS认证，请使用如下接口
 
-```sh
-export SMEM_CONF_STORE_TLS_ENABLE=0 //不开启TLS认证
+```python
+import shmem as shm
+shm.set_conf_store_tls(False, "")   # 关闭tls认证
 ```
-```sh
-export MEMFABRIC_HYBRID_TLD_INFO=xxx //开启TLS认证
+
+```python
+import shmem as shm
+tls_info = "xxx"
+shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
 ```
 
 6. 使用torchrun运行测试demo

@@ -57,8 +57,8 @@ def generate_shapes(num_cases=1):
         shape_b = (k, n)
 
         if (
-            _product(shape_a) < SHAPE_TOTAL_SIZE_LIMIT
-            and _product(shape_b) < SHAPE_TOTAL_SIZE_LIMIT
+                _product(shape_a) < SHAPE_TOTAL_SIZE_LIMIT
+                and _product(shape_b) < SHAPE_TOTAL_SIZE_LIMIT
         ):
             generated_shapes.add((m, k, n))
 
@@ -76,9 +76,10 @@ def _generate_test_case(dtype_str, shape_info, world_size, category):
         "category": category
     }, id=id_str)
 
+
 def get_test_cases(
-    num_cases_per_dtype_for_correctness=CORRECTNESS_TEST_NUM_CASES_PER_DTYPE,
-    num_cases_per_dtype_for_stability=NUMERICAL_STABILITY_TEST_NUM_CASES_PER_DTYPE,
+        num_cases_per_dtype_for_correctness=CORRECTNESS_TEST_NUM_CASES_PER_DTYPE,
+        num_cases_per_dtype_for_stability=NUMERICAL_STABILITY_TEST_NUM_CASES_PER_DTYPE,
 ):
     """Generates a list of test cases."""
     test_cases = []
@@ -89,7 +90,7 @@ def get_test_cases(
                 test_cases.append(_generate_test_case(
                     dtype_str, shape_info, world_size, "correctness"
                 ))
-        
+
         # 处理稳定性测试用例
         for shape_info in generate_shapes(num_cases_per_dtype_for_stability):
             for world_size in SUPPORT_RANKS:
@@ -108,7 +109,7 @@ def find_free_port():
 
 
 def run_fusion_matmul_allreduce_kernel(
-    rank, case_params, ipport, base_device_id, executable_path, test_data_dir
+        rank, case_params, ipport, base_device_id, executable_path, test_data_dir
 ):
     """The function to be executed by each rank's process."""
     world_size = case_params["world_size"]
@@ -186,8 +187,8 @@ def test_fusion_matmul_allreduce(case_params):
     # all_A = [np_data_generator.generate(shape_a) for _ in range(world_size)]
     # all_B = [np_data_generator.generate(shape_b) for _ in range(world_size)]
     # all ranks input same tensor.
-    all_A = [np_data_generator.generate(shape_a) ] * world_size
-    all_B = [np_data_generator.generate(shape_b) ] * world_size
+    all_A = [np_data_generator.generate(shape_a)] * world_size
+    all_B = [np_data_generator.generate(shape_b)] * world_size
 
     # cal CPU matmul & allreduce.
     gt_fp32 = np.zeros(shape_c, dtype=np.float32)
@@ -266,7 +267,7 @@ def test_fusion_matmul_allreduce(case_params):
     rel_err_check_mask = np.abs(gt) >= 1.0
     if rel_err_check_mask.any():
         re = np.abs(act[rel_err_check_mask] - gt[rel_err_check_mask]) / (
-            np.abs(gt[rel_err_check_mask]) + 1e-7
+                np.abs(gt[rel_err_check_mask]) + 1e-7
         )
         max_re = re.max().item()
         assert max_re <= err, f"Relative error check failed for {shmem_output_path}!"

@@ -4,7 +4,6 @@ import torch.distributed as dist
 import torch_npu
 import shmem as ash
 
-
 g_ash_size = 1024 * 1024 * 1024
 g_malloc_size = 8 * 1024 * 1024
 
@@ -16,6 +15,9 @@ def decypt_handler_test(input_cipher):
 def run_register_decrypt_tests():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:
@@ -29,9 +31,30 @@ def run_register_decrypt_tests():
     _ = ash.shmem_finialize()
 
 
+def run_set_tls_info():
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+
+    # 1. test set tls info
+    ret = ash.set_conf_store_tls(False, "")
+
+    # 2. test init
+    ret = ash.shmem_init(rank, world_size, g_ash_size)
+    if ret != 0:
+        raise ValueError('[ERROR] shmem_init failed')
+
+    print(f'rank[{rank}]: register hander ret={ret}')
+
+    # 3. test finialize
+    _ = ash.shmem_finialize()
+
+
 def run_tests():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:
@@ -58,6 +81,9 @@ def run_tests():
 def exit_test():
     rank = dist.get_rank()
     world_size = dist.get_world_size()
+    ret = ash.set_conf_store_tls(False, "")
+    if ret != 0:
+        raise ValueError("[ERROR] set_conf_store_tls failed")
     # 1. test init
     ret = ash.shmem_init(rank, world_size, g_ash_size)
     if ret != 0:

@@ -48,8 +48,8 @@ static int32_t test_get_device_ptr(aclrtStream stream, uint8_t *ptr, size_t byte
 
     EXPECT_EQ(aclrtMemcpy(y_host, byte_size, ptr, byte_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
-    EXPECT_EQ(y_host[0], 1); // @see get_device_ptr
-    EXPECT_EQ(y_host[1], 1); // @see get_device_ptr
+    EXPECT_EQ(y_host[0], 1);  // @see get_device_ptr
+    EXPECT_EQ(y_host[1], 1);  // @see get_device_ptr
 
     EXPECT_EQ(aclrtFreeHost(y_host), ACL_SUCCESS);
 

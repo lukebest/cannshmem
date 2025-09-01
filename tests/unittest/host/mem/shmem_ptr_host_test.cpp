@@ -13,13 +13,8 @@
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
 #include "shmem_api.h"
-
-extern int test_gnpu_num;
-extern int test_first_npu;
-extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int process_count);
-extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *stream);
-extern void test_finalize(aclrtStream stream, int device_id);
-extern void get_device_ptr(uint32_t block_dim, void* stream, uint8_t* gva);
+#include "unittest_main_test.h"
+#include "shmem_ptr_kernel.h"
 
 static int32_t test_get_device_ptr(aclrtStream stream, uint8_t *ptr, int rank_id, uint32_t rank_size)
 {
@@ -35,8 +30,7 @@ static int32_t test_get_device_ptr(aclrtStream stream, uint8_t *ptr, int rank_id
     EXPECT_EQ(aclrtSynchronizeStream(stream), 0);
     sleep(1);
 
-    EXPECT_EQ(aclrtMemcpy(y_host, input_size, ptr, input_size,
-                          ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    EXPECT_EQ(aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
     EXPECT_EQ(y_host[0], 1);
     EXPECT_EQ(y_host[1], 1);
@@ -52,7 +46,7 @@ void test_shmem_ptr(int rank_id, int n_ranks, uint64_t local_mem_size)
     test_init(rank_id, n_ranks, local_mem_size, &stream);
     ASSERT_NE(stream, nullptr);
 
-    int *ptr = static_cast<int*>(shmem_malloc(2 * sizeof(int)));
+    int *ptr = static_cast<int *>(shmem_malloc(2 * sizeof(int)));
     ASSERT_NE(ptr, nullptr);
 
     void *host_self = shmem_ptr(ptr, rank_id);
@@ -65,7 +59,7 @@ void test_shmem_ptr(int rank_id, int n_ranks, uint64_t local_mem_size)
     ASSERT_NE(host_remote, nullptr);
     EXPECT_EQ(static_cast<int *>(next_remote) - static_cast<int *>(host_remote), 1);
 
-    auto status = test_get_device_ptr(stream, (uint8_t*)ptr, rank_id, n_ranks);
+    auto status = test_get_device_ptr(stream, (uint8_t *)ptr, rank_id, n_ranks);
     EXPECT_EQ(status, SHMEM_SUCCESS);
 
     shmem_free(ptr);

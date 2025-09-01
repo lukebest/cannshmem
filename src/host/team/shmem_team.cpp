@@ -38,8 +38,8 @@ inline std::string team_config2string(shmemi_team_t *config)
 
 inline bool is_valid_team(shmem_team_t &team)
 {
-    return (g_state.is_shmem_initialized && g_shmem_team_pool != nullptr &&
-        team >= 0 && team < SHMEM_MAX_TEAMS && (g_team_mask >> team & 1));
+    return (g_state.is_shmem_initialized && g_shmem_team_pool != nullptr && team >= 0 && team < SHMEM_MAX_TEAMS &&
+            (g_team_mask >> team & 1));
 }
 
 inline void device_team_destroy(int32_t team_idx)
@@ -47,7 +47,7 @@ inline void device_team_destroy(int32_t team_idx)
     // device_ptr Free
     shmemi_team_t *device_team_ptr = g_state.team_pools[team_idx];
     if (device_team_ptr != nullptr) {
-        if (aclrtFree((void *) device_team_ptr) != ACL_SUCCESS) {
+        if (aclrtFree((void *)device_team_ptr) != ACL_SUCCESS) {
             SHM_LOG_ERROR("aclrtFree for device_team_ptr failed for team " << team_idx);
         }
         g_state.team_pools[team_idx] = nullptr;
@@ -57,10 +57,10 @@ inline void device_team_destroy(int32_t team_idx)
 inline int32_t device_team_update(int team_idx, shmemi_team_t *host_team_ptr)
 {
     // device_ptr Malloc
-    void* team_ptr = nullptr;
+    void *team_ptr = nullptr;
     SHMEM_CHECK_RET(aclrtMalloc(&team_ptr, sizeof(shmemi_team_t), ACL_MEM_MALLOC_NORMAL_ONLY));
-    auto ret = aclrtMemcpy((shmemi_team_t *)team_ptr, sizeof(shmemi_team_t),
-                           host_team_ptr, sizeof(shmemi_team_t), ACL_MEMCPY_HOST_TO_DEVICE);
+    auto ret = aclrtMemcpy((shmemi_team_t *)team_ptr, sizeof(shmemi_team_t), host_team_ptr, sizeof(shmemi_team_t),
+                           ACL_MEMCPY_HOST_TO_DEVICE);
     if (ret != 0) {
         SHM_LOG_ERROR("memcpy device team info failed, ret: " << ret);
         aclrtFree(team_ptr);
@@ -86,8 +86,8 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
     shmem_team_world.team_idx = SHMEM_TEAM_WORLD;
     shmem_team_world.start = 0;
     shmem_team_world.stride = 1;
-    shmem_team_world.size = size;       // TODO state->npes
-    shmem_team_world.mype = rank;       // TODO state->mype
+    shmem_team_world.size = size;
+    shmem_team_world.mype = rank;
     g_team_mask |= 1ULL << SHMEM_TEAM_WORLD;
     SHMEM_CHECK_RET(device_team_update(SHMEM_TEAM_WORLD, &shmem_team_world));
 
@@ -98,46 +98,46 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
         SHM_LOG_ERROR("malloc sync pool failed.");
         return SHMEM_INNER_ERROR;
     }
-    auto ret = aclrtMemset((void *) g_state.sync_pool, SYNC_POOL_SIZE, 0, SYNC_POOL_SIZE);
+    auto ret = aclrtMemset((void *)g_state.sync_pool, SYNC_POOL_SIZE, 0, SYNC_POOL_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("memset sync pool failed.");
         return SHMEM_INNER_ERROR;
     }
 
-    ret = aclrtMalloc((void **) &(g_state.sync_counter), SYNC_COUNTERS_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
+    ret = aclrtMalloc((void **)&(g_state.sync_counter), SYNC_COUNTERS_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
     if (ret != 0 || g_state.sync_counter == 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("malloc sync counter failed.");
         return SHMEM_INNER_ERROR;
     }
-    ret = aclrtMemset((void *) g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
+    ret = aclrtMemset((void *)g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("memset sync counter failed.");
         return SHMEM_INNER_ERROR;
     }
 
-    ret = aclrtMalloc((void **) &(g_state.core_sync_pool), SHMEM_CORE_SYNC_POOL_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
+    ret = aclrtMalloc((void **)&(g_state.core_sync_pool), SHMEM_CORE_SYNC_POOL_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
     if (ret != 0 || g_state.core_sync_pool == 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("malloc core sync pool failed.");
         return SHMEM_INNER_ERROR;
     }
-    ret = aclrtMemset((void *) g_state.core_sync_pool, SHMEM_CORE_SYNC_POOL_SIZE, 0, SHMEM_CORE_SYNC_POOL_SIZE);
+    ret = aclrtMemset((void *)g_state.core_sync_pool, SHMEM_CORE_SYNC_POOL_SIZE, 0, SHMEM_CORE_SYNC_POOL_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("memset core sync pool failed.");
         return SHMEM_INNER_ERROR;
     }
 
-    ret = aclrtMalloc((void **) &(g_state.core_sync_counter), SHMEM_CORE_SYNC_COUNTER_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
+    ret = aclrtMalloc((void **)&(g_state.core_sync_counter), SHMEM_CORE_SYNC_COUNTER_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
     if (ret != 0 || g_state.core_sync_counter == 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("malloc core sync counter failed.");
         return SHMEM_INNER_ERROR;
     }
-    ret = aclrtMemset((void *) g_state.core_sync_counter, SHMEM_CORE_SYNC_COUNTER_SIZE, 0, SHMEM_CORE_SYNC_COUNTER_SIZE);
+    ret = aclrtMemset((void *)g_state.core_sync_counter, SHMEM_CORE_SYNC_COUNTER_SIZE, 0, SHMEM_CORE_SYNC_COUNTER_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("memset core sync counter failed.");
@@ -145,7 +145,6 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
     }
     return 0;
 }
-
 
 int32_t first_free_idx_fetch()
 {
@@ -164,7 +163,9 @@ int32_t shmemi_team_finalize()
     /* Destroy all undestroyed teams */
     int32_t shmem_max_teams = SHMEM_MAX_TEAMS;
     for (int32_t i = 0; i < shmem_max_teams; i++) {
-        if (is_valid_team(i)) shmem_team_destroy(i);
+        if (is_valid_team(i)) {
+            shmem_team_destroy(i);
+        }
     }
 
     if (g_state.sync_counter != 0) {
@@ -190,12 +191,10 @@ int32_t shmemi_team_finalize()
     return 0;
 }
 
-} // namespace shm
+}  // namespace shm
 
-int32_t shmem_team_split_strided(
-        shmem_team_t parent_team,
-        int32_t pe_start, int32_t pe_stride, int32_t pe_size,
-        shmem_team_t *new_team)
+int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int32_t pe_stride, int32_t pe_size,
+                                 shmem_team_t *new_team)
 {
     if (new_team == nullptr) {
         SHM_LOG_ERROR("output team is null.");
@@ -213,7 +212,8 @@ int32_t shmem_team_split_strided(
 
     if (pe_start >= SHMEM_MAX_RANKS || pe_stride >= SHMEM_MAX_RANKS || pe_size > SHMEM_MAX_RANKS) {
         SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
-                      << " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
+                                                                     << " pe_stride:" << pe_stride << " parent:"
+                                                                     << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
@@ -224,20 +224,21 @@ int32_t shmem_team_split_strided(
 
     if (pe_start < 0 || pe_start >= src_team->size || pe_size <= 0 || pe_size > src_team->size || pe_stride < 1) {
         SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
-                      << " pe_stride:" << pe_stride << " parent:" << shm::team_config2string(src_team));
+                                                                     << " pe_stride:" << pe_stride << " parent:"
+                                                                     << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
     if (global_pe_start >= shmem_n_pes() || global_pe_end >= shmem_n_pes()) {
-        SHM_LOG_ERROR("create team failed, large than world size, pe_start:" << pe_start << " pe_size:" << pe_size
-                      << " pe_stride:" << pe_stride << " world_size:" << shmem_n_pes() << " parent:"
-                      << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, large than world size, pe_start:"
+                      << pe_start << " pe_size:" << pe_size << " pe_stride:" << pe_stride
+                      << " world_size:" << shmem_n_pes() << " parent:" << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
     my_team.mype = (global_pe - global_pe_start) / global_pe_stride;
 
-    if (global_pe < global_pe_start || (global_pe - global_pe_start)  % global_pe_stride || my_team.mype >= pe_size) {
+    if (global_pe < global_pe_start || (global_pe - global_pe_start) % global_pe_stride || my_team.mype >= pe_size) {
         SHM_LOG_INFO("This PE is not a member of the new team.");
         return 0;
     }
@@ -266,7 +267,6 @@ int32_t shmem_team_split_strided(
     *new_team = my_team.team_idx;
     return 0;
 }
-
 
 int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
 {
@@ -311,7 +311,7 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
         }
 
         start += x_range;
-        
+
         if (my_xteam != SHMEM_TEAM_INVALID) {
             if (*x_team == SHMEM_TEAM_INVALID) {
                 *x_team = my_xteam;
@@ -327,8 +327,8 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
         shmem_team_t my_yteam;
         int remainder = src_size % x_range;
         int y_range = src_size / x_range;
-        int y_size = (remainder && i < remainder) ? (y_range + 1) : y_range;
-    
+        int y_size = (remainder && i < remainder) ? y_range + 1 : y_range;
+
         errorCode = shmem_team_split_strided(parent_team, start, x_range, y_size, &my_yteam);
         if (errorCode != 0) {
             SHM_LOG_WARN("create y-axis team " << (i + 1) << " of " << y_team_counts << " failed");
@@ -347,10 +347,7 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
     return 0;
 }
 
-
-int32_t shmem_team_translate_pe(
-    shmem_team_t src_team, int32_t src_pe,
-    shmem_team_t dest_team)
+int32_t shmem_team_translate_pe(shmem_team_t src_team, int32_t src_pe, shmem_team_t dest_team)
 {
     if (!shm::is_valid_team(src_team) || !shm::is_valid_team(dest_team)) {
         return -1;
@@ -359,7 +356,9 @@ int32_t shmem_team_translate_pe(
     shmemi_team_t *src_team_ptr = &shm::g_shmem_team_pool[src_team];
     shmemi_team_t *dest_team_ptr = &shm::g_shmem_team_pool[dest_team];
 
-    if (src_pe > src_team_ptr->size) return -1;
+    if (src_pe > src_team_ptr->size) {
+        return -1;
+    }
 
     int32_t global_pe = src_team_ptr->start + src_pe * src_team_ptr->stride;
     int32_t pe_start = dest_team_ptr->start;
@@ -367,12 +366,12 @@ int32_t shmem_team_translate_pe(
     int32_t pe_size = dest_team_ptr->size;
 
     int32_t n = (global_pe - pe_start) / pe_stride;
-    if (global_pe < pe_start || (global_pe - pe_start) % pe_stride || n >= pe_size)
+    if (global_pe < pe_start || (global_pe - pe_start) % pe_stride || n >= pe_size) {
         return -1;
-    
+    }
+
     return n;
 }
-
 
 void shmem_team_destroy(shmem_team_t team)
 {
@@ -393,12 +392,10 @@ int32_t shmem_my_pe()
     return shm::g_state.mype;
 }
 
-
 int32_t shmem_n_pes()
 {
     return shm::g_state.npes;
 }
-
 
 int32_t shmem_team_my_pe(shmem_team_t team)
 {
@@ -408,7 +405,6 @@ int32_t shmem_team_my_pe(shmem_team_t team)
         return -1;
     }
 }
-
 
 int32_t shmem_team_n_pes(shmem_team_t team)
 {

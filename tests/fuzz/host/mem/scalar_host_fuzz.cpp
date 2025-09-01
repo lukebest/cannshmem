@@ -87,7 +87,7 @@ static void test_shmem_scalar(int rank_id, int n_ranks, uint64_t local_mem_size,
 }
 
 #define TEST_CASE(NAME, TYPE)                                                                      \
-    TEST_F(ShmemScalarFuzz, shmem_scalar_##NAME##_success)                                     \
+    TEST_F(ShmemScalarFuzz, shmem_scalar_##NAME##_success)                                         \
     {                                                                                              \
         char fuzzName[] = "shmem_scalar_##NAME##_success";                                         \
         uint64_t seed = 0;                                                                         \

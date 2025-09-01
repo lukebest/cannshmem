@@ -263,6 +263,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -python_extension)
             PYEXPAND_TYPE=ON
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DBUILD_PYTHON=ON"
             shift
             ;;
         -gendoc)

@@ -50,6 +50,7 @@ endfunction()
 foreach(EXAMPLE
     allgather
     matmul_allreduce
+    rdma_perftest
 )
     add_subdirectory(${EXAMPLE})
 endforeach()

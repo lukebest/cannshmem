@@ -38,7 +38,7 @@ constexpr int DEFAULT_BLOCK_NUM = 1;
             NULL,                                       /* heap_base */                  \
             {NULL},                                     /* p2p_heap_base */              \
             {NULL},                                     /* sdma_heap_base */             \
-            {NULL},                                     /* roce_heap_base */             \
+            {},                                         /* topo_list */                  \
             SIZE_MAX,                                   /* heap_size */                  \
             {NULL},                                     /* team_pools */                 \
             0,                                          /* sync_pool */                  \
@@ -124,10 +124,9 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     uint32_t reach_info = 0;
     for (int32_t i = 0; i < g_state.npes; i++) {
         status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
+        g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
         if (reach_info & SMEMS_DATA_OP_MTE) {
-            g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
-        } else {
-            g_state.p2p_heap_base[i] = NULL;
+            g_state.topo_list[i] |= SHMEM_TRANSPORT_MTE;
         }
         if (reach_info & SMEMS_DATA_OP_SDMA) {
             g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
@@ -135,9 +134,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
             g_state.sdma_heap_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_RDMA) {
-            g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
-        } else {
-            g_state.roce_heap_base[i] = NULL;
+            g_state.topo_list[i] |= SHMEM_TRANSPORT_ROCE;
         }
     }
     if (shm::g_ipport != nullptr) {

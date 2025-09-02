@@ -135,7 +135,7 @@ shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
 6. 使用torchrun运行测试demo
 
 ```sh
-torchrun --nproco-per-node=k test.py // k为想运行的ranksize
+torchrun --nproc-per-node=k test.py // k为想运行的ranksize
 ```
 看到日志中打印出“test.py running success!”即为demo运行成功
 

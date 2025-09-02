@@ -13,6 +13,7 @@
 #include "kernel_operator.h"
 #include "internal/device/shmemi_device_common.h"
 #include "low_level/shmem_device_low_level_rma.h"
+#include "low_level/shmem_device_low_level_roce.h"
 #include "shmem_device_team.h"
 #include "internal/device/sync/shmemi_device_p2p.h"
 #include "shmem_device_sync.h"
@@ -266,7 +267,7 @@ SHMEM_DEVICE void shmem_getmem_nbi(__gm__ void *dst, __gm__ void *src, uint32_t 
             ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR           \
                                                                              + UB_ALIGN_SIZE);                       \
             ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                           \
-            smem_shm_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)dst, pe, 0, elem_size * sizeof(TYPE),          \
+            shmemi_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)dst, pe, 0, elem_size * sizeof(TYPE),            \
                                 ub_tensor_64, ub_tensor_32);                                                         \
         }                                                                                                            \
     }
@@ -341,7 +342,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_DETAILED_NBI);
             ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR         \
                                                                             + UB_ALIGN_SIZE);                      \
             ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                         \
-            smem_shm_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)(dst.GetPhyAddr()), pe, 0,                   \
+            shmemi_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)(dst.GetPhyAddr()), pe, 0,                     \
                                 elem_size * sizeof(TYPE), ub_tensor_64, ub_tensor_32);                             \
         }                                                                                                          \
     }
@@ -414,7 +415,7 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI);
             ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR           \
                                                                             + UB_ALIGN_SIZE);                        \
             ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                           \
-            smem_shm_roce_write((__gm__ uint8_t*)src, (__gm__ uint8_t*)ptr, pe, 0, elem_size * sizeof(TYPE),         \
+            shmemi_roce_write((__gm__ uint8_t*)src, (__gm__ uint8_t*)ptr, pe, 0, elem_size * sizeof(TYPE),           \
                                     ub_tensor_64, ub_tensor_32);                                                     \
         }                                                                                                            \
     }
@@ -488,7 +489,7 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI);
             ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR         \
                                                                             + UB_ALIGN_SIZE);                      \
             ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                         \
-            smem_shm_roce_write((__gm__ uint8_t*)(src.GetPhyAddr()), (__gm__ uint8_t*)ptr, pe, 0,                  \
+            shmemi_roce_write((__gm__ uint8_t*)(src.GetPhyAddr()), (__gm__ uint8_t*)ptr, pe, 0,                    \
                                                     elem_size * sizeof(TYPE), ub_tensor_64, ub_tensor_32);         \
         }                                                                                                          \
     }

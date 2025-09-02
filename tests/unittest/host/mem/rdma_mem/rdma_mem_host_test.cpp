@@ -16,83 +16,64 @@ extern void test_rdma_put_low_level(uint32_t block_dim, void* stream, uint8_t* g
 extern void test_rdma_get_low_level(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config);
 extern void test_rdma_put_high_level(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config);
 extern void test_rdma_get_high_level(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config);
-extern void shmem_rdma_get_qpinfo_test_do(void* stream, uint8_t* gva, uint32_t rankId, uint64_t config);
-extern void test_rdma_poll_cq_do(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config);
-
-static void test_rdma_poll_cq(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint64_t heap_size)
-{
-    size_t messageSize = 128;
-    uint64_t *xHost;
-    size_t totalSize = 120;
-    
-    ASSERT_EQ(aclrtMallocHost((void **)(&xHost), totalSize), 0);
-    for (uint32_t i = 0; i < messageSize / sizeof(uint32_t); i++) {
-        xHost[i] = rank_id + 10;
-    }
-    ASSERT_EQ(aclrtMemcpy(gva + (rank_id + 1) * messageSize, messageSize, xHost, messageSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
-
-    uint32_t block_dim = 1;
-    test_rdma_poll_cq_do(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
-    ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-    sleep(2);
-
-    std::string p_name = "[Process " + std::to_string(rank_id) + "] ";
-    std::cout << p_name;
-    ASSERT_EQ(aclrtMemcpy(xHost, totalSize, gva + 2048, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
-    for (uint32_t i = 0; i < totalSize / sizeof(uint64_t); i++) {
-        printf("PollCQ index = %d, value = %lu\n", i, xHost[i]);
-    }
-}
 
 static void test_rdma_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint32_t rank_size)
 {
     size_t messageSize = 64;
-    uint32_t *xHost;
+    uint32_t *inHost;
+    uint32_t *outHost;
     size_t totalSize = messageSize * rank_size;
-    
-    ASSERT_EQ(aclrtMallocHost((void **)(&xHost), totalSize), 0);
-    for (uint32_t i = 0; i < messageSize / sizeof(uint32_t); i++) {
-        xHost[i] = rank_id + 10;
-    }
-    ASSERT_EQ(aclrtMemcpy(gva + rank_id * messageSize, messageSize, xHost, messageSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
-
     uint32_t block_dim = 1;
-    // test_rdma_put_low_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
-    // test_rdma_get_low_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
-    test_rdma_put_high_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
-    // test_rdma_get_high_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
+    
+    ASSERT_EQ(aclrtMallocHost((void **)(&inHost), totalSize), 0);
+    ASSERT_EQ(aclrtMallocHost((void **)(&outHost), totalSize), 0);
+    memset(inHost, 0, totalSize);
+    for (uint32_t i = 0; i < messageSize / sizeof(uint32_t); i++) {
+        inHost[i + rank_id * messageSize / sizeof(uint32_t)] = rank_id + 10;
+    }
+
+    ASSERT_EQ(aclrtMemcpy(gva, totalSize, inHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
+    shm::shmemi_control_barrier_all();
+    test_rdma_put_low_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
     ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-    sleep(2);
-
-    std::string p_name = "[Process " + std::to_string(rank_id) + "] ";
-    std::cout << p_name;
-    ASSERT_EQ(aclrtMemcpy(xHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    shm::shmemi_control_barrier_all();
+    ASSERT_EQ(aclrtMemcpy(outHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
     for (uint32_t i = 0; i < rank_size; i++) {
-        ASSERT_EQ(xHost[i * messageSize / sizeof(uint32_t)], i + 10);
-    }
-}
-
-static void test_rdma_get_info(aclrtStream stream, uint8_t *gva, uint32_t rankId, uint32_t rankSize) {
-    uint64_t *xHost;
-    size_t totalSize = 120;
-    ASSERT_EQ(aclrtMallocHost((void **)(&xHost), totalSize), 0);
-    memset(xHost, 0xEE, totalSize);
-    ASSERT_EQ(aclrtMemcpy(gva, totalSize, xHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
-    for (uint32_t curRank = 0; curRank < rankSize; curRank++) {
-        if (curRank == rankId) {
-            continue;
-        }
-        shmem_rdma_get_qpinfo_test_do(stream, gva, curRank, shmemx_get_ffts_config());
-        ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
-        sleep(1);
-
-        ASSERT_EQ(aclrtMemcpy(xHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
-        for (uint32_t i = 0; i < totalSize / sizeof(uint64_t); i++) {
-            printf("GetQPInfo srcRank = %d, destRank = %d, index = %d, value = %lu\n", rankId, curRank, i, xHost[i]);
-        }
+        ASSERT_EQ(outHost[i * messageSize / sizeof(uint32_t)], i + 10);
     }
 
-    ASSERT_EQ(aclrtFreeHost(xHost), 0);
+    ASSERT_EQ(aclrtMemcpy(gva, totalSize, inHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
+    shm::shmemi_control_barrier_all();
+    test_rdma_get_low_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
+    ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
+    shm::shmemi_control_barrier_all();
+    ASSERT_EQ(aclrtMemcpy(outHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    for (uint32_t i = 0; i < rank_size; i++) {
+        ASSERT_EQ(outHost[i * messageSize / sizeof(uint32_t)], i + 10);
+    }
+
+    ASSERT_EQ(aclrtMemcpy(gva, totalSize, inHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
+    shm::shmemi_control_barrier_all();
+    test_rdma_put_high_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
+    ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
+    shm::shmemi_control_barrier_all();
+    ASSERT_EQ(aclrtMemcpy(outHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    for (uint32_t i = 0; i < rank_size; i++) {
+        ASSERT_EQ(outHost[i * messageSize / sizeof(uint32_t)], i + 10);
+    }
+
+    ASSERT_EQ(aclrtMemcpy(gva, totalSize, inHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE), 0);
+    shm::shmemi_control_barrier_all();
+    test_rdma_get_high_level(block_dim, stream, (uint8_t *)gva, shmemx_get_ffts_config());
+    ASSERT_EQ(aclrtSynchronizeStream(stream), 0);
+    shm::shmemi_control_barrier_all();
+    ASSERT_EQ(aclrtMemcpy(outHost, totalSize, gva, totalSize, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    for (uint32_t i = 0; i < rank_size; i++) {
+        ASSERT_EQ(outHost[i * messageSize / sizeof(uint32_t)], i + 10);
+    }
+
+    ASSERT_EQ(aclrtFreeHost(inHost), 0);
+    ASSERT_EQ(aclrtFreeHost(outHost), 0);
 }
 
 void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
@@ -102,9 +83,7 @@ void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
     ASSERT_NE(stream, nullptr);
 
     void* ptr = shmem_malloc(1024);
-    // test_rdma_poll_cq(stream, (uint8_t *)ptr, rank_id, n_ranks);
     test_rdma_put_get(stream, (uint8_t *)ptr, rank_id, n_ranks);
-    // test_rdma_get_info(stream, (uint8_t *)ptr, rank_id, n_ranks);
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
     if (::testing::Test::HasFailure()){

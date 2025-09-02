@@ -3,41 +3,13 @@
 #include "shmem_api.h"
 constexpr uint64_t MESSAGE_SIZE = 64;
 
-extern "C" __global__ __aicore__ void RDMAPollCQTest(GM_ADDR gva, uint64_t config)
-{
-    shmemx_set_ffts_config(config);
-    AscendC::TPipe pipe;
-    AscendC::TBuf<AscendC::TPosition::VECOUT> buf;
-    pipe.InitBuffer(buf, UB_ALIGN_SIZE * 2);
-    AscendC::LocalTensor<uint32_t> ubLocal32 = buf.GetWithOffset<uint32_t>(UB_ALIGN_SIZE / sizeof(uint32_t), 0);
-    AscendC::LocalTensor<uint64_t> ubLocal64 = buf.GetWithOffset<uint64_t>(UB_ALIGN_SIZE / sizeof(uint64_t), UB_ALIGN_SIZE);
-
-    int64_t rank = smem_shm_get_global_rank();
-    int64_t rank_size = smem_shm_get_global_rank_size();
-    GM_ADDR src_addr;
-
-    for (int64_t peer = 0; peer < rank_size; peer++) {
-        if (peer == rank) {
-            continue;
-        }
-        src_addr = gva + rank * MESSAGE_SIZE;
-        smem_shm_roce_pollcq_test(src_addr, (GM_ADDR)(shmem_ptr(src_addr, peer)), peer, 0, MESSAGE_SIZE, ubLocal64, ubLocal32, gva + 2048);
-    }
-}
-
-void test_rdma_poll_cq_do(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config)
-{
-    RDMAPollCQTest<<<block_dim, nullptr, stream>>>(gva, config);
-}
-
 extern "C" __global__ __aicore__ void RDMAGetTestLowLevel(GM_ADDR gva, uint64_t config)
 {
     shmemx_set_ffts_config(config);
     AscendC::TPipe pipe;
     AscendC::TBuf<AscendC::TPosition::VECOUT> buf;
     pipe.InitBuffer(buf, UB_ALIGN_SIZE * 2);
-    AscendC::LocalTensor<uint32_t> ubLocal32 = buf.GetWithOffset<uint32_t>(UB_ALIGN_SIZE / sizeof(uint32_t), 0);
-    AscendC::LocalTensor<uint64_t> ubLocal64 = buf.GetWithOffset<uint64_t>(UB_ALIGN_SIZE / sizeof(uint64_t), UB_ALIGN_SIZE);
+    AscendC::LocalTensor<uint8_t> ubLocal = buf.GetWithOffset<uint8_t>(UB_ALIGN_SIZE * 2, 0);
 
     int64_t rank = smem_shm_get_global_rank();
     int64_t rank_size = smem_shm_get_global_rank_size();
@@ -48,7 +20,7 @@ extern "C" __global__ __aicore__ void RDMAGetTestLowLevel(GM_ADDR gva, uint64_t 
             continue;
         }
         dest_addr = gva + peer * MESSAGE_SIZE;
-        smem_shm_roce_read((GM_ADDR)(shmem_ptr(dest_addr, peer)), dest_addr, peer, 0, MESSAGE_SIZE, ubLocal64, ubLocal32);
+        shmem_roce_get_mem_nbi(dest_addr, dest_addr, (__ubuf__ uint8_t*)ubLocal.GetPhyAddr(), MESSAGE_SIZE, peer);
     }
 }
 
@@ -63,8 +35,7 @@ extern "C" __global__ __aicore__ void RDMAPutTestLowLevel(GM_ADDR gva, uint64_t 
     AscendC::TPipe pipe;
     AscendC::TBuf<AscendC::TPosition::VECOUT> buf;
     pipe.InitBuffer(buf, UB_ALIGN_SIZE * 2);
-    AscendC::LocalTensor<uint32_t> ubLocal32 = buf.GetWithOffset<uint32_t>(UB_ALIGN_SIZE / sizeof(uint32_t), 0);
-    AscendC::LocalTensor<uint64_t> ubLocal64 = buf.GetWithOffset<uint64_t>(UB_ALIGN_SIZE / sizeof(uint64_t), UB_ALIGN_SIZE);
+    AscendC::LocalTensor<uint8_t> ubLocal = buf.GetWithOffset<uint8_t>(UB_ALIGN_SIZE * 2, 0);
 
     int64_t rank = smem_shm_get_global_rank();
     int64_t rank_size = smem_shm_get_global_rank_size();
@@ -75,7 +46,7 @@ extern "C" __global__ __aicore__ void RDMAPutTestLowLevel(GM_ADDR gva, uint64_t 
             continue;
         }
         src_addr = gva + rank * MESSAGE_SIZE;
-        smem_shm_roce_write(src_addr, (GM_ADDR)(shmem_ptr(src_addr, peer)), peer, 0, MESSAGE_SIZE, ubLocal64, ubLocal32);
+        shmem_roce_put_mem_nbi(src_addr, src_addr, (__ubuf__ uint8_t*)ubLocal.GetPhyAddr(), MESSAGE_SIZE, peer);
     }
 }
 
@@ -124,15 +95,4 @@ extern "C" __global__ __aicore__ void RDMAPutTestHighLevel(GM_ADDR gva, uint64_t
 void test_rdma_put_high_level(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config)
 {
     RDMAPutTestHighLevel<<<block_dim, nullptr, stream>>>(gva, config);
-}
-
-extern "C" __global__ __aicore__ void shmem_rdma_get_qpinfo_test(GM_ADDR gva, uint32_t rankId, uint64_t config)
-{
-    shmemx_set_ffts_config(config);
-    smem_shm_roce_qpinfo_test(gva, rankId, 0);
-}
-
-void shmem_rdma_get_qpinfo_test_do(void* stream, uint8_t* gva, uint32_t rankId, uint64_t config)
-{
-    shmem_rdma_get_qpinfo_test<<<1, nullptr, stream>>>(gva, rankId, config);
 }

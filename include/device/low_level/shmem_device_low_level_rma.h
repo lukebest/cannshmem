@@ -14,6 +14,9 @@
 #include "internal/device/shmemi_device_common.h"
 #include "device/shmem_device_team.h"
 
+constexpr uint64_t SHMEM_INTERNAL_UB_BUF_START_ADDR = 188 * 1024;
+constexpr uint32_t UB_ALIGN_SIZE = 32;
+
 /**
  * @brief Translate an local symmetric address to remote symmetric address on the specified PE.
  *
@@ -77,6 +80,31 @@ SHMEM_DEVICE void shmem_mte_get_mem_nbi(__gm__ T *dst, __gm__ T *src, __ubuf__ T
         smem_shm_copy_ub2gm(dst + repeat_times * repeat_elem, buf, remain);
     }
 }
+
+/**
+ * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local device.
+ *
+ * @param dst               [in] Pointer on local device of the destination data.
+ * @param src               [in] Pointer on Symmetric memory of the source data.
+ * @param buf               [in] Pointer on local UB, available space larger than 64 Bytes.
+ * @param elem_size         [in] Number of elements in the destination and source arrays.
+ * @param pe                [in] PE number of the remote PE.
+ */
+template <typename T>
+SHMEM_DEVICE void shmem_roce_get_mem_nbi(__gm__ T* dst, __gm__ T* src, __ubuf__ T* buf, uint32_t elem_size, int pe)
+{
+    auto ptr = shmem_ptr(src, pe);
+    AscendC::LocalTensor<uint32_t> ub_tensor_32;
+    ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(buf);
+    ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;
+    AscendC::LocalTensor<uint64_t> ub_tensor_64;
+    ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(buf) + UB_ALIGN_SIZE;
+    ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;
+    smem_shm_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)dst, pe, 0, elem_size * sizeof(T), ub_tensor_64, ub_tensor_32);
+}
+
 
 /**
  * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data 
@@ -168,6 +196,30 @@ SHMEM_DEVICE void shmem_mte_get_mem_nbi(AscendC::GlobalTensor<T> dst, AscendC::G
 }
 
 /**
+ * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+ *
+ * @param dst               [in] GlobalTensor on local device of the destination data.
+ * @param src               [in] GlobalTensor on Symmetric memory of the source data.
+ * @param buf               [in] LocalTensor on local UB, available space larger than 64 Bytes.
+ * @param elem_size         [in] Number of elements in the destination and source arrays.
+ * @param pe                [in] PE number of the remote PE.
+ */
+template <typename T>
+SHMEM_DEVICE void shmem_roce_get_mem_nbi(AscendC::GlobalTensor<T> dst, AscendC::GlobalTensor<T> src, AscendC::LocalTensor<T> buf, uint32_t elem_size, int pe)
+{
+    auto ptr = shmem_ptr((__gm__ void *)src.GetPhyAddr(), pe);
+    AscendC::LocalTensor<uint32_t> ub_tensor_32;
+    ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(buf.GetPhyAddr());
+    ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;
+    AscendC::LocalTensor<uint64_t> ub_tensor_64;
+    ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(buf.GetPhyAddr()) + UB_ALIGN_SIZE;
+    ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;
+    smem_shm_roce_read((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)dst.GetPhyAddr(), pe, 0, elem_size * sizeof(T), ub_tensor_64, ub_tensor_32);
+}
+
+/**
  * @brief Asynchronous interface. Provide a high-performance way to copy non-contiguous data 
  *        on symmetric memory from the specified PE to address on the local device.
  *
@@ -245,6 +297,30 @@ SHMEM_DEVICE void shmem_mte_put_mem_nbi(__gm__ T *dst, __gm__ T *src, __ubuf__ T
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID);
         smem_shm_copy_ub2gm(remote_ptr + repeat_times * repeat_elem, buf, remain);
     }
+}
+
+/**
+ * @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+ *
+ * @param dst               [in] Pointer on Symmetric memory of the destination data.
+ * @param src               [in] Pointer on local device of the source data.
+ * @param buf               [in] Pointer on local UB, available space larger than 64 Bytes.
+ * @param elem_size         [in] Number of elements in the destination and source arrays.
+ * @param pe                [in] PE number of the remote PE.
+ */
+template <typename T>
+SHMEM_DEVICE void shmem_roce_put_mem_nbi(__gm__ T* dst, __gm__ T* src, __ubuf__ T* buf, uint32_t elem_size, int pe)
+{
+    auto ptr = shmem_ptr(dst, pe);
+    AscendC::LocalTensor<uint32_t> ub_tensor_32;
+    ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(buf);
+    ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;
+    AscendC::LocalTensor<uint64_t> ub_tensor_64;
+    ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(buf) + UB_ALIGN_SIZE;
+    ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;
+    smem_shm_roce_write((__gm__ uint8_t*)src, (__gm__ uint8_t*)ptr, pe, 0, elem_size * sizeof(T), ub_tensor_64, ub_tensor_32);
 }
 
 /**
@@ -334,6 +410,30 @@ SHMEM_DEVICE void shmem_mte_put_mem_nbi(AscendC::GlobalTensor<T> dst, AscendC::G
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_MTE3>(EVENT_ID);
         smem_shm_copy_ub2gm(remote_buff[repeat_times * repeat_elem], buf, remain);
     }
+}
+
+/**
+ * @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+ *
+ * @param dst               [in] GlobalTensor on Symmetric memory of the destination data.
+ * @param src               [in] GlobalTensor on local device of the source data.
+ * @param buf               [in] Pointer on local UB, available space larger than 64 Bytes.
+ * @param elem_size         [in] Number of elements in the destination and source arrays.
+ * @param pe                [in] PE number of the remote PE.
+ */
+template <typename T>
+SHMEM_DEVICE void shmem_roce_put_mem_nbi(AscendC::GlobalTensor<T> dst, AscendC::GlobalTensor<T> src, AscendC::LocalTensor<T> buf, uint32_t elem_size, int pe, AscendC::TEventID EVENT_ID)
+{
+    auto ptr = shmem_ptr((__gm__ void *)dst.GetPhyAddr(), pe);
+    AscendC::LocalTensor<uint32_t> ub_tensor_32;
+    ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(buf.GetPhyAddr());
+    ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;
+    AscendC::LocalTensor<uint64_t> ub_tensor_64;
+    ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
+    ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(buf.GetPhyAddr()) + UB_ALIGN_SIZE;
+    ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;
+    smem_shm_roce_write((__gm__ uint8_t*)(src.GetPhyAddr()), (__gm__ uint8_t*)ptr, pe, 0, elem_size * sizeof(T), ub_tensor_64, ub_tensor_32);
 }
 
 /**

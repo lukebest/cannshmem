@@ -18,9 +18,6 @@
 #include "shmem_device_sync.h"
 #include "host/shmem_host_def.h"
 
-constexpr uint64_t SHMEM_INTERNAL_UB_BUF_START_ADDR = 188 * 1024;
-constexpr uint32_t UB_ALIGN_SIZE = 32;
-
 /**
  * @brief Standard RMA Types and Names
  *

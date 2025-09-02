@@ -104,7 +104,7 @@ function fn_build_googletest()
         return 0
     fi
     cd $THIRD_PARTY_DIR
-    [[ ! -d "googletest" ]] && git clone --branch v1.14.0 --depth 1 https://github.com/google/googletest.git
+    [[ ! -d "googletest" ]] && git clone --branch v1.14.0 --depth 1 https://gitee.com/mirrors/googletest.git
     cd googletest
 
     rm -rf build && mkdir build && cd build

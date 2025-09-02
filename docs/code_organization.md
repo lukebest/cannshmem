@@ -74,6 +74,6 @@ include目录下的头文件是按照如下文件层级进行组织的
 │    └─Troubleshooting_FAQs.md  // QA
 ```
 
-## scrips
+## scripts
 存放相关脚本。  
 [脚本具体功能和使用](related_scripts.md)

@@ -14,28 +14,6 @@
 constexpr uint32_t MAGIC_VAL = 10;
 constexpr uint32_t WARMUP_MESSAGE_LENGTH = 32;
 
-/**
- * @brief RDMA Quiet function. This synchronous function ensures all previous RDMA WQEs are completed (data has arrived at the destination NIC).
- *
- * @param remoteRankId           [in] destination rank ID
- * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
- * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
- */
-
-SHMEM_DEVICE void smem_shm_roce_quiet(uint32_t remoteRankId, AscendC::LocalTensor<uint64_t> ubLocal64, AscendC::LocalTensor<uint32_t> ubLocal32) {
-    __gm__ HybmDeviceMeta* metaPtr = (__gm__ HybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR + 
-                                                                SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
-    __gm__ AIVRDMAInfo* RDMAInfo = (__gm__ AIVRDMAInfo*)(metaPtr->qpInfoAddress);
-    uint32_t qpNum = RDMAInfo->qpNum;
-    for (uint32_t qpIdx = 0; qpIdx < qpNum; qpIdx++) {
-        __gm__ WQCtx* qpCtxEntry = (__gm__ WQCtx*)(RDMAInfo->sqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(WQCtx));
-        auto curHardwareHeadAddr = qpCtxEntry->headAddr;
-        cacheWriteThrough((__gm__ uint8_t*)curHardwareHeadAddr, 8);
-        uint32_t curHead = *(__gm__ uint32_t*)(curHardwareHeadAddr);
-        smem_shm_roce_poll_cq(remoteRankId, qpIdx, curHead - 1, ubLocal64, ubLocal32);
-    }
-}
-
 extern "C" __global__ __aicore__ void rdma_highlevel_put_pingpong_latency(uint64_t fftsConfig, GM_ADDR gva, int message_length) {
     shmemx_set_ffts_config(fftsConfig);
     if (AscendC::GetSubBlockIdx() != 0) {
@@ -156,7 +134,7 @@ extern "C" __global__ __aicore__ void rdma_highlevel_put_bw(uint64_t fftsConfig,
         for (int i = 0; i < 10000; i++) {
             shmem_put_uint8_mem_nbi(src_addr, src_addr, message_length, peer);
         }
-        smem_shm_roce_quiet(peer, ubLocal64, ubLocal32);
+        smem_shm_roce_quiet(peer, 0, ubLocal64, ubLocal32);
         shmem_put_uint8_mem_nbi(gva + rank_size * message_length + 8, src_addr, sizeof(uint32_t), peer);
         while (*(__gm__ uint32_t*)(gva + message_length * rank_size + 16) != peer + MAGIC_VAL) {
             cacheWriteThrough(gva + message_length * rank_size + 16, 8);
@@ -180,7 +158,7 @@ void rdma_highlevel_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsCon
     rdma_highlevel_put_bw<<<1, nullptr, stream>>>(fftsConfig, gva, message_length);
 }
 
-extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_ADDR gva, int message_length) {
+extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_ADDR gva, int message_length, int64_t iter) {
     shmemx_set_ffts_config(fftsConfig);
     AscendC::LocalTensor<uint32_t> ubLocal32;
     ubLocal32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);
@@ -204,9 +182,9 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
             for (int i = 0; i < 10000; i++) {
                 smem_shm_roce_write(src_addr, (GM_ADDR)shmem_ptr(src_addr, peer), peer, 0, message_length, ubLocal64, ubLocal32);
             }
-            smem_shm_roce_quiet(peer, ubLocal64, ubLocal32);
+            smem_shm_roce_quiet(peer, 0, ubLocal64, ubLocal32);
             smem_shm_roce_write(src_addr, (GM_ADDR)shmem_ptr(gva + rank_size * message_length * 2 + 8, peer), peer, 0, sizeof(int64_t), ubLocal64, ubLocal32);
-            while (*(__gm__ int64_t*)(gva + message_length * rank_size * 2 + 16) != peer + MAGIC_VAL) {
+            while (*(__gm__ int64_t*)(gva + message_length * rank_size * 2 + 16) != peer + MAGIC_VAL + iter) {
                 cacheWriteThrough(gva + message_length * rank_size * 2 + 16, 8);
                 AscendC::GetSystemCycle();
             }
@@ -215,7 +193,7 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
             *(__gm__ int64_t*)(gva + message_length * rank_size * 2) = end - start;
         } else {
             peer = 0;
-            while (*(__gm__ int64_t*)(gva + rank_size * message_length * 2 + 8) != peer + MAGIC_VAL) {
+            while (*(__gm__ int64_t*)(gva + rank_size * message_length * 2 + 8) != peer + MAGIC_VAL + iter) {
                 cacheWriteThrough(gva + rank_size * message_length * 2 + 8, 8);
                 AscendC::GetSystemCycle();
             }
@@ -237,7 +215,7 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
             }
             AscendC::PipeBarrier<PIPE_ALL>();
             shmem_mte_put_mem_nbi(gva + rank_size * message_length * 2 + 24, src_addr, reinterpret_cast<__ubuf__ uint8_t*>(copy_ub), copy_ub_size, sizeof(uint32_t), peer, copy_event_id);
-            while (*(__gm__ uint32_t*)(gva + message_length * rank_size * 2 + 32) != peer + MAGIC_VAL) {
+            while (*(__gm__ uint32_t*)(gva + message_length * rank_size * 2 + 32) != peer + MAGIC_VAL + iter) {
                 cacheWriteThrough(gva + message_length * rank_size * 2 + 32, 8);
                 AscendC::GetSystemCycle();
             }
@@ -246,7 +224,7 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
             *(__gm__ int64_t*)(gva + message_length * rank_size * 2 + 48) = end - start;
         } else {
             peer = 0;
-            while (*(__gm__ uint32_t*)(gva + rank_size * message_length * 2 + 24) != peer + MAGIC_VAL) {
+            while (*(__gm__ uint32_t*)(gva + rank_size * message_length * 2 + 24) != peer + MAGIC_VAL + iter) {
                 cacheWriteThrough(gva + rank_size * message_length * 2 + 24, 8);
                 AscendC::GetSystemCycle();
             }
@@ -256,6 +234,6 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
     }
 }
 
-void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length) {
-    rdma_mte_put_bw<<<2, nullptr, stream>>>(fftsConfig, gva, message_length);
+void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length, int64_t iter) {
+    rdma_mte_put_bw<<<2, nullptr, stream>>>(fftsConfig, gva, message_length, iter);
 }

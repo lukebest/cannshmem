@@ -16,7 +16,7 @@ export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/3rdparty/memfab
 
 - n_ranks: 全局Rank数量，只支持2个Rank。
 - rank_id: 当前进程的Rank号。
-- ipport: SHMEM初始化需要的IP及端口号，格式为tcp://<IP>:<端口号>。
+- ipport: SHMEM初始化需要的IP及端口号，格式为tcp://<IP>:<端口号>。如果执行跨机测试，需要讲IP设为rank0所在Host的IP。
 - g_npus: 当前卡上启动的NPU数量。
 - f_rank: 当前卡上使用的第一个Rank号。
 - f_npu: 当前卡上使用的第一个NPU卡号。

@@ -52,6 +52,7 @@ foreach(EXAMPLE
     allgather
     matmul_allreduce
     rdma_perftest
+    rdma_demo
 )
     add_subdirectory(${EXAMPLE})
 endforeach()

@@ -158,7 +158,7 @@ void test_shmem_team_config(int rank_id, int n_ranks, uint64_t local_mem_size)
     shmem_team_t team_odd;
     int start     = 0;
     int stride    = 1;
-    int team_size = 8;
+    int team_size = n_ranks;
     int ret       = shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
     EXPECT_EQ(ret, 0);
     EXPECT_TRUE(team_odd >= 0 && team_odd < SHMEM_MAX_TEAMS);

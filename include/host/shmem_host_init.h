@@ -20,7 +20,8 @@ extern "C" {
 /**
  * @brief Query the current initialization status.
  *
- * @return Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is complete. All return types can be found in <b>\ref shmem_init_status_t</b>.
+ * @return Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is
+ *         complete. All return types can be found in <b>\ref shmem_init_status_t</b>.
  */
 SHMEM_HOST_API int shmem_init_status();
 
@@ -29,9 +30,11 @@ SHMEM_HOST_API int shmem_init_status();
  *
  * @param my_rank            [in] Current rank
  * @param n_ranks            [in] Total number of ranks
- * @param local_mem_size      [in] The size of shared memory currently occupied by current rank
- * @param ip_port            [in] The ip and port number of the sever, e.g. tcp://ip:port Security warning: ip_port should be a null-terminated C string, unless it may result in out-of-bounds memory access
- * @param attributes        [out] Pointer to the default attributes used for initialization
+ * @param local_mem_size     [in] The size of shared memory currently occupied by current rank
+ * @param ip_port            [in] The ip and port number of the sever, e.g. tcp://ip:port Security warning: ip_port
+ *                                should be a null-terminated C string, unless it may result in out-of-bounds
+ *                                memory access
+ * @param attributes         [out] Pointer to the default attributes used for initialization
  * @return Returns 0 on success or an error code on failure
  */
 SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_size, const char *ip_port,
@@ -40,7 +43,8 @@ SHMEM_HOST_API int shmem_set_attr(int my_rank, int n_ranks, uint64_t local_mem_s
 /**
  * @brief Modify the data operation engine type in the attributes that will be used for initialization.
  *        If this method is not used, the default data_op_engine_type value is SHMEM_DATA_OP_MTE
- *        if method <b>shmem_set_attr()</b> is used after this method, the data_op_engine_type param will be overwritten by the default value.
+ *        if method <b>shmem_set_attr()</b> is used after this method, the data_op_engine_type param
+ *        will be overwritten by the default value.
  *
  * @param attributes        [in/out] Pointer to the attributes to modify the data operation engine type
  * @param value             [in] Value of data operation engine type
@@ -51,7 +55,8 @@ SHMEM_HOST_API int shmem_set_data_op_engine_type(shmem_init_attr_t *attributes, 
 /**
  * @brief Modify the timeout in the attributes that will be used for initialization.
  *        If this method is not used, the default timeout value is 120
- *        if method <b>shmem_set_attr()</b> is used after this method, the timeout param will be overwritten by the default value.
+ *        if method <b>shmem_set_attr()</b> is used after this method, the timeout param
+ *         will be overwritten by the default value.
  *
  * @param attributes        [in/out] Pointer to the attributes to modify the data operation engine type
  * @param value             [in] Value of timeout
@@ -63,7 +68,7 @@ SHMEM_HOST_API int shmem_set_timeout(shmem_init_attr_t *attributes, uint32_t val
  * @brief Initialize the resources required for SHMEM task based on attributes.
  *        Attributes can be created by users or obtained by calling <b>shmem_set_attr()</b>.
  *        if the self-created attr structure is incorrect, the initialization will fail.
- *        It is recommended to build the attributes by <b>shmem_set_attr()</b>. 
+ *        It is recommended to build the attributes by <b>shmem_set_attr()</b>.
  *
  * @param attributes        [in] Pointer to the user-defined attributes.
  * @return Returns 0 on success or an error code on failure

@@ -33,13 +33,16 @@ public:
         shmem_mte_put_mem_nbi(gva_gm, dev_gm, buf, (uint32_t)ub_size, rank_size * length / 4, rank, EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-        shmem_mte_put_mem_nbi(dst_gm[rank_size * length / 4], src_gm[rank_size * length / 4], buf_tensor, rank_size * length / 4, rank, EVENT_ID0);
+        shmem_mte_put_mem_nbi(dst_gm[rank_size * length / 4], src_gm[rank_size * length / 4], buf_tensor,
+            rank_size * length / 4, rank, EVENT_ID0);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-        shmemx_mte_put_mem_nbi(gva_gm + rank_size * length / 2, dev_gm + rank_size * length / 2, rank_size * length / 4, rank, false);
+        shmemx_mte_put_mem_nbi(gva_gm + rank_size * length / 2, dev_gm + rank_size * length / 2,
+            rank_size * length / 4, rank, false);
         AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-        shmemx_mte_put_mem_nbi(gva_gm + rank_size * length * 3 / 4, dev_gm + rank_size * length * 3 / 4, rank_size * length / 4, rank, false);
+        shmemx_mte_put_mem_nbi(gva_gm + rank_size * length * 3 / 4, dev_gm + rank_size * length * 3 / 4,
+            rank_size * length / 4, rank, false);
         shmemx_barrier_all_vec();
         buf_queue.FreeTensor(buf_tensor);
     }
@@ -77,8 +80,8 @@ public:
         gva_gm = (__gm__ int8_t *)gva;
         dev_gm = (__gm__ int8_t *)dev;
 
-        /* set GM Buffer */                                                                                                             \
-        src_gm.SetGlobalBuffer(gva_gm);                                                                                                 \
+        /* set GM Buffer */
+        src_gm.SetGlobalBuffer(gva_gm);
         dst_gm.SetGlobalBuffer(dev_gm);
 
         rank = shmem_my_pe();
@@ -95,10 +98,12 @@ public:
         __ubuf__ int8_t *buf = (__ubuf__ int8_t *)addr;
 
         for (int i = 0; i < rank_size / 2; i++) {
-            shmem_mte_get_mem_nbi(dev_gm + length * i, gva_gm, buf, (uint32_t)ub_size, length / 2, i % rank_size, EVENT_ID0);
+            shmem_mte_get_mem_nbi(dev_gm + length * i, gva_gm, buf, (uint32_t)ub_size,
+                length / 2, i % rank_size, EVENT_ID0);
             AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
             AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
-            shmem_mte_get_mem_nbi(dst_gm[length * i + length / 2], src_gm, buf_tensor, length / 2, i % rank_size, EVENT_ID0);
+            shmem_mte_get_mem_nbi(dst_gm[length * i + length / 2], src_gm, buf_tensor,
+                length / 2, i % rank_size, EVENT_ID0);
             AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
             AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(EVENT_ID0);
         }

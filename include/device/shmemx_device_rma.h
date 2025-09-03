@@ -15,7 +15,8 @@
 #include "low_level/shmemx_device_low_level_rma.h"
 
 /**
- * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+ * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address
+ *        on the local PE.
  *
  * @param dst               [in] Pointer on local device of the destination data.
  * @param src               [in] Pointer on Symmetric memory of the source data.
@@ -23,7 +24,8 @@
  * @param pe                [in] PE number of the remote PE.
  * @param enable_L2         [in] whether to enable L2 cache
  */
-SHMEM_DEVICE void shmemx_mte_get_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src, uint32_t elem_size, int32_t pe, bool enable_L2)
+SHMEM_DEVICE void shmemx_mte_get_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src, uint32_t elem_size,
+    int32_t pe, bool enable_L2)
 {
     /* Global State Get */
     __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
@@ -31,7 +33,8 @@ SHMEM_DEVICE void shmemx_mte_get_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src,
     uint64_t copy_ub = device_state->mte_config.shmem_ub;
     uint32_t copy_ub_size = device_state->mte_config.ub_size;
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
-    shmemx_mte_get_mem_nbi_low_level(dst, src, reinterpret_cast<__ubuf__ int8_t*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id, enable_L2);
+    shmemx_mte_get_mem_nbi_low_level(dst, src, reinterpret_cast<__ubuf__ int8_t*>(copy_ub), copy_ub_size,
+        elem_size, pe, copy_event_id, enable_L2);
 }
 
 /**
@@ -51,6 +54,7 @@ SHMEM_DEVICE void shmemx_mte_put_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src,
         uint64_t copy_ub = device_state->mte_config.shmem_ub;
         uint32_t copy_ub_size = device_state->mte_config.ub_size;
         AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
-        shmemx_mte_put_mem_nbi_low_level(dst, src, reinterpret_cast<__ubuf__ int8_t*>(copy_ub), copy_ub_size, elem_size, pe, copy_event_id, enable_L2);
+        shmemx_mte_put_mem_nbi_low_level(dst, src, reinterpret_cast<__ubuf__ int8_t*>(copy_ub), copy_ub_size,
+            elem_size, pe, copy_event_id, enable_L2);
 }
 #endif

@@ -43,8 +43,8 @@ struct CommBlockSwizzleDynamic {
     CommBlockSwizzleDynamic() {}
 
     CATLASS_DEVICE
-    CommBlockSwizzleDynamic(MatrixCoord blockShape_, uint32_t rankIdx_, uint32_t rankSize_, uint32_t swizzleDirection_ = 0,
-        uint32_t commDataSplit_ = 1, uint32_t commNpuSplit_ = 1)
+    CommBlockSwizzleDynamic(MatrixCoord blockShape_, uint32_t rankIdx_, uint32_t rankSize_,
+        uint32_t swizzleDirection_ = 0, uint32_t commDataSplit_ = 1, uint32_t commNpuSplit_ = 1)
         : blockShape(blockShape_), rankIdx(rankIdx_), rankSize(rankSize_), swizzleDirection(swizzleDirection_),
           commDataSplit(commDataSplit_), commNpuSplit(commNpuSplit_)
     {
@@ -166,4 +166,3 @@ struct CommBlockSwizzleDynamic {
 
 }  // namespace Catlass::Gemm::Block
 
-   

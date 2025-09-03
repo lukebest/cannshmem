@@ -12,7 +12,7 @@
 
 extern "C" SHMEM_GLOBAL void increase(uint64_t config, GM_ADDR addr, int rank_id, int rank_size) {
     shmemx_set_ffts_config(config);
-    
+
 #ifdef __DAV_C220_CUBE__
     // scalar unit of cube core is not affected by barrier
     shmem_barrier_all();
@@ -42,9 +42,10 @@ extern "C" SHMEM_GLOBAL void increase_vec(uint64_t config, GM_ADDR addr, int ran
 #endif
 }
 
-extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, int rank_id, int rank_size, shmem_team_t team_id) {
+extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, int rank_id,
+    int rank_size, shmem_team_t team_id) {
     shmemx_set_ffts_config(config);
-    
+
 #ifdef __DAV_C220_CUBE__
     // scalar unit of cube core is not affected by barrier
     shmem_barrier_all();
@@ -63,7 +64,8 @@ extern "C" SHMEM_GLOBAL void increase_odd_team(uint64_t config, GM_ADDR addr, in
 #endif
 }
 
-extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr, int rank_id, int rank_size, shmem_team_t team_id) {
+extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr, int rank_id,
+    int rank_size, shmem_team_t team_id) {
     shmemx_set_ffts_config(config);
 
 #ifdef __DAV_C220_VEC__
@@ -86,10 +88,12 @@ void increase_vec_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, 
     increase_vec<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }
 
-void increase_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size, shmem_team_t team_id) {
+void increase_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
+    int rank_size, shmem_team_t team_id) {
     increase_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }
 
-void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size, shmem_team_t team_id) {
+void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
+    int rank_size, shmem_team_t team_id) {
     increase_vec_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }

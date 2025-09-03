@@ -10,19 +10,24 @@
 
 /*
     WARNING：Restrictions of Barrier APIs.
-    
-    1. Barrier APIs can be used only in MIX kernels. The compiler will optimize the kernel to VEC or CUBE if it lacks effective cube instructions (eg. Mmad) or vector instructions (eg: DataCopy). 
+
+    1. Barrier APIs can be used only in MIX kernels. The compiler will optimize the kernel to VEC or CUBE if
+       it lacks effective cube instructions (eg. Mmad) or vector instructions (eg: DataCopy).
     Need compiler updates to remove this feature, or insert Mmad/DataCopy calls manully.
 
     2. Barrier APIs conflict with SyncAll. Avoid mixing them together.
-    
+
     3. We provide 2 kinds of barrier:
         a. shmem_barrier_xxx
-            Barrier of all cores. On systems with only HCCS: All operations of all ranks of a team on excuting stream before the barrier are visiable to all ranks of the team after the barrier.
+            Barrier of all cores. On systems with only HCCS: All operations of all ranks of a team on excuting
+            stream before the barrier are visiable to all ranks of the team after the barrier.
         b. shmemx_barrier_xxx_vec
-            Barrier of all VEC cores. On systems with only HCCS: All operations of ALL VEC CORES of all ranks of a team on excuting stream before the barrier are visiable to ALL VEC CORES of all ranks of the team after the barrier.
-        
-        This subtle difference is beneficial to compute-communiction overlapping (usually UNI_DIRECTIONAL dependency), and could achieve better performance. Refer to examples/matmul_allreduce for details.
+            Barrier of all VEC cores. On systems with only HCCS: All operations of ALL VEC CORES of all ranks of a
+            team on excuting stream before the barrier are visiable to ALL VEC CORES of all ranks of the team after
+            the barrier.
+
+        This subtle difference is beneficial to compute-communiction overlapping (usually UNI_DIRECTIONAL dependency),
+        and could achieve better performance. Refer to examples/matmul_allreduce for details.
 
     4. The scalar unit of cube core is not affected by shmem_barrier_xxx. Make sure don't use that.
 */
@@ -52,9 +57,16 @@ SHMEM_DEVICE void shmemx_set_ffts_config(uint64_t config)
 
 /**
  * @fn SHMEM_DEVICE void shmem_barrier(shmem_team_t tid)
- * @brief shmem_barrier is a collective synchronization routine over a team. Control returns from shmem_barrier after all PEs in the team have called shmem_barrier. 
- *        shmem_barrier ensures that all previously issued stores and remote memory updates, including AMOs and RMA operations, done by any of the PEs in the active set are complete before returning. On systems with only scale-up network (HCCS), updates are globally visible, whereas on systems with both scale-up network HCCS and scale-out network (RDMA), SHMEM only guarantees that updates to the memory of a given PE are visible to that PE.
- *        Barrier operations issued on the CPU and the NPU only complete communication operations that were issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
+ * @brief shmem_barrier is a collective synchronization routine over a team. Control returns from shmem_barrier
+ *        after all PEs in the team have called shmem_barrier.
+ *        shmem_barrier ensures that all previously issued stores and remote memory updates, including AMOs and
+ *        RMA operations, done by any of the PEs in the active set are complete before returning. On systems with
+ *        only scale-up network (HCCS), updates are globally visible, whereas on systems with both scale-up network
+ *        HCCS and scale-out network (RDMA), SHMEM only guarantees that updates to the memory of a given PE are
+ *        visible to that PE.
+ *        Barrier operations issued on the CPU and the NPU only complete communication operations that were issued
+ *        from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using
+ *        aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
  *
  * @param tid              [in] team to do barrier
  */
@@ -73,7 +85,8 @@ SHMEM_DEVICE void shmem_barrier_all()
 }
 
 /**
- * @brief Similar to shmem_barrier except that only vector cores participate. Useful in communication-over-compute operators. Cube core may call the api but takes no effect.
+ * @brief Similar to shmem_barrier except that only vector cores participate. Useful in communication-over-compute
+ *        operators. Cube core may call the api but takes no effect.
  *
  * @param tid              [in] team to do barrier
  */
@@ -93,9 +106,14 @@ SHMEM_DEVICE void shmemx_barrier_all_vec()
 }
 
 /**
- * @brief The shmem_quiet routine ensures completion of all operations on symmetric data objects issued by the calling PE.
- *        On systems with only scale-up network (HCCS), updates are globally visible, whereas on systems with both scale-up network HCCS and scale-out network (RDMA), SHMEM only guarantees that updates to the memory of a given PE are visible to that PE.
- *        Quiet operations issued on the CPU and the NPU only complete communication operations that were issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
+ * @brief The shmem_quiet routine ensures completion of all operations on symmetric data objects issued by the
+ *        calling PE.
+ *        On systems with only scale-up network (HCCS), updates are globally visible, whereas on systems with
+ *        both scale-up network HCCS and scale-out network (RDMA), SHMEM only guarantees that updates to the
+ *        memory of a given PE are visible to that PE.
+ *        Quiet operations issued on the CPU and the NPU only complete communication operations that were
+ *        issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from
+ *        the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
  *
  */
 SHMEM_DEVICE void shmem_quiet()
@@ -104,9 +122,13 @@ SHMEM_DEVICE void shmem_quiet()
 }
 
 /**
- * @brief In OpenSHMEM specification, shmem_fence assures ordering of delivery of Put, AMOs, and memory store routines to symmetric data objects, but does not guarantee the completion of these operations. 
- *        However, due to hardware capabilities, we implemented shmem_fence same as shmem_quiet, ensuring both ordering and completion.
- *        Fence operations issued on the CPU and the NPU only order communication operations that were issued from the CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU, using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
+ * @brief In OpenSHMEM specification, shmem_fence assures ordering of delivery of Put, AMOs, and memory store routines
+ *        to symmetric data objects, but does not guarantee the completion of these operations.
+ *        However, due to hardware capabilities, we implemented shmem_fence same as shmem_quiet, ensuring both ordering
+ *        and completion.
+ *        Fence operations issued on the CPU and the NPU only order communication operations that were issued from the
+ *        CPU and the NPU, respectively. To ensure completion of GPU-side operations from the CPU,
+ *        using aclrtSynchronizeStream/aclrtDeviceSynchronize or stream-based API.
  *
  */
 SHMEM_DEVICE void shmem_fence()
@@ -115,12 +137,14 @@ SHMEM_DEVICE void shmem_fence()
 }
 
 /**
- * @brief The shmemx_signal_op operation updates sig_addr with signal using operation sig_op on the specified PE. This operation can be used together with shmem_signal_wait_until for efficient point-to-point synchronization. 
+ * @brief The shmemx_signal_op operation updates sig_addr with signal using operation sig_op on the specified PE.
+ *        This operation can be used together with shmem_signal_wait_until for efficient point-to-point synchronization.
  * WARNING: Atomicity NOT Guaranteed.
  *
  * @param sig_addr              [in] Symmetric address of the signal word to be updated.
  * @param signal                [in] The value used to update sig_addr.
- * @param sig_op                [in] Operation used to update sig_addr with signal. Supported operations: SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
+ * @param sig_op                [in] Operation used to update sig_addr with signal. Supported operations:
+ *                                   SHMEM_SIGNAL_SET/SHMEM_SIGNAL_ADD
  * @param pe                    [in] PE number of the remote PE.
  */
 SHMEM_DEVICE void shmemx_signal_op(__gm__ int32_t *sig_addr, int32_t signal, int sig_op, int pe)
@@ -129,10 +153,13 @@ SHMEM_DEVICE void shmemx_signal_op(__gm__ int32_t *sig_addr, int32_t signal, int
 }
 
 /**
- * @brief This routine can be used to implement point-to-point synchronization between PEs or between threads within the same PE. A call to this routine blocks until the value of sig_addr at the calling PE satisfies the wait condition specified by the comparison operator, cmp, and comparison value, cmp_val.
+ * @brief This routine can be used to implement point-to-point synchronization between PEs or between threads within
+ *        the same PE. A call to this routine blocks until the value of sig_addr at the calling PE satisfies the wait
+ *        condition specified by the comparison operator, cmp, and comparison value, cmp_val.
  *
  * @param sig_addr              [in] Local address of the source signal variable.
- * @param cmp                   [in] The comparison operator that compares sig_addr with cmp_val. Supported operators: SHMEM_CMP_EQ/SHMEM_CMP_NE/SHMEM_CMP_GT/SHMEM_CMP_GE/SHMEM_CMP_LT/SHMEM_CMP_LE.
+ * @param cmp                   [in] The comparison operator that compares sig_addr with cmp_val. Supported operators:
+ *                                   SHMEM_CMP_EQ/SHMEM_CMP_NE/SHMEM_CMP_GT/SHMEM_CMP_GE/SHMEM_CMP_LT/SHMEM_CMP_LE.
  * @param cmp_val               [in] The value against which the object pointed to by sig_addr will be compared.
  * @return Return the contents of the signal data object, sig_addr, at the calling PE that satisfies the wait condition.
  */

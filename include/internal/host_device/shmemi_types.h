@@ -26,7 +26,7 @@ extern "C" {
 
 #define ALIGH_TO(size, page) (((size) + (page) - 1) / (page) * (page))
 
-/* synchonization related */ 
+/* synchonization related */
 #define SHMEMI_SYNCBIT_SIZE SCALAR_DATA_CACHELINE_SIZE
 
 // npu level sync
@@ -77,8 +77,9 @@ typedef struct {
     size_t heap_size;
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];
-    
-    // Using shmemi_sync_bit instead of basic types to shmemi_store flag, avoiding concurrent write due to cacheline sharing.
+
+    // Using shmemi_sync_bit instead of basic types to shmemi_store flag,
+    // avoiding concurrent write due to cacheline sharing.
     // Refer to shmemi_barrier.h for more details.
     // These members are 'shmemi_sync_bit *' types actully, but are defined as 'uint64_t' due to compiler restriction.
     uint64_t sync_pool;

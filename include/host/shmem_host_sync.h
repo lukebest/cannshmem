@@ -7,13 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 /*
-    WARNING： 
-    
+    WARNING：
+
     Our barrier implementation ensures that:
-        On systems with only HCCS: All operations of all ranks of a team ON EXECUTING/INTERNAL STREAMs before the barrier are visiable to all ranks of the team after the barrier.
-        
+        On systems with only HCCS: All operations of all ranks of a team ON EXECUTING/INTERNAL STREAMs
+        before the barrier are visiable to all ranks of the team after the barrier.
+
     Refer to shmem_device_sync.h for using restrictions.
 */
 
@@ -29,10 +30,10 @@ extern "C" {
 
 /**
  * @fn SHMEM_HOST_API uint64_t shmemx_get_ffts_config()
- * @brief Get runtime ffts config. This config should be passed to MIX Kernel and set by MIX Kernel using shmemx_set_ffts. Refer to shmemx_set_ffts for more details.
+ * @brief Get runtime ffts config. This config should be passed to MIX Kernel and set by MIX Kernel
+ * using shmemx_set_ffts. Refer to shmemx_set_ffts for more details.
  *
  * @return ffts config
- *
  */
 SHMEM_HOST_API uint64_t shmemx_get_ffts_config();
 

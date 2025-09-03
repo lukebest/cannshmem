@@ -124,7 +124,8 @@ typedef struct {
  *
  * - int my_rank: The rank of the current process.
  * - int n_ranks: The total rank number of all processes.
- * - const char* ip_port: The ip and port of the communication server. The port must not conflict with other modules and processes.
+ * - const char* ip_port: The ip and port of the communication server. The port must not conflict
+ *   with other modules and processes.
  * - uint64_t local_mem_size: The size of shared memory currently occupied by current rank.
  * - shmem_init_optional_attr_t option_attr: Optional Parameters.
 */

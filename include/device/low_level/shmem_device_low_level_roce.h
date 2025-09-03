@@ -309,8 +309,8 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
 /**
  * @brief Asynchronous RDMA Write function.
  *
- * @param srcDmaAddr             [in] source address in local HBM
  * @param destDmaAddr            [in] destination address in remote HBM
+ * @param srcDmaAddr             [in] source address in local HBM
  * @param destRankId             [in] destination rank ID
  * @param qpIdx                  [in] QP index in multi-QP scenario (default 0 for single QP)
  * @param messageLen             [in] message length in Bytes
@@ -319,7 +319,7 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
  */
 
 template<typename T>
-SHMEM_DEVICE void shmemi_roce_write(__gm__ T* srcDmaAddr, __gm__ T* destDmaAddr, uint32_t destRankId,
+SHMEM_DEVICE void shmemi_roce_write(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, uint32_t destRankId,
                                                 uint32_t qpIdx, uint64_t messageLen,
                                                 AscendC::LocalTensor<uint64_t> ubLocal64,
                                                 AscendC::LocalTensor<uint32_t> ubLocal32)
@@ -331,8 +331,8 @@ SHMEM_DEVICE void shmemi_roce_write(__gm__ T* srcDmaAddr, __gm__ T* destDmaAddr,
 /**
  * @brief Asynchronous RDMA READ function.
  *
- * @param srcDmaAddr             [in] source address in remote HBM
  * @param destDmaAddr            [in] destination address in local HBM
+ * @param srcDmaAddr             [in] source address in remote HBM
  * @param srcRankId              [in] destination rank ID
  * @param qpIdx                  [in] QP index in multi-QP scenario (default 0 for single QP)
  * @param messageLen             [in] message length in Bytes
@@ -341,7 +341,7 @@ SHMEM_DEVICE void shmemi_roce_write(__gm__ T* srcDmaAddr, __gm__ T* destDmaAddr,
  */
 
 template<typename T>
-SHMEM_DEVICE void shmemi_roce_read(__gm__ T* srcDmaAddr, __gm__ T* destDmaAddr, uint32_t srcRankId,
+SHMEM_DEVICE void shmemi_roce_read(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, uint32_t srcRankId,
                                                 uint32_t qpIdx, uint64_t messageLen,
                                                 AscendC::LocalTensor<uint64_t> ubLocal64,
                                                 AscendC::LocalTensor<uint32_t> ubLocal32)

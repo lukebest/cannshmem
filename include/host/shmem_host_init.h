@@ -71,12 +71,17 @@ SHMEM_HOST_API int shmem_set_timeout(shmem_init_attr_t *attributes, uint32_t val
 SHMEM_HOST_API int shmem_init_attr(shmem_init_attr_t *attributes);
 
 /**
- * @brief Register a decrypt key password handler.
+ * @brief Set the TLS private key and password, and register a decrypt key password handler.
  *
+ * @param tls_pk the content of tls private key
+ * @param tls_pk_len length of tls private key
+ * @param tls_pk_pw the content of tls private key password
+ * @param tls_pk_pw_len length of tls private key password
  * @param decrypt_handler decrypt function pointer
  * @return Returns 0 on success or an error code on failure
  */
-SHMEM_HOST_API int32_t shmem_register_decrypt_handler(const shmem_decrypt_handler decrypt_handler);
+SHMEM_HOST_API int32_t shmem_set_config_store_tls_key(const char *tls_pk, const uint32_t tls_pk_len,
+    const char *tls_pk_pw, const uint32_t tls_pk_pw_len, const shmem_decrypt_handler decrypt_handler);
 
 /**
  * @brief Set the log print function for the SHMEM library.

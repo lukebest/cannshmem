@@ -53,6 +53,20 @@ function fn_build()
     cd -
 }
 
+function fn_whl_build()
+{
+  echo "Python extension enabled. Copying and packaging Python wheel..."
+
+  cd "${PROJECT_ROOT}/scripts"
+  source set_env.sh
+
+  cd "${PROJECT_ROOT}/src/python"
+  rm -rf build shmem.egg-info build dist
+  python3 setup.py bdist_wheel
+
+  cd "${PROJECT_ROOT}"
+}
+
 function fn_make_run_package()
 {
     if [ $( uname -a | grep -c -i "x86_64" ) -ne 0 ]; then
@@ -286,6 +300,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 fn_build
+
+if [ "$PYEXPAND_TYPE" = "ON" ]; then
+    fn_whl_build
+fi
 
 fn_make_run_package
 if [ ${GEN_DOC} == "ON" ]; then

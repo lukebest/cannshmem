@@ -21,7 +21,7 @@ for lib in ["libshmem.so"]:
     ctypes.CDLL(os.path.join(libs_path, lib))
 
 from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
-                       shmem_ptr, my_pe, pe_count, register_decrypt_handler, mte_set_ub_params, team_split_strided,
+                       shmem_ptr, my_pe, pe_count, set_conf_store_tls_key, mte_set_ub_params, team_split_strided,
                        team_split_2d, team_translate_pe, \
                        team_destroy, InitAttr, OpEngineType, shmem_set_attributes, shmem_set_data_op_engine_type,
                        shmem_set_timeout, \
@@ -41,7 +41,7 @@ __all__ = [
     'shmem_ptr',
     'my_pe',
     'pe_count',
-    'register_decrypt_handler',
+    'set_conf_store_tls_key',
     'set_conf_store_tls',
     'team_my_pe',
     'team_n_pes',

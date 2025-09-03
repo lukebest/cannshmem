@@ -285,7 +285,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
 int32_t shmem_set_config_store_tls_key(const char *tls_pk, const uint32_t tls_pk_len,
     const char *tls_pk_pw, const uint32_t tls_pk_pw_len, const shmem_decrypt_handler decrypt_handler)
 {
-    return smem_set_config_store_tls_key(tls_pk, tls_pk_len, tls_pk_pw, tls_pk_pw_len, handler);
+    return smem_set_config_store_tls_key(tls_pk, tls_pk_len, tls_pk_pw, tls_pk_pw_len, decrypt_handler);
 }
 
 int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))

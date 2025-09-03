@@ -95,7 +95,12 @@ int my_key_password_decrypt_handler(const char *cipherText, size_t cipherTextLen
     // do decrypt here
 }
 
-int ret = shmem_register_decrypt_handler(my_key_password_decrypt_handler);
+const char *pk = "xxx";
+uint32_t pk_len = strlen(pk);
+
+const char *password = "xxxx";
+uint32_t pw_len = strlen(password);
+int ret = shmem_set_config_store_tls_key(pk, pk_len, password, pw_len, my_key_password_decrypt_handler);
 ```
 
 如需关闭加密特性，则调用如下接口。关闭后，则无需调用shmem_register_decrypt_handler注册接口。

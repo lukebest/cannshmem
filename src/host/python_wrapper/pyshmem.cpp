@@ -97,14 +97,17 @@ static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextL
     }
 }
 
-int32_t register_python_decrypt_handler(py::function py_decrypt_func)
+int32_t shmem_set_conf_store_tls_key_with_decrypt(std::string &tls_pk,std::string &tls_pk_pw,
+    py::function py_decrypt_func)
 {
     if (!py_decrypt_func || py_decrypt_func.is_none()) {
-        return shmem_register_decrypt_handler(nullptr);
+        return shmem_set_config_store_tls_key(tls_pk.c_str(), tls_pk.size(), tls_pk_pw.c_str(),
+            tls_pk_pw.size(), nullptr);
     }
 
     g_py_decrypt_func = py_decrypt_func;
-    return shmem_register_decrypt_handler(py_decrypt_handler_wrapper);
+    return shmem_set_config_store_tls_key(tls_pk.c_str(), tls_pk.size(), tls_pk_pw.c_str(),
+        tls_pk_pw.size(), py_decrypt_handler_wrapper);
 }
 
 int32_t shmem_set_conf_store_tls_info(bool enable, std::string &tls_info)
@@ -133,10 +136,13 @@ Returns:
 Finalize share memory module.
     )");
 
-    m.def("register_decrypt_handler", &shm::register_python_decrypt_handler, py::call_guard<py::gil_scoped_release>(),
+    m.def("set_conf_store_tls_key", &shm::shmem_set_conf_store_tls_key_with_decrypt,
+          py::call_guard<py::gil_scoped_release>(), py::arg("tls_pk"), py::arg("tls_pk_pw"),
           py::arg("py_decrypt_func"), R"(
-Register a Python decrypt handler.
+Set the TLS private key and password, and register a decrypt key password handler.
 Parameters:
+    tls_pk (string): the content of tls private key string
+    tls_pk_pw (string): the content of tls private key password string
     py_decrypt_func (callable): Python function that accepts (str cipher_text) and returns (str plain_text)
         cipher_text: the encrypted text (private key password)
         plain_text: the decrypted text (private key password)
@@ -146,7 +152,7 @@ Returns:
 
     m.def("set_conf_store_tls", &shm::shmem_set_conf_store_tls_info, py::call_guard<py::gil_scoped_release>(),
           py::arg("enable"), py::arg("tls_info"), R"(
-set the config store tls info.
+Set the config store tls info.
 Parameters:
     enable (boolean): enable config store tls or not
         tls_info (string): tls config string

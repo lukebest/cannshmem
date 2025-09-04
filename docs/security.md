@@ -73,5 +73,5 @@ ASLR（address space layout randomization）开启后能增强漏洞攻击防护
 | 自研   | 不涉及 | build.sh                    | https://gitee.com/ascend/memfabric_hybrid.git | 依赖的开源代码仓            |
 | 文档   | 不涉及 | README.md                    | https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit | CANN商发文档            |
 | 文档   | 不涉及 | shmemi_device_barrier.h                   | https://www.inf.ed.ac.uk/teaching/courses/ppls/BarrierPaper.pdf | 并行编程语言和系统            |
-| 开源引入   | https://github.com/google/googletest | build.sh                   | https://github.com/google/googletest.git | gtest测试框架            |
+| 开源引入   | https://gitee.com/mirrors/googletest.git | build.sh                   | https://gitee.com/mirrors/googletest.git | gtest测试框架            |
 | 开源引入   | https://github.com/doxygen | build.sh                   | https://github.com/doxygen/doxygen/releases/download/Release_1_9_3/doxygen-1.9.3.src.tar.gz | doxygen文档生成工具            |

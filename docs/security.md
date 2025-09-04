@@ -13,20 +13,20 @@
 |协议|TCP|
 |端口说明|server与client TCP协议消息接口|
 |侦听端口是否可更改|是|
-|认证方式|支持，由初始化入参指定是否开启|
-|加密方式|无|
+|认证方式|数字证书认证|
+|加密方式|TLS 1.3|
 |所属平面|管理面|
 |版本|所有版本|
 |特殊场景|无|
 
 说明：
-支持通过接口 `shmem_set_conf_store_tls` 配置TLS秘钥证书等，进行tls安全连接，建议用户开启TLS加密配置，保证通信通信安全。系统启动后，建议删除本地秘钥证书等信息敏感文件。调用该接口时，传入的文件路径不能包含英文分号、逗号、冒号。
+支持通过接口 `shmem_set_conf_store_tls` 配置TLS秘钥证书等，进行tls安全连接，建议用户开启TLS加密配置，保证通信安全。系统启动后，建议删除本地密钥证书等信息敏感文件。调用该接口时，传入的文件路径不能包含英文分号、逗号、冒号。
 支持通过环境变量 `ACCLINK_CHECK_PERIOD_HOURS`和`ACCLINK_CERT_CHECK_AHEAD_DAYS` 配置证书检查周期与证书过期预警时间
 
-使用接口里子：
+使用接口示例：
 ```c
 // 配置关闭tls:
-smem_set_conf_store_tls(false, nullptr, 0);
+shmem_set_conf_store_tls(false, nullptr, 0);
 
 // 配置打开tls:
 
@@ -39,7 +39,7 @@ char *tls_info ="                               \
     tlsCrlFile: server_crl1.pem,server_crl2.pem;\
     tlsCaFile: ca.pem1,ca.pem2;                 \
     packagePath: /etc/lib"
-int32_t ret = smem_set_conf_store_tls(true, tls_info, strlen(tls_info));
+int32_t ret = shmem_set_conf_store_tls(true, tls_info, strlen(tls_info));
 ```
 | 环境变量 | 说明          |
 |------|-------------|

@@ -32,9 +32,9 @@ SHMEM_HOST_API int shmem_team_split_strided(shmem_team_t parent_team, int pe_sta
 /**
  * @brief Translate a given PE number in one team into the corresponding PE number in another team.
  * 
- * @param src_team           [in] A team handle.
+ * @param src_team           [in] A SHMEM team handle.
  * @param src_pe             [in] The PE number in src_team.
- * @param dest_team          [in] A team handle.
+ * @param dest_team          [in] A SHMEM team handle.
  *
  * @return The number of PEs in the specified team. 
  *         If the team handle is SHMEM_TEAM_INVALID, returns -1.
@@ -73,7 +73,7 @@ SHMEM_HOST_API int shmem_n_pes();
 SHMEM_HOST_API int shmem_team_my_pe(shmem_team_t team);
 
 /**
- * @brief Returns the number of PEs in the team.
+ * @brief Returns the number of PEs in the specified team.
  * 
  * @param team              [in] A team handle.
  *

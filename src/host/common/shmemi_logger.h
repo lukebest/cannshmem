@@ -79,7 +79,7 @@ public:
         time_t time_stamp = tv.tv_sec;
         struct tm local_time {};
         if (strftime(str_time, sizeof str_time, "%Y-%m-%d %H:%M:%S.", localtime_r(&time_stamp, &local_time)) != 0) {
-            std::cout << str_time << std::setw(6) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level)
+            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level)
                       << " " << syscall(SYS_gettid) << " " << oss.str() << std::endl;
         } else {
             std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid) << " " << oss.str()

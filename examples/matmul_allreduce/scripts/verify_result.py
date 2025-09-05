@@ -14,11 +14,14 @@ RED = "\033[31m"
 GREEN = "\033[32m"
 RESET = "\033[0m"
 
+
 def is_close(actual: np.ndarray, expected: np.ndarray, rtol: float = 2 ** -8):
     if actual.dtype == np.float16 or actual.dtype == np.float32:
         return np.abs(actual - expected) <= rtol * np.maximum(1, np.abs(expected))
     elif actual.dtype == np.int32:
         return actual == expected
+    return np.allclose(actual, expected, rtol=rtol)
+
 
 def verify_result():
     import argparse
@@ -44,8 +47,7 @@ def verify_result():
 
     different_element_indexes = np.where(different_element_result)[0]
 
-    for index in range(len(different_element_indexes)):
-        real_index = different_element_indexes[index]
+    for index, real_index in enumerate(different_element_indexes):
         golden_data = golden[real_index]
         output_data = output[real_index]
         print(f"data index: {real_index:6d}, expected: {golden_data:-.9f}, actual: {output_data:-.9f}, "

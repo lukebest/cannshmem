@@ -7,8 +7,8 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 #
-import numpy as np
 import os
+import numpy as np
 
 from ml_dtypes import bfloat16
 
@@ -49,7 +49,7 @@ def gen_golden_data():
         "bfloat16_t": bfloat16
     }
 
-    data_type = type_map[args.test_type]
+    data_type = type_map.get(args.test_type, 'float16_t')
     rank_size = args.rank_size
 
     case_num = 24

@@ -68,8 +68,8 @@ TEST_F(ShmemSyncOrderFuzz, shmem_quiet_order_success)
                           ACL_SUCCESS);
 
                 if (rank_id == 1) {
-                    ASSERT_EQ(host_buf[33], 0xBBu);
-                    ASSERT_EQ(host_buf[34], 0xAAu);
+                    ASSERT_EQ(host_buf[33U], 0xBBu);
+                    ASSERT_EQ(host_buf[34U], 0xAAu);
                 }
 
                 shmem_free(dev_ptr);
@@ -107,8 +107,8 @@ TEST_F(ShmemSyncOrderFuzz, shmem_fence_order_success)
                           ACL_SUCCESS);
 
                 if (rank_id == 1) {
-                    ASSERT_EQ(addr_host[17], 84u);
-                    ASSERT_EQ(addr_host[18], 42u);
+                    ASSERT_EQ(addr_host[17U], 84u);
+                    ASSERT_EQ(addr_host[18U], 42u);
                 }
                 shmem_free(addr_dev);
             },

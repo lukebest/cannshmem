@@ -85,14 +85,14 @@ static void test_shmem_ub_non_contiguous(int rank_id, int n_ranks, uint64_t loca
     EXPECT_EQ(aclrtSynchronizeStream(scope.stream), ACL_SUCCESS);
     EXPECT_EQ(aclrtMemcpy(input.data(), input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), ACL_SUCCESS);
 
-    get_func(block_dim, scope.stream, shmemx_get_ffts_config(), (uint8_t *)ptr, (uint8_t *)dev_ptr, input_repeat / 2,
+    get_func(block_dim, scope.stream, shmemx_get_ffts_config(), (uint8_t *)ptr, (uint8_t *)dev_ptr, input_repeat / 2U,
              input_length);
     EXPECT_EQ(aclrtSynchronizeStream(scope.stream), ACL_SUCCESS);
     EXPECT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), ACL_SUCCESS);
 
-    for (size_t i = 0; i < input_repeat / 4; i++) {
+    for (size_t i = 0; i < input_repeat / 4U; i++) {
         for (size_t j = 0; j < input_length; j++) {
-            input[i * input_length + j] = static_cast<Tp>(rank_flag) + static_cast<Tp>(i * 4);
+            input[i * input_length + j] = static_cast<Tp>(rank_flag) + static_cast<Tp>(i * 4U);
         }
     }
 

@@ -56,13 +56,14 @@ TEST_F(ShmemHostFuzz, shmem_init_custom_attr_success)
     {
         const int process_count = shmem_fuzz_gnpu_num();
         uint64_t local_mem_size = fuzz_get_ranged_number(FUZZ_VALUE_0_ID, 1, 1, 512) * 2 * MiB;
+        const int timeout = 50;
         shmem_fuzz_multi_task(
             [](int rank_id, int n_ranks, uint64_t local_mem_size) {
                 shmem_init_attr_t *attributes;
                 aclrtStream stream = nullptr;
                 shmem_fuzz_test_set_attr(rank_id, n_ranks, local_mem_size, &attributes);
                 shmem_set_data_op_engine_type(attributes, SHMEM_DATA_OP_MTE);
-                shmem_set_timeout(attributes, 50);
+                shmem_set_timeout(attributes, timeout);
                 shmem_fuzz_test_init_attr(attributes, &stream);
                 ASSERT_EQ(shmem_init_status(), SHMEM_STATUS_IS_INITIALIZED);
                 shmem_fuzz_test_deinit(stream, shmem_fuzz_device_id(rank_id));

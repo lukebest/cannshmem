@@ -126,8 +126,8 @@ void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, 
     // Block level, define BlockMmad
     constexpr bool enableUnitFlag = true;
     using MmadDispatchPolicy = Gemm::MmadAtlasA2Pingpong<enableUnitFlag>;
-    using L1TileShape = GemmShape<128, 256, 256>;
-    using L0TileShape = GemmShape<128, 256, 64>;
+    using L1TileShape = GemmShape<128U, 256U, 256U>;
+    using L0TileShape = GemmShape<128U, 256U, 64U>;
     using AType = Gemm::GemmType<half, LayoutA>;
     using BType = Gemm::GemmType<half, LayoutB>;
     using CType = Gemm::GemmType<half, LayoutC>;
@@ -135,7 +135,7 @@ void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, 
 
     using ElementStore = half;
 
-    using BlockScheduler = typename Gemm::Block::GemmIdentityBlockSwizzle<7, 1>;
+    using BlockScheduler = typename Gemm::Block::GemmIdentityBlockSwizzle<7U, 1U>;
     using CommBlockSwizzle = Gemm::Block::CommBlockSwizzleDynamic;
 
     // Block level, define BlockAllReduceEpilogue(ReduceScatter + AllGather)
@@ -197,7 +197,7 @@ struct Options {
 
     int Parse(int argc, char **argv)
     {
-        if (argc < 6) {
+        if (argc < 6U) {
             printf(helper);
             return -1;
         }

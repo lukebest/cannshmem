@@ -9,6 +9,7 @@
 #
 import pytest
 
+
 def get_rtol(dtype_str: str, computation_count):
     """
     根据数据类型和计算量动态调整误差阈值

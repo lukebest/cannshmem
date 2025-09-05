@@ -10,13 +10,16 @@
 import subprocess
 import warnings
 
-branch = subprocess.check_output(["/bin/bash", "-c",
-                                  "git symbolic-ref -q --short HEAD || git describe --tags --exact-match 2> /dev/null || git rev-parse HEAD"]).strip().decode()
-project = "Shmem Guidebook"
-author = "xxx"
-copyright = "2025"
-release = "1.0.0"
-html_show_sphinx = False
+git_command = """\
+git symbolic-ref -q --short HEAD \
+|| git describe --tags --exact-match 2> /dev/null \
+|| git rev-parse HEAD"""
+branch = subprocess.check_output(["/bin/bash", "-c", git_command]).strip().decode()
+PROJECT = "Shmem Guidebook"
+AUTHOR = "xxx"
+COPYRIGHT_INFO = "2025"
+RELEASE = "1.0.0"
+HTML_SHOW_SPHINX = False
 
 extensions = [
     'myst_parser',
@@ -34,11 +37,11 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-html_theme = 'sphinx_rtd_theme'
+HTML_THEME = 'sphinx_rtd_theme'
 html_theme_options = {
     'navigation_depth': 4,
     'collapse_navigation': False,
 }
 
 breathe_projects = {"SHMEM_CPP_API": f"./{branch}/xml"}
-breathe_default_project = "SHMEM_CPP_API"
+BREATHE_DEFAULT_PROJECT = "SHMEM_CPP_API"

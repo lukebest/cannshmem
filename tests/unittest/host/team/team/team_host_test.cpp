@@ -24,6 +24,8 @@ static int32_t test_get_device_state(aclrtStream stream, uint8_t *gva, uint32_t 
                                      shmem_team_t team_id, int stride)
 {
     int *y_host;
+    int num3 = 3;
+    int num5 = 5;
     size_t input_size = 1024 * sizeof(int);
     EXPECT_EQ(aclrtMallocHost((void **)(&y_host), input_size), 0);  // size = 1024
 
@@ -33,16 +35,17 @@ static int32_t test_get_device_state(aclrtStream stream, uint8_t *gva, uint32_t 
     SHMEM_CHECK_RET(aclrtGetDevice(&device_id));
     get_device_state(block_dim, stream, (uint8_t *)ptr, team_id);
     EXPECT_EQ(aclrtSynchronizeStream(stream), 0);
-    sleep(2);
+    sleep(1);
 
-    EXPECT_EQ(aclrtMemcpy(y_host, 5 * sizeof(int), ptr, 5 * sizeof(int), ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    EXPECT_EQ(aclrtMemcpy(y_host, num5 * sizeof(int), ptr, num5 * sizeof(int), ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
     if (rank_id & 1) {
-        EXPECT_EQ(y_host[0], rank_size);
-        EXPECT_EQ(y_host[1], rank_id);
-        EXPECT_EQ(y_host[2], rank_id / stride);
-        EXPECT_EQ(y_host[3], rank_size / stride);
-        EXPECT_EQ(y_host[4], (y_host[3] - 1) * stride + rank_id % stride);
+        int idx = 0;
+        EXPECT_EQ(y_host[idx++], rank_size);
+        EXPECT_EQ(y_host[idx++], rank_id);
+        EXPECT_EQ(y_host[idx++], rank_id / stride);
+        EXPECT_EQ(y_host[idx++], rank_size / stride);
+        EXPECT_EQ(y_host[idx++], (y_host[num3] - 1) * stride + rank_id % stride);
     }
 
     EXPECT_EQ(aclrtFreeHost(y_host), 0);
@@ -59,13 +62,13 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size)
     shmem_team_t team_odd;
     int start     = 1;
     int stride    = 2;
-    int team_size = n_ranks / 2;
+    int team_size = n_ranks / stride;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
 
     shmem_team_t team_even;
     start     = 0;
     stride    = 2;
-    team_size = n_ranks / 2;
+    team_size = n_ranks / stride;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_even);
 
     // #################### host侧取值测试 ##############################

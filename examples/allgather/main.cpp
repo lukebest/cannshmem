@@ -94,10 +94,10 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
         uint32_t trans_size = test_cases[i];
 
         //  Small data kernel needs 8 AIV core, Big data kernel needs 16 AIV.
-        if (trans_size * sizeof(T) < 2097152) {
-            BLOCK_NUM = 8;
+        if (trans_size * sizeof(T) < 2097152U) {
+            BLOCK_NUM = 8U;
         } else {
-            BLOCK_NUM = 16;
+            BLOCK_NUM = 16U;
         }
 
         void *input_ptr;
@@ -120,7 +120,7 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
         for (int zz = 0; zz < PERF_TIMES; zz++) {
             magic++;
             allgather_demo<T>(BLOCK_NUM, stream, fftsAddr, (uint8_t *)input_ptr, (uint8_t *)output_ptr, (uint8_t *)ptr,
-                              trans_size, magic * 1024);
+                              trans_size, magic * 1024U);
         }
         status = aclrtSynchronizeStream(stream);
 
@@ -171,15 +171,16 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
 
 int main(int argc, char *argv[])
 {
+    int idx = 1;
+    int n_ranks = atoi(argv[idx++]);
+    int rank_id = atoi(argv[idx++]);
+    ipport = argv[idx++];
+    g_npus = atoi(argv[idx++]);
+    f_rank = atoi(argv[idx++]);
+    f_npu = atoi(argv[idx++]);
+    data_type = argv[idx++];
     int status = 0;
-    int n_ranks = atoi(argv[1]);
-    int rank_id = atoi(argv[2]);
-    ipport = argv[3];
-    g_npus = atoi(argv[4]);
-    f_rank = atoi(argv[5]);
-    f_npu = atoi(argv[6]);
-    data_type = argv[7];
-    uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+    uint64_t local_mem_size = 1024UL * 1024UL * 1024UL;
     int32_t ret = shmem_set_conf_store_tls(false, nullptr, 0);
     std::cout << "init shmem tls result:" << ret << std::endl;
     if (std::string(data_type) == "int") {

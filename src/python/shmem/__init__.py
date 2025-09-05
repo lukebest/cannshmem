@@ -12,14 +12,6 @@ import os
 import sys
 import ctypes
 import torch_npu
-
-current_path = os.path.abspath(__file__)
-current_dir = os.path.dirname(current_path)
-sys.path.append(current_dir)
-libs_path = os.path.join(os.getenv('SHMEM_HOME_PATH', current_dir), 'shmem/lib')
-for lib in ["libshmem.so"]:
-    ctypes.CDLL(os.path.join(libs_path, lib))
-
 from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
                        shmem_ptr, my_pe, pe_count, set_conf_store_tls_key, mte_set_ub_params, team_split_strided,
                        team_split_2d, team_translate_pe, \
@@ -32,6 +24,13 @@ from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
                        shmem_info_get_version, shmem_info_get_name, \
                        shmem_team_get_config, OptionalAttr, shmem_global_exit, set_conf_store_tls, set_log_level,
                        set_extern_logger)
+
+current_path = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_path)
+sys.path.append(current_dir)
+libs_path = os.path.join(os.getenv('SHMEM_HOME_PATH', current_dir), 'shmem/lib')
+for lib in ["libshmem.so"]:
+    ctypes.CDLL(os.path.join(libs_path, lib))
 
 __all__ = [
     'shmem_init',

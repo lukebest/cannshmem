@@ -36,9 +36,11 @@ void test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_siz
 
         // Initialize data
         uint32_t trans_size = 16;
+        int num11 = 11;
+        int num10 = 10;
         std::vector<int32_t> input(trans_size, 0);
         for (int i = 0; i < trans_size; i++) {
-            input[i] = (rank_id + 10);
+            input[i] = (rank_id + num10);
         }
 
         ASSERT_EQ(aclrtMemcpy((void *)((uint64_t)ptr + shmem_team_my_pe(team_odd) * trans_size * sizeof(int32_t)),
@@ -56,7 +58,7 @@ void test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_siz
         EXPECT_EQ(aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
         for (int i = 0; i < team_size; i++) {
-            EXPECT_EQ(y_host[trans_size * i], 11 + i * 2);
+            EXPECT_EQ(y_host[trans_size * i], num11 + i * 2);
         }
 
         EXPECT_EQ(aclrtFreeHost(y_host), 0);

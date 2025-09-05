@@ -142,16 +142,17 @@ static void test_shmem_team_device(int rank_id, int n_ranks, uint64_t local_mem_
     ASSERT_EQ(aclrtGetDevice(&device_id), ACL_SUCCESS);
     get_device_state(block_dim, scope.stream, (uint8_t *)ptr, team);
     ASSERT_EQ(aclrtSynchronizeStream(scope.stream), ACL_SUCCESS);
-    sleep(2);
+    sleep(1);
 
     ASSERT_EQ(aclrtMemcpy(y_host, data_size, ptr, data_size, ACL_MEMCPY_DEVICE_TO_HOST), ACL_SUCCESS);
 
     if (rank_id & 1) {
-        ASSERT_EQ(y_host[0], n_ranks);
-        ASSERT_EQ(y_host[1], rank_id);
-        ASSERT_EQ(y_host[2], rank_id / stride);
-        ASSERT_EQ(y_host[3], n_ranks / stride);
-        ASSERT_EQ(y_host[4], (n_ranks / stride - 1) * stride + rank_id % stride);
+        int idx = 0;
+        ASSERT_EQ(y_host[idx++], n_ranks);
+        ASSERT_EQ(y_host[idx++], rank_id);
+        ASSERT_EQ(y_host[idx++], rank_id / stride);
+        ASSERT_EQ(y_host[idx++], n_ranks / stride);
+        ASSERT_EQ(y_host[idx++], (n_ranks / stride - 1) * stride + rank_id % stride);
     }
 
     EXPECT_EQ(aclrtFreeHost(y_host), 0);

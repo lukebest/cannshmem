@@ -27,7 +27,7 @@ static void test_quiet_order(int32_t rank_id, int32_t n_ranks, uint64_t local_me
 
     int total_size = 64;
     uint64_t *dev_ptr = (uint64_t *)shmem_malloc(total_size * sizeof(uint64_t));
-    ASSERT_EQ(aclrtMemset(dev_ptr, 64 * sizeof(uint64_t), 0, total_size * sizeof(uint64_t)), 0);
+    ASSERT_EQ(aclrtMemset(dev_ptr, total_size * sizeof(uint64_t), 0, total_size * sizeof(uint64_t)), 0);
 
     std::vector<uint64_t> host_buf(total_size, 0);
 
@@ -40,8 +40,8 @@ static void test_quiet_order(int32_t rank_id, int32_t n_ranks, uint64_t local_me
               0);
 
     if (rank_id == 1) {
-        ASSERT_EQ(host_buf[33], 0xBBu);
-        ASSERT_EQ(host_buf[34], 0xAAu);
+        ASSERT_EQ(host_buf[33U], 0xBBu);
+        ASSERT_EQ(host_buf[34U], 0xAAu);
     }
 
     shmem_free(dev_ptr);
@@ -74,8 +74,8 @@ static void test_fence_order(int32_t rank_id, int32_t n_ranks, uint64_t local_me
               0);
 
     if (rank_id == 1) {
-        ASSERT_EQ(addr_host[17], 84u);
-        ASSERT_EQ(addr_host[18], 42u);
+        ASSERT_EQ(addr_host[17U], 84u);
+        ASSERT_EQ(addr_host[18U], 42u);
     }
     shmem_free(addr_dev);
 

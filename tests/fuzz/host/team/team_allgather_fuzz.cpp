@@ -68,7 +68,8 @@ void team_all_gather_test(int rank_id, int n_ranks, aclrtStream stream, uint32_t
         shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
 
         // Initialize data
-        std::vector<int32_t> input(trans_count, (rank_id + 10) * (rank_id + 10));
+        constexpr uint32_t RANK_ID_OFFSET = 10;
+        std::vector<int32_t> input(trans_count, (rank_id + RANK_ID_OFFSET) * (rank_id + RANK_ID_OFFSET));
         std::stringstream input_str;
         print_array(input_str, input, trans_count);
         std::printf("[rank#%d] input = %s;\n", rank_id, input_str.str().c_str());

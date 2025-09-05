@@ -1,33 +1,43 @@
+#
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 import os
 import pandas as pd
 import numpy as np
-import subprocess
-import time
 
 WARM_UP_TIMES = 10
 PERF_TEST_CYCLE_TIMES = 40
+
 
 def open_input_file(input_file):
     df = pd.read_csv(input_file)
     return df
 
-def get_time_data(df, testLineNum: int):
+
+def get_time_data(df, test_line_num: int):
     df = df[df['kernel_type'] == "KERNEL_AIVEC"]
     df = df.reset_index(drop=True)
     time_data = []
     total_rows = len(df)
-    data_rows = total_rows // testLineNum
+    data_rows = total_rows // test_line_num
     coc_tiling_num = (data_rows - WARM_UP_TIMES) // PERF_TEST_CYCLE_TIMES
 
-    for i in range(testLineNum):
+    for i in range(test_line_num):
         start_row = i * data_rows + WARM_UP_TIMES
         for j in range(coc_tiling_num):
             current_row = start_row + j * PERF_TEST_CYCLE_TIMES
-            group = df.iloc[current_row : current_row + PERF_TEST_CYCLE_TIMES]["task_time(us)"]
+            group = df.iloc[current_row: current_row + PERF_TEST_CYCLE_TIMES]["task_time(us)"]
             avg_value = group.mean()
             time_data.append(avg_value)
 
     return time_data
+
 
 def get_time_file(path):
     for data_path in os.listdir(path):
@@ -39,6 +49,7 @@ def get_time_file(path):
                 res = os.path.join(profiler_path, f)
                 return res
     return ""
+
 
 def get_pref_path(path):
     perf_list = list(filter(lambda item: item.startswith("PROF"), os.listdir(path)))

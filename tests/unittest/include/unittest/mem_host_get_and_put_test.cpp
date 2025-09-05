@@ -62,8 +62,9 @@ public:
     }
     inline void Process(bool is_nbi = false)
     {
+        int chunk_size = 16;
         for (int i = 0; i < rank_size; i++) {
-            shmem_getmem((void *)(dev_gm + 16 * i), (void *)(gva_gm), 16, i % rank_size);
+            shmem_getmem((void *)(dev_gm + chunk_size * i), (void *)(gva_gm), chunk_size, i % rank_size);
         }
     }
 
@@ -91,12 +92,15 @@ void host_test_getmem(uint8_t *gva, uint8_t *dev, int32_t rank_, size_t element_
 
 static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem_size)
 {
+    int sleep_time = 1;
+    int stage_total = 16;
+    int stage_offset = 10;
     int total_size = 16 * rank_size;
     size_t input_size = total_size;
 
     std::vector<uint8_t> input(total_size, 0);
-    for (int i = 0; i < 16; i++) {
-        input[i] = (rank_id + 10);
+    for (int i = 0; i < stage_total; i++) {
+        input[i] = (rank_id + stage_offset);
     }
 
     void *dev_ptr;
@@ -107,7 +111,7 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
     void *ptr = shmem_malloc(1024);
     host_test_putmem(ptr, dev_ptr, rank_id, input_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
-    sleep(2);
+    sleep(sleep_time);
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -129,9 +133,9 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
     std::cout << std::endl;
     int32_t flag = 0;
     for (int i = 0; i < total_size; i++) {
-        int stage = i / 16;
-        if (static_cast<int>(input[i]) != (stage + 10)) {
-            std::cout << "input:" << static_cast<int>(input[i]) << "stage:" << (stage + 10) << std::endl;
+        int stage = i / stage_total;
+        if (static_cast<int>(input[i]) != (stage + stage_offset)) {
+            std::cout << "input:" << static_cast<int>(input[i]) << "stage:" << (stage + stage_offset) << std::endl;
             flag = 1;
         }
     }

@@ -25,10 +25,10 @@ public:
     {
         AscendC::PipeBarrier<PIPE_ALL>();
         shmem_int32_p(gva_gm, shmem_n_pes(), rank);
-        shmem_int32_p(gva_gm + 1, shmem_my_pe(), rank);
-        shmem_int32_p(gva_gm + 2, shmem_team_my_pe(team_idx), rank);
-        shmem_int32_p(gva_gm + 3, shmem_team_n_pes(team_idx), rank);
-        shmem_int32_p(gva_gm + 4, shmem_team_translate_pe(team_idx, shmem_team_n_pes(team_idx) - 1,
+        shmem_int32_p(gva_gm + 1U, shmem_my_pe(), rank);
+        shmem_int32_p(gva_gm + 2U, shmem_team_my_pe(team_idx), rank);
+        shmem_int32_p(gva_gm + 3U, shmem_team_n_pes(team_idx), rank);
+        shmem_int32_p(gva_gm + 4U, shmem_team_translate_pe(team_idx, shmem_team_n_pes(team_idx) - 1,
                       SHMEM_TEAM_WORLD), rank);
     }
 private:

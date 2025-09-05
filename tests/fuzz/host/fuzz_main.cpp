@@ -117,11 +117,12 @@ void shmem_fuzz_multi_task(std::function<void(int, int, uint64_t)> task, uint64_
 
 int main(int argc, char *argv[])
 {
-    fuzz_global_ranks = std::atoi(argv[1]);
-    fuzz_global_ip_port = argv[2];
-    fuzz_gnpu_num = std::atoi(argv[3]);
-    fuzz_first_rank = std::atoi(argv[4]);
-    fuzz_first_npu = std::atoi(argv[5]);
+    int idx = 1;
+    fuzz_global_ranks = std::atoi(argv[idx++]);
+    fuzz_global_ip_port = argv[idx++];
+    fuzz_gnpu_num = std::atoi(argv[idx++]);
+    fuzz_first_rank = std::atoi(argv[idx++]);
+    fuzz_first_npu = std::atoi(argv[idx++]);
 
     testing::InitGoogleTest(&argc, argv);
 

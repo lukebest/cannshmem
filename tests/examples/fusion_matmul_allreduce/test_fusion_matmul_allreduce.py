@@ -7,16 +7,16 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 #
-import multiprocessing
-import pytest
-import numpy as np
-import os
-import subprocess
-import socket
-from contextlib import closing
 import hashlib
 import random
 from functools import reduce
+from contextlib import closing
+import os
+import subprocess
+import socket
+import multiprocessing
+import numpy as np
+import pytest
 
 # import tests greneral configs.
 from tests.examples.config import NP_RANDOM_SEED, SHAPE_TOTAL_SIZE_LIMIT
@@ -183,12 +183,9 @@ def test_fusion_matmul_allreduce(case_params):
     elif "stability" in case_category:
         np_data_generator = NPNormalGenerator(output_dtype=numpy_dtype)
 
-    # all ranks input different tensors.
-    # all_A = [np_data_generator.generate(shape_a) for _ in range(world_size)]
-    # all_B = [np_data_generator.generate(shape_b) for _ in range(world_size)]
     # all ranks input same tensor.
-    all_A = [np_data_generator.generate(shape_a)] * world_size
-    all_B = [np_data_generator.generate(shape_b)] * world_size
+    all_a = [np_data_generator.generate(shape_a)] * world_size
+    all_b = [np_data_generator.generate(shape_b)] * world_size
 
     # cal CPU matmul & allreduce.
     gt_fp32 = np.zeros(shape_c, dtype=np.float32)
@@ -196,8 +193,8 @@ def test_fusion_matmul_allreduce(case_params):
 
     for i in range(world_size):
         # Always calculate matmul in fp32 for precision
-        a_i = all_A[i]
-        b_i = all_B[i]
+        a_i = all_a[i]
+        b_i = all_b[i]
 
         mm = np.matmul(a_i.astype(np.float32), b_i.astype(np.float32))
         # Skip if intermediate matmul overflows, as the test case is not meaningful
@@ -220,17 +217,13 @@ def test_fusion_matmul_allreduce(case_params):
         rank_i_a_path = os.path.abspath(os.path.join(data_dir, f"rank_{i}_a.bin"))
         rank_i_b_path = os.path.abspath(os.path.join(data_dir, f"rank_{i}_b.bin"))
         with open(rank_i_a_path, "wb") as f:
-            f.write(all_A[i].astype(numpy_dtype).tobytes())
+            f.write(all_a[i].astype(numpy_dtype).tobytes())
 
         with open(rank_i_b_path, "wb") as f:
-            f.write(all_B[i].astype(numpy_dtype).tobytes())
-
-    # for debug use.
-    # with open(os.path.join(data_dir, "gt.bin"), "wb") as f:
-    #     f.write(gt.astype(numpy_dtype).tobytes())
+            f.write(all_b[i].astype(numpy_dtype).tobytes())
 
     # pack CPU input & output.
-    case_params[case_hash] = {"A": all_A[i], "B": all_B[i], "gt": gt}
+    case_params[case_hash] = {"A": all_a[i], "B": all_b[i], "gt": gt}
 
     # Run ranks in parallel
     ctx = multiprocessing.get_context("spawn")

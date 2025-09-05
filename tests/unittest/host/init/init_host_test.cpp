@@ -12,6 +12,7 @@
 
 namespace shm {
 extern shmem_init_attr_t g_attr;
+constexpr uint32_t timeout = 50;
 }
 
 void test_shmem_init(int rank_id, int n_ranks, uint64_t local_mem_size)
@@ -189,8 +190,8 @@ void test_shmem_init_set_config(int rank_id, int n_ranks, uint64_t local_mem_siz
     shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
 
     shmem_set_data_op_engine_type(attributes, SHMEM_DATA_OP_MTE);
-    shmem_set_timeout(attributes, 50);
-    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+    shmem_set_timeout(attributes, shm::timeout);
+    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, shm::timeout);
     EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
     EXPECT_EQ(status = shmem_set_conf_store_tls(false, nullptr, 0), 0);
@@ -203,7 +204,7 @@ void test_shmem_init_set_config(int rank_id, int n_ranks, uint64_t local_mem_siz
     EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
     EXPECT_NE(shm::g_state.team_pools[0], nullptr);
 
-    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, shm::timeout);
     EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
     status = shmem_init_status();
@@ -229,8 +230,8 @@ void test_shmem_global_exit(int rank_id, int n_ranks, uint64_t local_mem_size)
     shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
 
     shmem_set_data_op_engine_type(attributes, SHMEM_DATA_OP_MTE);
-    shmem_set_timeout(attributes, 50);
-    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+    shmem_set_timeout(attributes, shm::timeout);
+    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, shm::timeout);
     EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
     shmem_set_conf_store_tls(false, nullptr, 0);
@@ -243,7 +244,7 @@ void test_shmem_global_exit(int rank_id, int n_ranks, uint64_t local_mem_size)
     EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
     EXPECT_NE(shm::g_state.team_pools[0], nullptr);
 
-    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, 50);
+    EXPECT_EQ(shm::g_attr.option_attr.control_operation_timeout, shm::timeout);
     EXPECT_EQ(shm::g_attr.option_attr.data_op_engine_type, SHMEM_DATA_OP_MTE);
 
     status = shmem_init_status();

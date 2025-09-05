@@ -75,11 +75,12 @@ void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t loca
 
 int main(int argc, char** argv) 
 {
-    test_global_ranks = std::atoi(argv[1]);
-    test_global_ipport = argv[2];
-    test_gnpu_num = std::atoi(argv[3]);
-    test_first_rank = std::atoi(argv[4]);
-    test_first_npu = std::atoi(argv[5]);
+    int idx = 1;
+    test_global_ranks = std::atoi(argv[idx++]);
+    test_global_ipport = argv[idx++];
+    test_gnpu_num = std::atoi(argv[idx++]);
+    test_first_rank = std::atoi(argv[idx++]);
+    test_first_npu = std::atoi(argv[idx++]);
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

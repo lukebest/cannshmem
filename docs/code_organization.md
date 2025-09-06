@@ -14,7 +14,7 @@
 ```
 include目录下的头文件是按照如下文件层级进行组织的
 |── include
-|    |── shmem_api.h                            // shmem所有对外api
+|    |── shmem_api.h                            // shmem所有对外API
 |    |── device
 |       |── low_level
 |           |── shmem_device_low_level_rma.h    // device侧远端内存访问低阶接口

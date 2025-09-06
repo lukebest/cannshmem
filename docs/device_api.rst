@@ -7,6 +7,9 @@ shmem_device_rma.h
 .. doxygenfile:: shmem_device_rma.h
     :project: SHMEM_CPP_API
     
+.. doxygenfile:: shmem_device_low_level_rma.h
+    :project: SHMEM_CPP_API
+
 shmem_device_sync.h
 ---------------------------------
 

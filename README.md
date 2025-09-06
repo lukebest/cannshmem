@@ -27,7 +27,7 @@ SHMEM
   - Atlas 800I A2/A3 系列产品
   - Atlas 800T A2/A3 系列产品
 - 平台：aarch64/x86
-- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1.alpha003及之后版本。CANN版本为社区版本，暂无支持商用版本。（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
+- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1及之后版本。Ascend HDK版本为商发版本，CANN版本为社区版本，暂无支持商用版本。（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
 cmake >= 3.19  
 GLIBC >= 2.28
 
@@ -135,7 +135,7 @@ shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
 6. 使用torchrun运行测试demo
 
 ```sh
-torchrun --nproco-per-node=k test.py // k为想运行的ranksize
+torchrun --nproc-per-node=k test.py // k为想运行的ranksize
 ```
 看到日志中打印出“test.py running success!”即为demo运行成功
 

@@ -27,7 +27,7 @@ SHMEM_HOST_API void *shmem_malloc(size_t size);
 
 /**
  * @brief allocate memory for an array of <i>nmemb</i> elements of <i>size</i> bytes each and returns a pointer to the
- *        allocated memory. The memory is set to zero. If <i>nmemb</i> or <i>size</i> is 0, then <b>calloc()</b>
+ *        allocated memory. The memory is set to zero. If <i>nmemb</i> or <i>size</i> is 0, then <b>shmem_calloc()</b>
  *        returns either NULL.
  *
  * @param nmemb            [in] elements count
@@ -48,7 +48,7 @@ SHMEM_HOST_API void *shmem_align(size_t alignment, size_t size);
 
 /**
  * @brief Free the memory space pointed to by <i>ptr</i>, which must have been returned by a previous call to
- *       <b>shmem_malloc()</b>, <b>calloc()</b>, <b>shmem_align()</b> or <b>realloc()</b>. If <i>ptr</i> is NULL,
+ *       <b>shmem_malloc()</b>, <b>shmem_calloc()</b> or <b>shmem_align()</b>. If <i>ptr</i> is NULL,
  *       no operation is performed.
  * @param ptr              [in] point to memory block to be free.
  */

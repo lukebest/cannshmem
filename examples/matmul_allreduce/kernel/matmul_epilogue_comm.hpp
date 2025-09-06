@@ -198,7 +198,6 @@ public:
             // set aic
             Arch::CrossCoreSetFlag<0x2, PIPE_MTE3>(flagAivFinishCompute[flagIdx]);
         }
-
     }
 
 private:

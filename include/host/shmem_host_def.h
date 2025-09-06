@@ -45,9 +45,6 @@ extern "C" {
     FUNC(uint32, uint32_t);   \
     FUNC(uint64, uint64_t);   \
     FUNC(char, char)
-// FUNC(half, half);
-// FUNC(bfloat16, bfloat16_t);
-
 /**
  * @defgroup group_macros Macros
  * @{

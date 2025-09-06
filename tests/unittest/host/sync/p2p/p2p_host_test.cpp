@@ -22,7 +22,7 @@ static void test_p2p(int rank_id, int rank_size, uint64_t local_mem_size)
     aclrtStream stream;
     test_init(rank_id, rank_size, local_mem_size, &stream);
 
-    int32_t *addr_dev = (int32_t *)shmem_malloc(sizeof(int32_t));
+    int32_t *addr_dev = static_cast<int32_t *>(shmem_malloc(sizeof(int32_t)));
     ASSERT_EQ(aclrtMemset(addr_dev, sizeof(int32_t), 0, sizeof(int32_t)), 0);
     p2p_chain_do(stream, shmemx_get_ffts_config(), (uint8_t *)addr_dev, rank_id, rank_size);
     ASSERT_EQ(aclrtSynchronizeStream(stream), 0);

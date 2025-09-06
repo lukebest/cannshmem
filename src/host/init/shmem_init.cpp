@@ -20,8 +20,8 @@ using namespace std;
 
 namespace shm {
 
-#define DEFAULT_MY_PE (-1)
-#define DEFAULT_N_PES (-1)
+constexpr int DEFAULT_MY_PE = -1;
+constexpr int DEFAULT_N_PES = -1;
 
 constexpr int DEFAULT_FLAG = 0;
 constexpr int DEFAULT_ID = 0;
@@ -115,27 +115,26 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     g_smem_handle = smem_shm_create(DEFAULT_ID, attributes->n_ranks, attributes->my_rank, g_state.heap_size,
                                     static_cast<smem_shm_data_op_type>(attributes->option_attr.data_op_engine_type),
                                     DEFAULT_FLAG, &gva);
-
     if (g_smem_handle == nullptr || gva == nullptr) {
         SHM_LOG_ERROR("smem_shm_create Failed");
         return SHMEM_SMEM_ERROR;
     }
-    g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * attributes->my_rank);
+    g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
     uint32_t reach_info = 0;
     for (int32_t i = 0; i < g_state.npes; i++) {
         status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
         if (reach_info & SMEMS_DATA_OP_MTE) {
-            g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
+            g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
         } else {
             g_state.p2p_heap_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_SDMA) {
-            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
+            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
         } else {
             g_state.sdma_heap_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_RDMA) {
-            g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * i);
+            g_state.roce_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<size_t>(i));
         } else {
             g_state.roce_heap_base[i] = NULL;
         }
@@ -229,18 +228,18 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
         SHM_LOG_ERROR("my_rank:" << my_rank << " shm::g_ipport is nullptr!");
         return SHMEM_INVALID_VALUE;
     }
-    int attr_version = (1 << 16) + sizeof(shmem_init_attr_t);
+    int attr_version = static_cast<int>((1 << 16) + sizeof(shmem_init_attr_t));
     shm::g_attr.my_rank = my_rank;
     shm::g_attr.n_ranks = n_ranks;
     shm::g_attr.ip_port = shm::g_ipport;
     shm::g_attr.local_mem_size = local_mem_size;
-    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT, 
+    shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT,
                                shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT};
     shm::g_attr_init = true;
     return SHMEM_SUCCESS;
 }
 
-int32_t shmem_init_status()
+int32_t shmem_init_status(void)
 {
     if (!shm::g_state.is_shmem_created)
         return SHMEM_STATUS_NOT_INITIALIZED;
@@ -321,7 +320,7 @@ int32_t shmem_set_conf_store_tls(bool enable, const char *tls_info, const uint32
     return smem_set_conf_store_tls(enable, tls_info, tls_info_len);
 }
 
-int32_t shmem_finalize()
+int32_t shmem_finalize(void)
 {
     SHMEM_CHECK_RET(shm::shmemi_team_finalize());
     if (shm::g_smem_handle != nullptr) {

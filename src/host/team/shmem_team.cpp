@@ -39,7 +39,7 @@ inline std::string team_config2string(shmemi_team_t *config)
 inline bool is_valid_team(shmem_team_t &team)
 {
     return (g_state.is_shmem_initialized && g_shmem_team_pool != nullptr && team >= 0 && team < SHMEM_MAX_TEAMS &&
-            (g_team_mask >> team & 1));
+            ((g_team_mask >> team) & 1));
 }
 
 inline void device_team_destroy(int32_t team_idx)
@@ -292,7 +292,8 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
     int32_t src_start = src_team->start;
     int32_t src_stride = src_team->stride;
     int32_t src_size = src_team->size;
-    int32_t x_team_counts = std::ceil(src_size / float(x_range));
+    double x_team_counts_double = std::ceil(src_size / static_cast<double>(x_range));
+    int32_t x_team_counts = static_cast<int32_t>(x_team_counts_double);
     int32_t y_team_counts = x_range;
 
     if (x_range > src_size) {
@@ -387,12 +388,12 @@ void shmem_team_destroy(shmem_team_t team)
     }
 }
 
-int32_t shmem_my_pe()
+int32_t shmem_my_pe(void)
 {
     return shm::g_state.mype;
 }
 
-int32_t shmem_n_pes()
+int32_t shmem_n_pes(void)
 {
     return shm::g_state.npes;
 }

@@ -26,7 +26,7 @@ static void test_quiet_order(int32_t rank_id, int32_t n_ranks, uint64_t local_me
     ASSERT_NE(stream, nullptr);
 
     int total_size = 64;
-    uint64_t *dev_ptr = (uint64_t *)shmem_malloc(total_size * sizeof(uint64_t));
+    uint64_t *dev_ptr = static_cast<uint64_t *>(shmem_malloc(total_size * sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(dev_ptr, total_size * sizeof(uint64_t), 0, total_size * sizeof(uint64_t)), 0);
 
     std::vector<uint64_t> host_buf(total_size, 0);
@@ -60,7 +60,7 @@ static void test_fence_order(int32_t rank_id, int32_t n_ranks, uint64_t local_me
     ASSERT_NE(stream, nullptr);
 
     int total_size = 64;
-    uint64_t *addr_dev = (uint64_t *)shmem_malloc(total_size * sizeof(uint64_t));
+    uint64_t *addr_dev = static_cast<uint64_t *>(shmem_malloc(total_size * sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(addr_dev, total_size * sizeof(uint64_t), 0, total_size * sizeof(uint64_t)), 0);
 
     std::vector<uint64_t> addr_host(total_size, 0);

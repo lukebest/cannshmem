@@ -11,7 +11,8 @@
 /*
 This file provides device-side collective synchronization implementations, ensuring that:
 1. ALL VEC CORES of all ranks of a team reach a sychonization point before doing subsequent operations.
-2. All operations of ALL VEC CORES of all ranks of the team before the synchronization point are visible to ALL VEC CORES of all ranks of the team after the synchronization point.
+2. All operations of ALL VEC CORES of all ranks of the team before the synchronization point are visible
+    to ALL VEC CORES of all ranks of the team after the synchronization point.
 
 */
 
@@ -137,7 +138,8 @@ b. rank n-1 reads rank n's array, and write the element at position n-1 (in roun
       ...  | 1 | 0 | ...
 --------------------------------------------
 
-c. rank n-2 reads staled rank n's array (no cache consistency ensurance), and write the element at position n-2 (in round 2).
+c. rank n-2 reads staled rank n's array (no cache consistency ensurance),
+    and write the element at position n-2 (in round 2).
          ↓       n
 --------------------------------------------
    ... | 1 | 0 | 0 | ...
@@ -286,7 +288,7 @@ SHMEM_DEVICE void shmemi_barrier_npu_v3(shmemi_team_t *team)
     shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
 
-/* Level 3: barrier between hosts, TO BE IMPLEMENTED.*/
+/* Level 3: barrier between hosts, TO BE IMPLEMENTED. */
 SHMEM_DEVICE void shmemi_barrier_sys()
 {
 }

@@ -27,7 +27,7 @@ static int32_t test_get_device_state(aclrtStream stream, uint8_t *gva, uint32_t 
     int num3 = 3;
     int num5 = 5;
     size_t input_size = 1024 * sizeof(int);
-    EXPECT_EQ(aclrtMallocHost((void **)(&y_host), input_size), 0);  // size = 1024
+    EXPECT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&y_host), input_size), 0);  // size = 1024
 
     uint32_t block_dim = 1;
     void *ptr          = shmem_malloc(1024);

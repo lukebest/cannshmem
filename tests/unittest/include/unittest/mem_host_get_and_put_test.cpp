@@ -64,7 +64,8 @@ public:
     {
         int chunk_size = 16;
         for (int i = 0; i < rank_size; i++) {
-            shmem_getmem((void *)(dev_gm + chunk_size * i), (void *)(gva_gm), chunk_size, i % rank_size);
+            shmem_getmem(static_cast<void *>(dev_gm + chunk_size * i), static_cast<void *>(gva_gm), chunk_size,
+                i % rank_size);
         }
     }
 
@@ -164,7 +165,7 @@ void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_
         size_t input_size = sizeof(TYPE);                                                        \
                                                                                                  \
         void *ptr = shmem_malloc(input_size);                                                    \
-        shmem_##NAME##_p((TYPE *)ptr, (TYPE)(rank_id + 10), rank_id);                            \
+        shmem_##NAME##_p(static_cast<TYPE *>(ptr), static_cast<TYPE>(rank_id + 10), rank_id);    \
         ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);                  \
         sleep(2);                                                                                \
                                                                                                  \

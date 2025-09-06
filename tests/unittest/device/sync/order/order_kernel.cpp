@@ -61,10 +61,12 @@ extern "C" SHMEM_GLOBAL void fence_order(uint64_t config, GM_ADDR addr, int rank
     }
 }
 
-void quiet_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks) {
+void quiet_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks)
+{
     quiet_order<<<1, nullptr, stream>>>(config, addr, rank_id, n_ranks);
 }
 
-void fence_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks) {
+void fence_order_do(void* stream, uint64_t config, uint8_t *addr, int32_t rank_id, int32_t n_ranks)
+{
     fence_order<<<1, nullptr, stream>>>(config, addr, rank_id, n_ranks);
 }

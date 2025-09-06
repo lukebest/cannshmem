@@ -60,7 +60,7 @@ typedef struct {
 
 // mte_config
 typedef struct {
-    int64_t shmem_ub;        // __ubuf__ Ptr, Shmem memcpy needed.
+    uint64_t shmem_ub;        // __ubuf__ Ptr, Shmem memcpy needed.
     uint32_t ub_size;        // UB's Size, in Bytes.
     uint32_t event_id;       // TEventID, for Shmem memcpy sync.
 } shmemi_mte_config_t;
@@ -97,7 +97,6 @@ typedef struct {
 typedef struct {
     // typedef void *aclrtStream; as in https://www.hiascend.com/document/detail/zh/canncommercial/80RC3/apiref/appdevgapi/aclcppdevg_03_1355.html
     void *default_stream;
-    // using TEventID = int8_t; as in https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/800alpha003/apiref/ascendcopapi/atlasascendc_api_07_0181.html
     int8_t default_event_id;
     uint32_t default_block_num;
 } shmemi_host_state_t;

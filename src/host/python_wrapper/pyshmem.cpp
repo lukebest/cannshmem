@@ -120,7 +120,7 @@ static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextL
     }
 }
 
-int32_t shmem_set_conf_store_tls_key_with_decrypt(std::string &tls_pk,std::string &tls_pk_pw,
+int32_t shmem_set_conf_store_tls_key_with_decrypt(std::string &tls_pk, std::string &tls_pk_pw,
     py::function py_decrypt_func)
 {
     if (!py_decrypt_func || py_decrypt_func.is_none()) {
@@ -542,13 +542,13 @@ Returns:
                 shmem_##NAME##_p(dst_addr, value, pe);                                                 \
             },                                                                                         \
             py::call_guard<py::gil_scoped_release>(), py::arg("dst"), py::arg("value"), py::arg("pe"), \
-            R"(                                                              \
-    Provide a low latency put capability for single element of most basic types             \
-                                                                                            \
-    Arguments:                                                                              \
-        dst               [in] Symmetric address of the destination data on local PE.       \
-        value             [in] The element to be put.                                       \
-        pe                [in] The number of the remote PE.                                 \
+            R"(                                                                                        \
+    Provide a low latency put capability for single element of most basic types                        \
+                                                                                                       \
+    Arguments:                                                                                         \
+        dst     [in] Symmetric address of the destination data on local PE.
+        value   [in] The element to be put.
+        pe      [in] The number of the remote PE.
         )");                                                                                           \
     }
 
@@ -566,12 +566,12 @@ Returns:
             },                                                                       \
             py::call_guard<py::gil_scoped_release>(), py::arg("src"), py::arg("pe"), \
             R"(                                                              \
-    Provide a low latency get single element of most basic types.             \
+    Provide a low latency get single element of most basic types.
                                                                                             \
     Arguments:                                                                              \
-        src               [in] Symmetric address of the destination data on local PE.  \
-        pe                [in] The number of the remote PE.                            \
-        A single element of type specified in the input pointer.                             \
+        src     [in] Symmetric address of the destination data on local PE.
+        pe      [in] The number of the remote PE.
+        A single element of type specified in the input pointer.
         )");                                                                         \
     }
 

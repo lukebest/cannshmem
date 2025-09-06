@@ -25,7 +25,7 @@ int fuzz_first_rank;
 int fuzz_first_npu;
 }  // namespace
 
-int shmem_fuzz_gnpu_num()
+int shmem_fuzz_gnpu_num(void)
 {
     return fuzz_gnpu_num;
 }

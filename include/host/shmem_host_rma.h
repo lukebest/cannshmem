@@ -176,7 +176,8 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_G)
 SHMEM_HOST_API void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t pe);
 
 /**
-* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+* @brief Synchronous interface. Copy contiguous data on symmetric memory from the specified PE to
+*        address on the local PE.
 *
 * @param dst                [in] Pointer on local device of the destination data.
 * @param src                [in] Pointer on Symmetric memory of the source data.
@@ -186,7 +187,8 @@ SHMEM_HOST_API void shmem_putmem(void* dst, void* src, size_t elem_size, int32_t
 SHMEM_HOST_API void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t pe);
 
 /**
-* @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.
+* @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to
+*        address on the local PE.
 *
 * @param dst                [in] Pointer on Symmetric addr of local PE.
 * @param src                [in] Pointer on local memory of the source data.
@@ -196,7 +198,8 @@ SHMEM_HOST_API void shmem_getmem(void* dst, void* src, size_t elem_size, int32_t
 SHMEM_HOST_API void shmem_putmem_nbi(void* dst, void* src, size_t elem_size, int32_t pe);
 
 /**
-* @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+* @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to
+*        address on the local PE.
 *
 * @param dst                [in] Pointer on local device of the destination data.
 * @param src                [in] Pointer on Symmetric memory of the source data.
@@ -233,7 +236,7 @@ SHMEM_HOST_API void shmem_putmem_signal_nbi(void* dst, void* src, size_t elem_si
     * @param pe                [in] PE number of the remote PE.
  */
 SHMEM_HOST_API void shmem_putmem_signal(void* dst, void* src, size_t elem_size,
-                                            void* sig_addr, int32_t signal, int sig_op, int pe);
+                                        void* sig_addr, int32_t signal, int sig_op, int pe);
 #ifdef __cplusplus
 }
 #endif

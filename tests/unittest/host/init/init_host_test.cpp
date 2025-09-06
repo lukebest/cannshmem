@@ -7,7 +7,6 @@
 #include <acl/acl.h>
 #include <gtest/gtest.h>
 #include "shmemi_host_common.h"
-#include <gtest/gtest.h>
 #include "unittest_main_test.h"
 
 namespace shm {

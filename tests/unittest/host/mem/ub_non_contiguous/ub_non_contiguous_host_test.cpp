@@ -34,7 +34,7 @@ constexpr int input_length = 32;
     static void TestUB##NAME##NonContiguousPutGet(aclrtStream stream, uint8_t *gva, uint32_t rank_id,        \
                                                   uint32_t rank_size)                                        \
     {                                                                                                        \
-        int rank_flag = rank_id * 10; /* Used as input data*/                                                \
+        int rank_flag = rank_id * 10; /* Used as input data */                                                \
         int total_size = input_repeat * input_length;                                                        \
         size_t input_size = total_size * sizeof(TYPE);                                                       \
                                                                                                              \

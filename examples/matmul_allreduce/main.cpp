@@ -13,9 +13,6 @@
 #include <vector>
 
 // misc
-#include "helper.hpp"
-#include "golden.hpp"
-#include "fp16_t.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -28,6 +25,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include "helper.hpp"
+#include "golden.hpp"
+#include "fp16_t.h"
 
 // from catlass
 #include "catlass/catlass.hpp"
@@ -163,7 +163,8 @@ void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, 
                                                                commBlockShape,
                                                                commProcessShape,
                                                                matmulBlockScheduler,
-                                                               commSwizzle};
+                                                               commSwizzle
+                                                               };
 
     // Prepare params
     typename MatmulAllReduceKernel::Params params{problemShape, blockShape, pValue, rank, rankSize, a, layoutA, b,
@@ -211,7 +212,6 @@ struct Options {
 
         while (argIndex < argc) {
             std::string flag = std::string(argv[argIndex++]);
-
             if (flag == "--pValue") {
                 pValue = std::atoi(argv[argIndex++]);
             } else if (flag == "--ubMoveNum") {
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
     uint8_t *aDevice;
     ACL_CHECK(aclrtMalloc((void **)(&aDevice), aSize, ACL_MEM_MALLOC_HUGE_FIRST));
     uint8_t *aHost;
-    ACL_CHECK(aclrtMallocHost((void **)(&aHost), aSize));
+    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&aHost), aSize));
     std::string dataPath = argv[8];
     std::string aPath = dataPath + "/rank_" + std::to_string(rankId) + "_a.bin";
     ReadFile(aPath.c_str(), aHost, aSize);
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     uint8_t *bDevice;
     ACL_CHECK(aclrtMalloc((void **)(&bDevice), bSize, ACL_MEM_MALLOC_HUGE_FIRST));
     uint8_t *bHost;
-    ACL_CHECK(aclrtMallocHost((void **)(&bHost), bSize));
+    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void **>(&bHost), bSize));
     std::string bPath = dataPath + "/rank_" + std::to_string(rankId) + "_b.bin";
     ReadFile(bPath.c_str(), bHost, bSize);
     ACL_CHECK(aclrtMemcpy(bDevice, bSize, bHost, bSize, ACL_MEMCPY_HOST_TO_DEVICE));
@@ -301,8 +301,8 @@ int main(int argc, char **argv)
     uint8_t *cDevice;
     ACL_CHECK(aclrtMalloc((void **)(&cDevice), cSize, ACL_MEM_MALLOC_HUGE_FIRST));
     uint8_t *cHost;
-    ACL_CHECK(aclrtMallocHost((void **)(&cHost), cSize));
-    memset(cHost, 0, cSize);  // 零初始化 C 矩阵
+    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&cHost), cSize));
+    std::fill(cHost, cHost + cSize, 0);  // 零初始化 C 矩阵
     ACL_CHECK(aclrtMemcpy(cDevice, cSize, cHost, cSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
     void *symmPtr = shmem_malloc((204 * 1024 * 1024) * sizeof(__fp16));

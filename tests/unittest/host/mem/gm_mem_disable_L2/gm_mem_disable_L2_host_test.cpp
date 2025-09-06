@@ -31,7 +31,7 @@ extern void test_shmemx_mte_get(uint32_t block_dim, void *stream, uint64_t confi
 
 static void test_shmemx_mte_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id, uint32_t rank_size)
 {
-    int total_size = input_length * (int)rank_size;
+    int total_size = input_length * static_cast<int>(rank_size);
     size_t input_size = total_size * sizeof(int8_t);
 
     std::vector<int8_t> input(total_size, 0);
@@ -60,8 +60,9 @@ static void test_shmemx_mte_put_get(aclrtStream stream, uint8_t *gva, uint32_t r
     int32_t flag = 0;
     for (int i = 0; i < total_size; i++) {
         int stage = i / input_length;
-        if (input[i] != static_cast<int8_t>(stage + test_offset))
+        if (input[i] != static_cast<int8_t>(stage + test_offset)) {
             flag = 1;
+        }
     }
     ASSERT_EQ(flag, 0);
 }

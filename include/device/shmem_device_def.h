@@ -30,8 +30,7 @@ extern "C" {
  *   head of the following repeat.
  * - uint32_t dst_ld: Dst data leading dimension.
 */
-struct non_contiguous_copy_param
-{
+struct non_contiguous_copy_param {
     uint32_t repeat;
     uint32_t length;
     uint32_t src_ld;

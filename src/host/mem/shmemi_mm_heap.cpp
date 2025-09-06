@@ -182,7 +182,7 @@ int32_t memory_heap::release(void *address) noexcept
     }
 
     auto size = pos->second;
-    uint64_t final_offset = offset;
+    uint64_t final_offset = static_cast<uint64_t>(offset);
     uint64_t final_size = size;
     address_used_tree_.erase(pos);
 
@@ -193,16 +193,20 @@ int32_t memory_heap::release(void *address) noexcept
             // 合并前一个range
             final_offset = prev_addr_pos->first;
             final_size += prev_addr_pos->second;
+
+            auto prev_addr_range = *prev_addr_pos;
             address_idle_tree_.erase(prev_addr_pos);
-            size_idle_tree_.erase(memory_range{prev_addr_pos->first, prev_addr_pos->second});
+            size_idle_tree_.erase(memory_range{prev_addr_range.first, prev_addr_range.second});
         }
     }
 
     auto next_addr_pos = address_idle_tree_.find(offset + size);
     if (next_addr_pos != address_idle_tree_.end()) {  // 合并后一个range
-        final_size += next_addr_pos->second;
+        uint64_t next_addr = next_addr_pos->first;
+        uint64_t next_size = next_addr_pos->second;
+        final_size += next_size;
         address_idle_tree_.erase(next_addr_pos);
-        size_idle_tree_.erase(memory_range{next_addr_pos->first, next_addr_pos->second});
+        size_idle_tree_.erase(memory_range{next_addr, next_size});
     }
     address_idle_tree_.emplace(final_offset, final_size);
     size_idle_tree_.emplace(memory_range{final_offset, final_size});

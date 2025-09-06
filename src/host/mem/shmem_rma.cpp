@@ -31,7 +31,7 @@ void *shmem_ptr(void *ptr, int32_t pe)
     uint64_t offset = (uint64_t)ptr - (uint64_t)shm::g_state.heap_base;
     void *symm_ptr = shm::g_state.p2p_heap_base[pe];
     if (symm_ptr != nullptr) {
-        symm_ptr = (void *)((uint64_t)symm_ptr + offset);
+        symm_ptr = reinterpret_cast<void*>(reinterpret_cast<uint64_t>(symm_ptr) + offset);
         return symm_ptr;
     }
     SHM_LOG_ERROR("shmem_ptr Failed. PE: " << shmem_my_pe()

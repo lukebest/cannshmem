@@ -46,7 +46,8 @@ SHMEM_DEVICE void shmemx_mte_get_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src,
  * @param pe                [in] PE number of the remote PE.
  * @param enable_L2         [in] whether to enable L2 cache
  */
-SHMEM_DEVICE void shmemx_mte_put_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src, uint32_t elem_size, int32_t pe, bool enable_L2)
+SHMEM_DEVICE void shmemx_mte_put_mem_nbi(__gm__ int8_t* dst, __gm__ int8_t* src, uint32_t elem_size, int32_t pe,
+    bool enable_L2)
 {
         /* Global State Get */
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();

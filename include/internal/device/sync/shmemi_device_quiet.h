@@ -12,7 +12,8 @@
 
 #include "internal/device/shmemi_device_common.h"
 
-SHMEM_DEVICE void shmemi_quiet() {
+SHMEM_DEVICE void shmemi_quiet()
+{
     // clear instruction pipes
     AscendC::PipeBarrier<PIPE_ALL>();
 

@@ -26,10 +26,10 @@ static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t lo
     test_init(rank_id, n_ranks, local_mem_size, &stream);
     ASSERT_NE(stream, nullptr);
 
-    uint64_t *addr_dev = (uint64_t *)shmem_malloc(sizeof(uint64_t));
+    uint64_t *addr_dev = static_cast<uint64_t *>(shmem_malloc(sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(addr_dev, sizeof(uint64_t), 0, sizeof(uint64_t)), 0);
     uint64_t *addr_host;
-    ASSERT_EQ(aclrtMallocHost((void **)&addr_host, sizeof(uint64_t)), 0);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&addr_host), sizeof(uint64_t)), 0);
 
     for (int32_t i = 1; i <= SHMEM_BARRIER_TEST_NUM; i++) {
         std::cout << "[TEST] barriers test blackbox rank_id: " << rank_id << " time: " << i << std::endl;
@@ -40,10 +40,10 @@ static void test_barrier_black_box(int32_t rank_id, int32_t n_ranks, uint64_t lo
         shm::shmemi_control_barrier_all();
     }
 
-    uint64_t *addr_dev_vec = (uint64_t *)shmem_malloc(sizeof(uint64_t));
+    uint64_t *addr_dev_vec = static_cast<uint64_t *>(shmem_malloc(sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(addr_dev_vec, sizeof(uint64_t), 0, sizeof(uint64_t)), 0);
     uint64_t *addr_host_vec;
-    ASSERT_EQ(aclrtMallocHost((void **)&addr_host_vec, sizeof(uint64_t)), 0);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&addr_host_vec), sizeof(uint64_t)), 0);
 
     for (int32_t i = 1; i <= SHMEM_BARRIER_TEST_NUM; i++) {
         std::cout << "[TEST] vec barriers test blackbox rank_id: " << rank_id << " time: " << i << std::endl;
@@ -79,15 +79,15 @@ static void test_barrier_black_box_odd_team(int32_t rank_id, int32_t n_ranks, ui
     int team_size = n_ranks / 2;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
 
-    uint64_t *addr_dev = (uint64_t *)shmem_malloc(sizeof(uint64_t));
+    uint64_t *addr_dev = static_cast<uint64_t *>(shmem_malloc(sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(addr_dev, sizeof(uint64_t), 0, sizeof(uint64_t)), 0);
     uint64_t *addr_host;
-    ASSERT_EQ(aclrtMallocHost((void **)&addr_host, sizeof(uint64_t)), 0);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&addr_host), sizeof(uint64_t)), 0);
 
-    uint64_t *addr_dev_vec = (uint64_t *)shmem_malloc(sizeof(uint64_t));
+    uint64_t *addr_dev_vec = static_cast<uint64_t *>(shmem_malloc(sizeof(uint64_t)));
     ASSERT_EQ(aclrtMemset(addr_dev_vec, sizeof(uint64_t), 0, sizeof(uint64_t)), 0);
     uint64_t *addr_host_vec;
-    ASSERT_EQ(aclrtMallocHost((void **)&addr_host_vec, sizeof(uint64_t)), 0);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&addr_host_vec), sizeof(uint64_t)), 0);
 
     if (rank_id & 1) {
         for (int32_t i = 1; i <= SHMEM_BARRIER_TEST_NUM; i++) {

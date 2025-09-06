@@ -80,20 +80,24 @@ extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr
 #endif
 }
 
-void increase_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void increase_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     increase<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }
 
-void increase_vec_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void increase_vec_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     increase_vec<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }
 
 void increase_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
-    int rank_size, shmem_team_t team_id) {
+    int rank_size, shmem_team_t team_id)
+{
     increase_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }
 
 void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int rank_id,
-    int rank_size, shmem_team_t team_id) {
+    int rank_size, shmem_team_t team_id)
+{
     increase_vec_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
 }

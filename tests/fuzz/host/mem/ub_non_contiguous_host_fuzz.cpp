@@ -60,7 +60,7 @@ static void test_shmem_ub_non_contiguous(int rank_id, int n_ranks, uint64_t loca
     shmem_init_scope scope(rank_id, n_ranks, local_mem_size);
     EXPECT_EQ(shmem_init_status(), SHMEM_STATUS_IS_INITIALIZED);
 
-    size_t rank_flag = rank_id * 10;
+    size_t rank_flag = static_cast<size_t>(rank_id) * 10;
     size_t total_size = input_repeat * input_length;
     size_t input_size = total_size * sizeof(Tp);
 

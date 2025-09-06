@@ -73,7 +73,7 @@ void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t loca
     }
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
     int idx = 1;
     test_global_ranks = std::atoi(argv[idx++]);

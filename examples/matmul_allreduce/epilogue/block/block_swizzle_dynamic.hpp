@@ -20,11 +20,9 @@ struct AllGatherSchedule {};
 struct AllReduceSchedule {};
 
 struct CommBlockSwizzleDynamic {
-
     ///
     /// Data members
     ///
-
     uint32_t swizzleOffset, swizzleDirection;
     MatrixCoord problemSize;
     MatrixCoord problemSizePerRank;
@@ -38,7 +36,6 @@ struct CommBlockSwizzleDynamic {
     ///
     /// Methods
     ///
-
     CATLASS_DEVICE
     CommBlockSwizzleDynamic() {}
 
@@ -50,8 +47,7 @@ struct CommBlockSwizzleDynamic {
     {
         if (swizzleDirection == 1) {
             swizzleOffset = commNpuSplit;
-        }
-        else {
+        } else {
             swizzleOffset = commDataSplit;
         }
         nLoops = rankSize;
@@ -89,7 +85,8 @@ struct CommBlockSwizzleDynamic {
     }
 
     CATLASS_DEVICE
-    MatrixCoord GetBlockIdx(uint32_t taskIdx) const {
+    MatrixCoord GetBlockIdx(uint32_t taskIdx) const
+    {
         uint32_t innerIdx = taskIdx % (mLoops * nLoops);
         if (swizzleDirection == 0) { // Zn
             uint32_t tileBlockLoop = CeilDiv(mLoops, swizzleOffset);
@@ -126,7 +123,8 @@ struct CommBlockSwizzleDynamic {
     }
 
     CATLASS_DEVICE
-    MatrixCoord GetBlockOffset(MatrixCoord blockIdx) const {
+    MatrixCoord GetBlockOffset(MatrixCoord blockIdx) const
+    {
         MatrixCoord commBlockCoord{blockIdx.row(), 0};
         auto subBlockOffset = commBlockCoord * blockShape;
 

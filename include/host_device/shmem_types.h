@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 /**
- * @private 
+ * @private
 */
 #define SHMEM_GLOBAL __global__ __aicore__
 
@@ -30,7 +30,7 @@ extern "C" {
 /**
 * @brief The state of the SHMEM host OP type.
 */
-enum shmemi_op_t{
+enum shmemi_op_t {
     SHMEMI_OP_PUT = 0,
     SHMEMI_OP_P,
     SHMEMI_OP_PUT_SIGNAL,
@@ -45,7 +45,7 @@ enum shmemi_op_t{
 /**
  * @brief Team's index.
 */
-enum shmem_team_index_t{
+enum shmem_team_index_t {
     SHMEM_TEAM_INVALID = -1,
     SHMEM_TEAM_WORLD = 0
 };
@@ -104,4 +104,4 @@ typedef int shmem_team_t;
 }
 #endif
 
-#endif /*SHMEM_TYPES_H*/
+#endif /* SHMEM_TYPES_H */

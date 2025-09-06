@@ -43,6 +43,7 @@ extern "C" SHMEM_GLOBAL void p2p_chain(uint64_t config, GM_ADDR addr, int rank_i
     shmem_barrier_all();
 }
 
-void p2p_chain_do(void *stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size) {
+void p2p_chain_do(void *stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
+{
     p2p_chain<<<1, nullptr, stream>>>(config, addr, rank_id, rank_size);
 }

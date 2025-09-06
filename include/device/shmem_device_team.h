@@ -39,10 +39,10 @@ SHMEM_DEVICE int shmem_n_pes(void)
 
 /**
  * @brief Returns the number of the calling PE in the specified team.
- * 
+ *
  * @param team              [in] A team handle.
  *
- * @return The number of the calling PE within the specified team. 
+ * @return The number of the calling PE within the specified team.
  *         If the team handle is SHMEM_TEAM_INVALID, returns -1.
  */
 SHMEM_DEVICE int shmem_team_my_pe(shmem_team_t team)
@@ -57,10 +57,10 @@ SHMEM_DEVICE int shmem_team_my_pe(shmem_team_t team)
 
 /**
  * @brief Returns the number of PEs in the specified team.
- * 
+ *
  * @param team              [in] A team handle.
  *
- * @return The number of PEs in the specified team. 
+ * @return The number of PEs in the specified team.
  *         If the team handle is SHMEM_TEAM_INVALID, returns -1.
  */
 SHMEM_DEVICE int shmem_team_n_pes(shmem_team_t team)
@@ -75,12 +75,12 @@ SHMEM_DEVICE int shmem_team_n_pes(shmem_team_t team)
 
 /**
  * @brief Translate a given PE number in one team into the corresponding PE number in another team.
- * 
+ *
  * @param src_team           [in] A SHMEM team handle.
  * @param src_pe             [in] The PE number in src_team.
  * @param dest_team          [in] A SHMEM team handle.
  *
- * @return The number of PEs in the specified team. 
+ * @return The number of PEs in the specified team.
  *         If the team handle is SHMEM_TEAM_INVALID, returns -1.
  */
 SHMEM_DEVICE int shmem_team_translate_pe(shmem_team_t src_team, int src_pe, shmem_team_t dest_team)

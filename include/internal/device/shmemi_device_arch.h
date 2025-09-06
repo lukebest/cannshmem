@@ -12,7 +12,8 @@
 
 #include "device/shmem_device_def.h"
 
-SHMEM_DEVICE void dcci_cacheline(__gm__ uint8_t * addr) {
+SHMEM_DEVICE void dcci_cacheline(__gm__ uint8_t * addr)
+{
     using namespace AscendC;
     GlobalTensor<uint8_t> global;
     global.SetGlobalBuffer(addr);
@@ -23,7 +24,8 @@ SHMEM_DEVICE void dcci_cacheline(__gm__ uint8_t * addr) {
     __asm__ __volatile__("");
 }
 
-SHMEM_DEVICE void dcci_entire_cache() {
+SHMEM_DEVICE void dcci_entire_cache()
+{
     using namespace AscendC;
     GlobalTensor<uint8_t> global;
     
@@ -33,7 +35,8 @@ SHMEM_DEVICE void dcci_entire_cache() {
     __asm__ __volatile__("");
 }
 
-SHMEM_DEVICE void dcci_atomic() {
+SHMEM_DEVICE void dcci_atomic()
+{
     using namespace AscendC;
     GlobalTensor<uint8_t> global;
 
@@ -42,7 +45,8 @@ SHMEM_DEVICE void dcci_atomic() {
     __asm__ __volatile__("");
 }
 
-SHMEM_DEVICE void dsb_all() {
+SHMEM_DEVICE void dsb_all()
+{
     using namespace AscendC;
     
     DataSyncBarrier<MemDsbT::ALL>();

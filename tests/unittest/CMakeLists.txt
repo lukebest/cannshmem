@@ -6,6 +6,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
+add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=1)
 add_subdirectory(device)
 add_subdirectory(host)
 add_subdirectory(include)

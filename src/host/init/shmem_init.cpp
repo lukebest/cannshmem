@@ -188,12 +188,14 @@ int32_t check_attr(shmem_init_attr_t *attributes)
 
 int32_t shmem_set_data_op_engine_type(shmem_init_attr_t *attributes, data_op_engine_type_t value)
 {
+    SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
     attributes->option_attr.data_op_engine_type = value;
     return SHMEM_SUCCESS;
 }
 
 int32_t shmem_set_timeout(shmem_init_attr_t *attributes, uint32_t value)
 {
+    SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
     attributes->option_attr.shm_init_timeout = value;
     attributes->option_attr.shm_create_timeout = value;
     attributes->option_attr.control_operation_timeout = value;
@@ -289,6 +291,7 @@ int32_t shmem_set_config_store_tls_key(const char *tls_pk, const uint32_t tls_pk
 
 int32_t shmem_set_extern_logger(void (*func)(int level, const char *msg))
 {
+    SHM_ASSERT_RETURN(func != nullptr, SHMEM_INVALID_PARAM);
     shm::shm_out_logger::Instance().set_extern_log_func(func, true);
     return smem_set_extern_logger(func);
 }

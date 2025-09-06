@@ -285,6 +285,10 @@ while [[ $# -gt 0 ]]; do
             GEN_DOC=ON
             shift
             ;;
+        -examples)
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DUSE_EXAMPLES=ON"
+            shift
+            ;;
         -onlygendoc)
             fn_build_doxygen
             fn_build_sphinx

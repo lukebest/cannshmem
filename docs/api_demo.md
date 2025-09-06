@@ -45,6 +45,12 @@ typedef struct {
 #include <acl/acl.h>
 #include "shmem_api.h"
 aclInit(nullptr);
+int status;
+int device_id = 0;
+int rank_id = 0;
+int n_ranks = 8;
+uint64_t local_mem_size = 1024UL * 1024UL * 1024;
+const char* test_global_ipport = "tcp://127.0.0.1:8666";
 status = aclrtSetDevice(device_id);
 
 shmem_init_attr_t* attributes;
@@ -84,7 +90,7 @@ ret = shmem_set_log_level(level);
 
 ### 注册私钥口令解密函数
 
-shmem的多卡之间业务面TCP通信，通过memfabric_hybrid提供的能力实现，为了保证通信安全，该特性默认开启，使用时传入初始化TLS信息，TLS信息格式参考docs/security.md样例，其中私钥是密文，私钥口令是密文，私钥口令解密函数通过如下方式注册，调用者实现解密过程。
+shmem的多卡之间业务面TCP通信，通过memfabric_hybrid提供的能力实现，为了保证通信安全，该特性默认开启，使用时传入初始化TLS信息，TLS信息格式参考docs/security.md样例，其中私钥是密文，私钥口令以密文形式存储，需通过注册的解密回调函数进行解密，调用者实现具体的解密逻辑。
 
 ```c
 int my_key_password_decrypt_handler(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)
@@ -131,7 +137,7 @@ if (rank_id & 1) {
     // shmem_team_my_pe(team_odd): Returns the number of the calling PE in the specified team.
     int team_my_pe = shmem_team_my_pe(team_odd); // team_my_pe == rank_id / stride
     // shmem_n_pes(): Returns the number of PEs running in the program.
-    int my_pe = shmem_n_pes(); // n_pes == n_ranks
+    int n_pes = shmem_n_pes(); // n_pes == n_ranks
     // shmem_my_pe(): Returns the PE number of the local PE
     int my_pe = shmem_my_pe(); // my_pe == rank_id
 }
@@ -152,7 +158,7 @@ public:
         gva_gm = (__gm__ int *)gva;
         team_idx= team_id;
 
-        rank = smem_shm_get_global_rank();          // 获取当前ank
+        rank = smem_shm_get_global_rank();          // 获取当前rank
         rank_size = smem_shm_get_global_rank_size(); // 获取总rank数
     }
     __aicore__ inline void Process()
@@ -219,12 +225,12 @@ public:
         gva_gm = (__gm__ float *)gva;
         value = val;
 
-        rank = smem_shm_get_global_rank();          // 获取当前ank
+        rank = smem_shm_get_global_rank();          // 获取当前rank
         rank_size = smem_shm_get_global_rank_size(); // 获取总rank数
     }
     __aicore__ inline void Process()
     {
-        // 把value的值put到共享内存gvaGm在pe=(rank + 1) % rankSize中的对应位置。
+        // 把value的值put到共享内存gva_gm在(rank + 1) % rank_size中的对应位置。
         shmem_float_p(gva_gm, value, (rank + 1) % rank_size);
     }
 private:
@@ -255,7 +261,7 @@ SHMEM的同步管理接口样例
 // 任务1
 // ...
 // 阻塞直到所有任务完成。
-shmem_barrier_all()
+shmem_barrier_all();
 // 任务2
 // ...
 ```

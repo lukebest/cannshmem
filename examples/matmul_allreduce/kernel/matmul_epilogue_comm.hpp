@@ -174,7 +174,7 @@ public:
         // Split core loop to comm loop tile
         MatrixCoord coreLoops{params.epilogueParams.gemmSwizzle.GetCoreLoops(), 1};
         MatrixCoord commBlockCount{loopNumPerComm, 1};
-        auto commLoops = CeilDiv(coreLoops, commBlockCount);
+        MatrixCoord commLoops = CeilDiv(coreLoops, commBlockCount);
         auto residueCommBlockCount = coreLoops % commBlockCount;
 
         MatrixCoord blockShape{params.blockShape.m(), params.blockShape.n()};
@@ -192,8 +192,7 @@ public:
             // wait aic
             Arch::CrossCoreWaitFlag(flagAicFinishStore[flagIdx]);
 
-            blockAllReduceEpilogue(blockShape, commBlockCount, actualCommBlockCount, calIdx, params.rankIdx,
-                params.rankSize, params.pValue);
+            blockAllReduceEpilogue(blockShape, commBlockCount, actualCommBlockCount, calIdx, params.rankIdx, params.rankSize, params.pValue);
 
             // set aic
             Arch::CrossCoreSetFlag<0x2, PIPE_MTE3>(flagAivFinishCompute[flagIdx]);

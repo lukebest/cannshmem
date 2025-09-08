@@ -15,10 +15,10 @@ readonly BUILD_PATH="$PROJECT_ROOT/build"
 readonly COVERAGE_PATH="$BUILD_PATH/coverage"
 
 if ! lcov --version; then
-    echo "Please install lcov before run unit test."
+    echo "No lcov found. Please install lcov before run unit test!"
     exit 1
 else
-    echo "lcov installed"
+    echo "lcov installed!"
 fi
 
 cd ${PROJECT_ROOT}
@@ -27,9 +27,9 @@ rm -rf "$COVERAGE_PATH"
 set -e
 RANK_SIZE="8"
 IPPORT="tcp://127.0.0.1:8666"
-GNPU_NUM="8"
 FIRST_NPU="0"
 FIRST_RANK="0"
+GNPU_NUM="8"
 if [ -z "${GTEST_FILTER}" ]; then
     TEST_FILTER="*.*"
 else
@@ -40,13 +40,13 @@ while [[ $# -gt 0 ]]; do
         -ranks)
             if [ -n "$2" ]; then
                 RANK_SIZE="$2"
-                if [ "$GNPU_NUM" -gt "$RANK_SIZE" ]; then
+                if [[ "$GNPU_NUM" -gt "$RANK_SIZE" ]]; then
                     GNPU_NUM="$RANK_SIZE"
-                    echo "Because GNPU_NUM is greater than RANK_SIZE, GNPU_NUM is assigned the value of RANK_SIZE=${RANK_SIZE}."
+                    echo "Because RANK_SIZE is less than GNPU_NUM, GNPU_NUM is assigned the value of RANK_SIZE=${RANK_SIZE}."
                 fi
                 shift 2
             else
-                echo "Error: -ranks requires a value."
+                echo "Error: -ranks requires a value. Please add a parameter after -ranks."
                 exit 1
             fi
             ;;
@@ -55,7 +55,7 @@ while [[ $# -gt 0 ]]; do
                 FIRST_RANK="$2"
                 shift 2
             else
-                echo "Error: -frank requires a value."
+                echo "Error: -frank requires a value. Please add a parameter after -frank."
                 exit 1
             fi
             ;;
@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
                 IPPORT="$2"
                 shift 2
             else
-                echo "Error: -ipport requires a value."
+                echo "Error: -ipport requires a value. Please add a parameter after -ipport."
                 exit 1
             fi
             ;;
@@ -73,7 +73,7 @@ while [[ $# -gt 0 ]]; do
                 GNPU_NUM="$2"
                 shift 2
             else
-                echo "Error: -gnpus requires a value."
+                echo "Error: -gnpus requires a value. Please add a parameter after -gnpus."
                 exit 1
             fi
             ;;
@@ -82,7 +82,7 @@ while [[ $# -gt 0 ]]; do
                 FIRST_NPU="$2"
                 shift 2
             else
-                echo "Error: -fnpu requires a value."
+                echo "Error: -fnpu requires a value. Please add a parameter after -fnpu."
                 exit 1
             fi
             ;;
@@ -91,19 +91,18 @@ while [[ $# -gt 0 ]]; do
                 TEST_FILTER="*$2*"
                 shift 2
             else
-                echo "Error: -test_filter requires a value."
+                echo "Error: -test_filter requires a value. Please add a parameter after -test_filter."
                 exit 1
             fi
             ;;
         *)
-            echo "Error: Unknown option $1."
+            echo "Error: Unknown option $1. Please revise."
             exit 1
             ;;
     esac
 done
-
-export SMEM_CONF_STORE_TLS_ENABLE=0
 export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/install/memfabric_hybrid/lib:${ASCEND_HOME_PATH}/lib64:$LD_LIBRARY_PATH
+export SMEM_CONF_STORE_TLS_ENABLE=0
 
 # Run fuzz test
 cd "$BUILD_PATH"

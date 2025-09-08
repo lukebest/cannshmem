@@ -23,10 +23,19 @@ TEST_TYPE="int"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        -ipport)
+            if [ -n "$2" ]; then
+                IPPORT="$2"
+                shift 2
+            else
+                echo "Error: -ipport requires a value."
+                exit 1
+            fi
+            ;;
         -ranks)
             if [ -n "$2" ]; then
                 RANK_SIZE="$2"
-                if [ "$GNPU_NUM" -gt "$RANK_SIZE" ]; then
+                 if [[ "$GNPU_NUM" -gt "$RANK_SIZE" ]]; then
                     GNPU_NUM="$RANK_SIZE"
                     echo "Because GNPU_NUM is greater than RANK_SIZE, GNPU_NUM is assigned the value of RANK_SIZE=${RANK_SIZE}."
                 fi
@@ -42,15 +51,6 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 echo "Error: -frank requires a value."
-                exit 1
-            fi
-            ;;
-        -ipport)
-            if [ -n "$2" ]; then
-                IPPORT="$2"
-                shift 2
-            else
-                echo "Error: -ipport requires a value."
                 exit 1
             fi
             ;;

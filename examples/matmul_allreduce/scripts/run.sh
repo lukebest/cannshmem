@@ -25,7 +25,7 @@ while [[ $# -gt 0 ]]; do
                 RANK_SIZE="$2"
                 shift 2
             else
-                echo "Error: -ranks requires a value."
+                echo "Error: -ranks requires a value. Please add a parameter."
                 exit 1
             fi
             ;;
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
                 FIRST_NPU="$2"
                 shift 2
             else
-                echo "Error: -fnpu requires a value."
+                echo "Error: -fnpu requires a value. Please add a parameter."
                 exit 1
             fi
             ;;
@@ -43,7 +43,7 @@ while [[ $# -gt 0 ]]; do
                 IPPORT="$2"
                 shift 2
             else
-                echo "Error: -ipport requires a value."
+                echo "Error: -ipport requires a value. Please add a parameter."
                 exit 1
             fi
             ;;
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
                 M="$2"
                 shift 2
             else
-                echo "Error: -M requires a value."
+                echo "Error: -M requires a value. Please add a parameter."
                 exit 1
             fi
             ;;
@@ -61,7 +61,7 @@ while [[ $# -gt 0 ]]; do
                 K="$2"
                 shift 2
             else
-                echo "Error: -K requires a value."
+                echo "Error: -K requires a value. Please add a parameter."
                 exit 1
             fi
             ;;
@@ -70,7 +70,7 @@ while [[ $# -gt 0 ]]; do
                 N="$2"
                 shift 2
             else
-                echo "Error: -N requires a value."
+                echo "Error: -N requires a value. Please add a parameter."
                 exit 1
             fi
             ;;

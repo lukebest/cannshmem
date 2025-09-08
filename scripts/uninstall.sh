@@ -19,7 +19,7 @@ function print()
 function delete_install_files()
 {
     install_dir=$1
-    print "INFO" "SHMEM $(basename $1) delete install files!"
+    print "INFO" "SHMEM $(basename $1) delete install files."
     [ -n "$1" ] && rm -rf $1
 }
 
@@ -27,7 +27,14 @@ function delete_file_with_authority()
 {
     file_path=$1
     dir_path=$(dirname ${file_path})
-    if [ ${dir_path} != "." ]; then
+    if [ ${dir_path} == "." ]; then
+        chmod 700 ${file_path}
+        if [ -d ${file_path} ]; then
+            rm -rf ${file_path}
+        else
+            rm -f ${file_path}
+        fi
+    else
         dir_authority=$(stat -c %a ${dir_path})
         chmod 700 ${dir_path}
         if [ -d ${file_path} ]; then
@@ -36,13 +43,6 @@ function delete_file_with_authority()
             rm -f ${file_path}
         fi
         chmod ${dir_authority} ${dir_path}
-    else
-        chmod 700 ${file_path}
-        if [ -d ${file_path} ]; then
-            rm -rf ${file_path}
-        else
-            rm -f ${file_path}
-        fi
     fi
 }
 
@@ -51,7 +51,7 @@ function delete_empty_recursion()
     if [ ! -d $1 ]; then
         return 0
     fi
-    print "INFO" "SHMEM $(basename $1) delete empty recursion!"
+    print "INFO" "SHMEM $(basename $1) delete empty recursion."
     for file in $1/*
     do
         if [ -d $file ]; then

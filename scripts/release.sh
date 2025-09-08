@@ -12,13 +12,13 @@
 function fn_make_run_package()
 {
     if [ $( uname -a | grep -c -i "x86_64" ) -ne 0 ]; then
-        echo "it is system of x86_64"
         ARCH="x86_64"
+        echo "It is system of x86_64."
     elif [ $( uname -a | grep -c -i "aarch64" ) -ne 0 ]; then
-        echo "it is system of aarch64"
         ARCH="aarch64"
+        echo "It is system of aarch64."
     else
-        echo "it is not system of x86_64 or aarch64"
+        echo "It is not system of x86_64 or aarch64."
         exit 1
     fi
     if [ -d "$OUTPUT_DIR/$ARCH" ]; then
@@ -35,9 +35,8 @@ function fn_make_run_package()
         branch : ${branch}
         commit id : ${commit_id}
 EOF
-
-    mkdir -p $OUTPUT_DIR/scripts
     mkdir -p $RELEASE_DIR/$ARCH
+    mkdir -p $OUTPUT_DIR/scripts
     cp $PROJECT_ROOT/scripts/install.sh $OUTPUT_DIR
     cp $PROJECT_ROOT/scripts/uninstall.sh $OUTPUT_DIR/scripts
     sed -i "s/SHMEMPKGARCH/${ARCH}/" $OUTPUT_DIR/install.sh

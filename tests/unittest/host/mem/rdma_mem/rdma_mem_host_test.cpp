@@ -9,7 +9,7 @@
 extern int test_gnpu_num;
 extern int test_first_npu;
 extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64_t local_mem_size, int processCount);
-extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
+extern void test_rdma_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
 extern void test_finalize(aclrtStream stream, int device_id);
 
 extern void test_rdma_put_low_level(uint32_t block_dim, void* stream, uint8_t* gva, uint64_t config);
@@ -79,7 +79,7 @@ static void test_rdma_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id
 void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
-    test_init(rank_id, n_ranks, local_mem_size, &stream);
+    test_rdma_init(rank_id, n_ranks, local_mem_size, &stream);
     ASSERT_NE(stream, nullptr);
 
     void* ptr = shmem_malloc(1024);

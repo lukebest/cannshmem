@@ -13,22 +13,7 @@
 #include "kernel_operator.h"
 #include "internal/device/shmemi_device_common.h"
 
-constexpr uint64_t SHMEM_DATA_CACHE_LINE_SIZE = 64;
 constexpr uint32_t SHMEM_NUM_CQE_PER_POLL_CQ = 100;
-
-SHMEM_DEVICE void cacheInvalid(__gm__ uint8_t* sourceAddr, uint64_t length) {
-    __gm__ uint8_t* start = (__gm__ uint8_t*)((uint64_t)sourceAddr / SHMEM_DATA_CACHE_LINE_SIZE * SHMEM_DATA_CACHE_LINE_SIZE);
-    __gm__ uint8_t* end =
-        (__gm__ uint8_t*)(
-            ((uint64_t)sourceAddr + length) / SHMEM_DATA_CACHE_LINE_SIZE * SHMEM_DATA_CACHE_LINE_SIZE
-        );
-    AscendC::GlobalTensor<uint8_t> global;
-    global.SetGlobalBuffer(start);
-    for (uint64_t i = 0; i <= end - start; i+= SHMEM_DATA_CACHE_LINE_SIZE) {
-        AscendC::DataCacheCleanAndInvalid<uint8_t,
-            AscendC::CacheLine::SINGLE_CACHE_LINE, AscendC::DcciDst::CACHELINE_OUT>(global[i]);
-    }
-}
 
 enum class SHMEMAIVOPCODE : uint32_t {
     OP_SEND = 0,
@@ -140,7 +125,7 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     auto cqeSize = cqCtxEntry->cqeSize;
     auto depth = cqCtxEntry->depth;
     auto curHardwareTailAddr = cqCtxEntry->tailAddr;
-    cacheInvalid((__gm__ uint8_t*)curHardwareTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
     uint32_t curTail = *(__gm__ uint32_t*)(curHardwareTailAddr);
 
     AscendC::DataCopyExtParams copyParamsTail{1, 1 * sizeof(uint32_t), 0, 0, 0};
@@ -148,12 +133,12 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
         __gm__ SHMEMcqeCtx* cqeAddr = (__gm__ SHMEMcqeCtx*)(cqBaseAddr + cqeSize * (curTail & (depth - 1)));
         uint32_t cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
         while (((cqeByte4 & (1 << 7)) != 0) == ((curTail & depth) != 0)) {
-            int64_t tmp = AscendC::GetSystemCycle();
-            cacheInvalid((__gm__ uint8_t*)cqeAddr, 32);
+            int64_t tmp = AscendC::GetSystemCycle(); // reserved for timeout check
+            dcci_cachelines((__gm__ uint8_t*)cqeAddr, 32);
             cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
         }
         curTail++;
-        uint32_t wqn = cqeAddr->byte16 & 0xFFFFFF;
+        uint32_t wqn = cqeAddr->byte16 & 0xFFFFFF; // reserved for multi WQ share the same CQ
         
         // Check CQE status
         uint32_t status = (cqeAddr->byte4 >> 8) & 0xFF;
@@ -169,7 +154,6 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(TailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    cacheInvalid((__gm__ uint8_t*)curHardwareTailAddr, 8);
 
     // Ring CQ Doorbell
     auto cqDBAddr = cqCtxEntry->dbAddr;
@@ -180,7 +164,6 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
         AscendC::PipeBarrier<PIPE_ALL>();
         AscendC::DataCopyPad(CQDBGlobalTensor, ubLocal32, copyParamsTail);
         AscendC::PipeBarrier<PIPE_ALL>();
-        cacheInvalid((__gm__ uint8_t*)cqDBAddr, 8);
     } else if (cqCtxEntry->dbMode == SHMEMDBMode::HW_DB) {
         uint64_t doorBellInfo = 0;
         doorBellInfo |= cqCtxEntry->cqn; // [0:23] DB_TAG = qp_num
@@ -199,7 +182,7 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     // Update WQ tail
     __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     auto curWQTailAddr = wqCtxEntry->tailAddr;
-    cacheInvalid((__gm__ uint8_t*)curWQTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
     uint32_t curWQTail = *(__gm__ uint32_t*)(curWQTailAddr);
     ubLocal32.SetValue(0, curTail);
     AscendC::GlobalTensor<uint32_t> WQTailGlobalTensor;
@@ -207,7 +190,6 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(WQTailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    cacheInvalid((__gm__ uint8_t*)curWQTailAddr, 8);
     return 0;
 }
 
@@ -239,7 +221,7 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
     auto sqBaseAddr = qpCtxEntry->bufAddr;
     auto wqeSize = qpCtxEntry->wqeSize;
     auto curHardwareHeadAddr = qpCtxEntry->headAddr;
-    cacheInvalid((__gm__ uint8_t*)curHardwareHeadAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareHeadAddr, 8);
     uint32_t curHead = *(__gm__ uint32_t*)(curHardwareHeadAddr);
     auto curHardwareTailAddr = qpCtxEntry->tailAddr;
     auto depth = qpCtxEntry->depth;
@@ -247,7 +229,7 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
     AscendC::PipeBarrier<PIPE_ALL>();
 
     // Poll CQ if send queue is full
-    cacheInvalid((__gm__ uint8_t*)curHardwareTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
     if ((curHead + 10) % depth == (*(__gm__ uint32_t*)(curHardwareTailAddr)) % depth) {
         shmemi_roce_poll_cq(destRankId, qpIdx, *(__gm__ uint32_t*)(curHardwareTailAddr) +
             SHMEM_NUM_CQE_PER_POLL_CQ, ubLocal64, ubLocal32);
@@ -276,7 +258,7 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
     *(__gm__ uint64_t*)(sgeAddr + 8) = (uint64_t)localAddr; // local VA
 
     // WQE & SGE cache flush
-    cacheInvalid(wqeAddr, sizeof(SHMEMwqeCtx) + sizeof(SHMEMsegCtx));
+    dcci_cachelines(wqeAddr, sizeof(SHMEMwqeCtx) + sizeof(SHMEMsegCtx));
     AscendC::PipeBarrier<PIPE_ALL>();
     curHead++;
 
@@ -369,7 +351,7 @@ SHMEM_DEVICE void shmemi_roce_quiet(uint32_t remoteRankId, uint32_t qpIdx,
     uint32_t qpNum = RDMAInfo->qpNum;
     __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     auto curHardwareHeadAddr = qpCtxEntry->headAddr;
-    cacheInvalid((__gm__ uint8_t*)curHardwareHeadAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareHeadAddr, 8);
     uint32_t curHead = *(__gm__ uint32_t*)(curHardwareHeadAddr);
     shmemi_roce_poll_cq(remoteRankId, qpIdx, curHead, ubLocal64, ubLocal32);
 }
@@ -392,7 +374,7 @@ SHMEM_DEVICE void shmemi_roce_qpinfo_test(__gm__ uint8_t* gva, uint32_t destRank
     *(__gm__ uint64_t*)(gva + 40) = (uint64_t)wqeSize;
     auto curHardwareHeadAddr = qpCtxEntry->headAddr;
     *(__gm__ uint64_t*)(gva + 48) = (uint64_t)curHardwareHeadAddr;
-    cacheInvalid((__gm__ uint8_t*)curHardwareHeadAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareHeadAddr, 8);
     uint32_t curHead = *(__gm__ uint32_t*)(curHardwareHeadAddr);
     *(__gm__ uint64_t*)(gva + 56) = (uint64_t)curHead;
     auto curHardwareTailAddr = qpCtxEntry->tailAddr;
@@ -441,7 +423,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     *(__gm__ uint64_t*)(gva + 24) = (uint64_t)depth;
     auto curHardwareTailAddr = cqCtxEntry->tailAddr;
     *(__gm__ uint64_t*)(gva + 32) = (uint64_t)curHardwareTailAddr;
-    cacheInvalid((__gm__ uint8_t*)curHardwareTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
     uint32_t curTail = *(__gm__ uint32_t*)(curHardwareTailAddr);
     *(__gm__ uint64_t*)(gva + 40) = (uint64_t)curTail;
 
@@ -451,7 +433,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     uint32_t cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
     while (!(cqeByte4 & (1 << 7))) {
         int64_t tmp = AscendC::GetSystemCycle();
-        cacheInvalid((__gm__ uint8_t*)cqeAddr, 32);
+        dcci_cachelines((__gm__ uint8_t*)cqeAddr, 32);
         cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
     }
     *(__gm__ uint64_t*)(gva + 56) = (uint64_t)(cqeAddr->byte4);
@@ -466,7 +448,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     *(__gm__ uint64_t*)(gva + 104) = (uint64_t)(wqCtxEntry->wqn == wqn);
     auto curWQTailAddr = wqCtxEntry->tailAddr;
-    cacheInvalid((__gm__ uint8_t*)curWQTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
     uint32_t curWQTail = *(__gm__ uint32_t*)(curWQTailAddr);
     ubLocal32.SetValue(0, curWQTail + 1);
     AscendC::GlobalTensor<uint32_t> WQTailGlobalTensor;
@@ -474,7 +456,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(WQTailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    cacheInvalid((__gm__ uint8_t*)curWQTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
     
     // Check CQE status
     uint32_t status = (cqeAddr->byte4 >> 8) & 0xFF;
@@ -490,7 +472,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(TailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    cacheInvalid((__gm__ uint8_t*)curHardwareTailAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
 
     // Ring CQ Doorbell
     auto cqDBAddr = cqCtxEntry->dbAddr;
@@ -500,7 +482,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(CQDBGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    cacheInvalid((__gm__ uint8_t*)cqDBAddr, 8);
+    dcci_cachelines((__gm__ uint8_t*)cqDBAddr, 8);
 }
 
 #endif // SHMEM_DEVICE_LOW_LEVEL_ROCE_H

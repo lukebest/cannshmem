@@ -334,12 +334,9 @@ TEST(TestInitAPI, TestInfoGetName)
     shmem_info_get_name(name);
     EXPECT_TRUE(strlen(name) > 0);
 
-    const char *template_str = "SHMEM v%s.%s.%s";
-    char expect[256];
-    snprintf(expect, 256, template_str, std::to_string(SHMEM_VENDOR_MAJOR_VER).c_str(),
-             std::to_string(SHMEM_VENDOR_MINOR_VER).c_str(), std::to_string(SHMEM_VENDOR_PATCH_VER).c_str());
-
-    for (size_t i = 0; i < strlen(expect); i++) {
+    std::string expect = "SHMEM v" + std::to_string(SHMEM_VENDOR_MAJOR_VER) + "."
+        + std::to_string(SHMEM_VENDOR_MINOR_VER) + "." + std::to_string(SHMEM_VENDOR_PATCH_VER).c_str();
+    for (size_t i = 0; i < expect.length(); i++) {
         EXPECT_EQ(expect[i], name[i]);
     }
 }

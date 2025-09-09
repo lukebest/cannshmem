@@ -222,7 +222,7 @@ SHMEM_TYPE_FUNC(SHMEM_TYPENAME_P)
      */                                                                                                                \
     SHMEM_HOST_API TYPE shmem_##NAME##_g(TYPE *src, int32_t pe)                                                        \
     {                                                                                                                  \
-        TYPE value {};                                                                                                    \
+        TYPE value {};                                                                                                 \
         auto ptr = shmem_ptr(src, pe);                                                                                 \
         if (ptr == nullptr) {                                                                                          \
             SHM_LOG_ERROR("shmem_g failed");                                                                           \

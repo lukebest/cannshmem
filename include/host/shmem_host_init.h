@@ -23,7 +23,7 @@ extern "C" {
  * @return Returns initialization status. Returning SHMEM_STATUS_IS_INITIALIZED indicates that initialization is
  *         complete. All return types can be found in <b>\ref shmem_init_status_t</b>.
  */
-SHMEM_HOST_API int shmem_init_status();
+SHMEM_HOST_API int shmem_init_status(void);
 
 /**
  * @brief Set the default attributes to be used in <b>shmem_init_attr()</b>.
@@ -119,7 +119,7 @@ SHMEM_HOST_API int32_t shmem_set_conf_store_tls(bool enable, const char *tls_inf
  *
  * @return Returns 0 on success or an error code on failure
  */
-SHMEM_HOST_API int shmem_finalize();
+SHMEM_HOST_API int shmem_finalize(void);
 
 /**
  * @brief returns the major and minor version.

@@ -20,9 +20,7 @@ struct AllGatherSchedule {};
 struct AllReduceSchedule {};
 
 struct CommBlockSwizzleDynamic {
-    ///
-    /// Data members
-    ///
+    // Data members
     uint32_t swizzleOffset, swizzleDirection;
     MatrixCoord problemSize;
     MatrixCoord problemSizePerRank;
@@ -33,9 +31,7 @@ struct CommBlockSwizzleDynamic {
     uint32_t commDataSplit;
     uint32_t commNpuSplit;
 
-    ///
-    /// Methods
-    ///
+    // Methods
     CATLASS_DEVICE
     CommBlockSwizzleDynamic() {}
 

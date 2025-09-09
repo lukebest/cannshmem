@@ -192,7 +192,8 @@ public:
             // wait aic
             Arch::CrossCoreWaitFlag(flagAicFinishStore[flagIdx]);
 
-            blockAllReduceEpilogue(blockShape, commBlockCount, actualCommBlockCount, calIdx, params.rankIdx, params.rankSize, params.pValue);
+            blockAllReduceEpilogue(blockShape, commBlockCount, actualCommBlockCount,
+                calIdx, params.rankIdx, params.rankSize, params.pValue);
 
             // set aic
             Arch::CrossCoreSetFlag<0x2, PIPE_MTE3>(flagAivFinishCompute[flagIdx]);

@@ -87,7 +87,7 @@ constexpr uint64_t MiB = 1024 * KiB;
 constexpr uint64_t GiB = 1024 * MiB;
 
 // 获取全局指定的 gnpu 数量
-int shmem_fuzz_gnpu_num();
+int shmem_fuzz_gnpu_num(void);
 // 获取 rank_id 对应的 device_id
 int32_t shmem_fuzz_device_id(int rank_id);
 // 使用参数进行默认逻辑的shmem初始化

@@ -10,11 +10,11 @@
 import subprocess
 import warnings
 
-git_command = """\
+GIT_COMMAND = """\
 git symbolic-ref -q --short HEAD \
 || git describe --tags --exact-match 2> /dev/null \
 || git rev-parse HEAD"""
-branch = subprocess.check_output(["/bin/bash", "-c", git_command]).strip().decode()
+branch = subprocess.check_output(["/bin/bash", "-c", GIT_COMMAND]).strip().decode()
 PROJECT = "Shmem Guidebook"
 AUTHOR = "xxx"
 COPYRIGHT_INFO = "2025"

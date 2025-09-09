@@ -57,8 +57,9 @@ void test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_siz
         EXPECT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&y_host), input_size), 0);
         EXPECT_EQ(aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
+        int multiple = 2;
         for (int i = 0; i < team_size; i++) {
-            EXPECT_EQ(y_host[trans_size * i], num11 + i * 2);
+            EXPECT_EQ(y_host[trans_size * i], num11 + i * multiple);
         }
 
         EXPECT_EQ(aclrtFreeHost(y_host), 0);

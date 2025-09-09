@@ -122,7 +122,8 @@ static void host_test_put_get_mem(int rank_id, int rank_size, uint64_t local_mem
         std::cout << static_cast<int>(input[i]) << " ";
     }
     std::cout << std::endl;
-    host_test_getmem((uint8_t *)ptr, (uint8_t *)dev_ptr, rank_size, 16);
+    size_t ele_size = 16;
+    host_test_getmem((uint8_t *)ptr, (uint8_t *)dev_ptr, rank_size, ele_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);

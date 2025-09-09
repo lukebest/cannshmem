@@ -15,6 +15,7 @@
 const int length = 16;
 const int ub_size = 256;
 const int buffer_bytes = 4096;
+const int capaticy = 2;
 
 class kernel_shmemx_mte_put_num {
 public:
@@ -58,7 +59,7 @@ public:
     }
 private:
     AscendC::TPipe pipe;
-    AscendC::TQue<AscendC::TPosition::VECIN, 2> buf_queue;
+    AscendC::TQue<AscendC::TPosition::VECIN, capaticy> buf_queue;
 
     __gm__ int8_t *gva_gm;
     __gm__ int8_t *dev_gm;

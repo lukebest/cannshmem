@@ -189,7 +189,8 @@ int32_t memory_heap::release(void *address) noexcept
     auto prev_addr_pos = address_idle_tree_.lower_bound(offset);
     if (prev_addr_pos != address_idle_tree_.begin()) {
         --prev_addr_pos;
-        if (prev_addr_pos != address_idle_tree_.end() && prev_addr_pos->first + prev_addr_pos->second == offset) {
+        if (prev_addr_pos != address_idle_tree_.end() &&
+            prev_addr_pos->first + prev_addr_pos->second == static_cast<uint64_t>(offset)) {
             // 合并前一个range
             final_offset = prev_addr_pos->first;
             final_size += prev_addr_pos->second;

@@ -59,15 +59,16 @@ void test_shmem_team(int rank_id, int n_ranks, uint64_t local_mem_size)
     test_init(rank_id, n_ranks, local_mem_size, &stream);
     ASSERT_NE(stream, nullptr);
     // #################### 子通信域切分测试 ############################
+    const int STRIDE_LENGTH_2 = 2;
     shmem_team_t team_odd;
     int start     = 1;
-    int stride    = 2;
+    int stride    = STRIDE_LENGTH_2;
     int team_size = n_ranks / stride;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
 
     shmem_team_t team_even;
     start     = 0;
-    stride    = 2;
+    stride    = STRIDE_LENGTH_2;
     team_size = n_ranks / stride;
     shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_even);
 

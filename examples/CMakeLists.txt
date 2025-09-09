@@ -43,6 +43,7 @@ function(shmem_add_collective_example NAME)
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
         ${PROJECT_SOURCE_DIR}/examples/${NAME}
         ${PROJECT_SOURCE_DIR}/examples/utils
+        ${PROJECT_SOURCE_DIR}/src/host
     )
     target_link_libraries(${NAME} PRIVATE shmem ${NAME}_kernel ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/lib/libmf_smem.so)
 endfunction()
@@ -50,6 +51,8 @@ endfunction()
 foreach(EXAMPLE
     allgather
     matmul_allreduce
+    rdma_perftest
+    rdma_demo
 )
     add_subdirectory(${EXAMPLE})
 endforeach()

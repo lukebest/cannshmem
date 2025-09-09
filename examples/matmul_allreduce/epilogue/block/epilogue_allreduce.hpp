@@ -165,7 +165,7 @@ public:
                 auto offsetOut = blockOffset + rankBlockOffset;
 
                 auto residueProcessShape = actualCommSubBlockShape % params.processShape;
-                auto processCount = CeilDiv(actualCommSubBlockShape, params.processShape);
+                MatrixCoord processCount = CeilDiv(actualCommSubBlockShape, params.processShape);
                 uint32_t processLoop = processCount.row() * processCount.column();
 
                 // [ReduceScatter] 1. Alloc TmpUB
@@ -240,7 +240,7 @@ public:
                 auto offsetOut = outputBlockOffset + rankBlockOffset;
 
                 auto residueProcessShape = actualCommSubBlockShape % params.processShape;
-                auto processCount = CeilDiv(actualCommSubBlockShape, params.processShape);
+                MatrixCoord processCount = CeilDiv(actualCommSubBlockShape, params.processShape);
 
                 uint32_t processLoop = processCount.row() * processCount.column();
 

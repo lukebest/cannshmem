@@ -108,12 +108,14 @@ static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextL
         std::string plain = py::cast<std::string>(g_py_decrypt_func(py_cipher).cast<py::str>());
         if (plain.size() >= plainTextLen) {
             std::cerr << "output cipher len is too long" << std::endl;
+            std::fill(plain.begin(), plain.end(), 0);
             return -1;
         }
 
         std::copy(plain.begin(), plain.end(), plainText);
         plainText[plain.size()] = '\0';
         plainTextLen = plain.size();
+        std::fill(plain.begin(), plain.end(), 0);
         return 0;
     } catch (const py::error_already_set &e) {
         return -1;

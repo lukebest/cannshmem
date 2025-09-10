@@ -325,7 +325,7 @@ int main(int argc, char **argv)
 
     ACL_CHECK(aclrtSynchronizeStream(stream));
     std::cout << "Before calling MM_AR kernel " << std::endl;
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 10; i++) {
         ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(shmemx_get_ffts_config(), problemShape, aDevice, bDevice,
                                                              cDevice, symmetricPtr, cocTiling);
     }

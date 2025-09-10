@@ -6,17 +6,17 @@ SHMEM包含host和device两类接口。host接口用SHMEM_HOST_API宏标识，de
 ## Init API
 SHMEM的初始化接口样例
 
-### 初始化状态  
+### 初始化状态
 ```c++
 enum {
     SHMEM_STATUS_NOT_INITIALIZED = 0,    // 未初始化
-    SHMEM_STATUS_SHM_CREATED,           // 完成共享内存堆创建 
-    SHMEM_STATUS_IS_INITIALIZED,         // 初始化完成 
+    SHMEM_STATUS_SHM_CREATED,           // 完成共享内存堆创建
+    SHMEM_STATUS_IS_INITIALIZED,         // 初始化完成
     SHMEM_STATUS_INVALID = INT_MAX,
 };
 ```
 
-### 初始化所需的attributes 
+### 初始化所需的attributes
 ```c++
 // 初始化属性
 typedef struct {
@@ -109,7 +109,7 @@ uint32_t pw_len = strlen(password);
 int ret = shmem_set_config_store_tls_key(pk, pk_len, password, pw_len, my_key_password_decrypt_handler);
 ```
 
-如需关闭加密特性，则调用如下接口。关闭后，则无需调用shmem_register_decrypt_handler注册接口。
+如需关闭加密特性，则调用如下接口。关闭后，则无需调用shmem_set_config_store_tls_key接口。
 ```c
 int ret = shmem_set_conf_store_tls(false, nullptr, 0);
 ```
@@ -131,7 +131,7 @@ shmem_team_split_strided(SHMEM_TEAM_WORLD, start, stride, team_size, &team_odd);
 
 // ##################### host侧取值 ###############################
 if (rank_id & 1) {
-    
+
     // shmem_team_n_pes(team_odd): Returns the number of PEs in the team.
     int team_n_pes = shmem_team_n_pes(team_odd); // team_n_pes == team_size
     // shmem_team_my_pe(team_odd): Returns the number of the calling PE in the specified team.
@@ -166,17 +166,17 @@ public:
         AscendC::PipeBarrier<PIPE_ALL>();
         // ##################### device侧取值 ###############################
         // shmem_int32_p 是RMA功能提供的接口，此处可简易理解为在device存储第二个入参的函数的结果。
-        
+
         // shmem_n_pes(): Returns the number of PEs running in the program.
-        shmem_int32_p(gva_gm, shmem_n_pes(), rank); 
+        shmem_int32_p(gva_gm, shmem_n_pes(), rank);
         // shmem_my_pe(): Returns the PE number of the local PE
-        shmem_int32_p(gva_gm + 1, shmem_my_pe(), rank); 
+        shmem_int32_p(gva_gm + 1, shmem_my_pe(), rank);
         // shmem_team_my_pe(team_idx): Returns the number of the calling PE in the specified team.
-        shmem_int32_p(gva_gm + 2, shmem_team_my_pe(team_idx), rank); 
+        shmem_int32_p(gva_gm + 2, shmem_team_my_pe(team_idx), rank);
         // shmem_team_n_pes(team_idx): Returns the number of PEs in the team.
-        shmem_int32_p(gva_gm + 3, shmem_team_n_pes(team_idx), rank); 
+        shmem_int32_p(gva_gm + 3, shmem_team_n_pes(team_idx), rank);
         // shmem_team_translate_pe(team_idx, 1, SHMEM_TEAM_WORLD): Translate a given PE number in one team into the corresponding PE number in another team.
-        shmem_int32_p(gva_gm + 4, shmem_team_translate_pe(team_idx, 1, SHMEM_TEAM_WORLD), rank); 
+        shmem_int32_p(gva_gm + 4, shmem_team_translate_pe(team_idx, 1, SHMEM_TEAM_WORLD), rank);
     }
 private:
     __gm__ int *gva_gm;

@@ -135,7 +135,7 @@ typedef struct {
 } shmem_init_attr_t;
 
 /**
- * @brief Callback function of private key password decryptor, see shmem_register_decrypt_handler
+ * @brief Callback function of private key password decryptor, see shmem_set_config_store_tls_key
  *
  * @param cipherText       [in] the encrypted text(private password)
  * @param cipherTextLen    [in] the length of encrypted text

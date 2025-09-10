@@ -3,7 +3,7 @@
     ```python
     def shmem_init(mype, npes, mem_size) -> int
     ```
-    
+
     |参数/返回值|含义|
     |-|-|
     |mype|本地处理单元索引，范围在 0 ~ npes 之间|
@@ -63,14 +63,14 @@
 
 1. 注册一个Python解密处理程序
     ```python
-    def register_decrypt_handler(py_decrypt_func:Callable[[str, str], None]) -> None
+    def set_conf_store_tls_key(tls_pk, tls_pk_pw, py_decrypt_func:Callable[[str], str]) -> int
     ```
 
     |参数/返回值|含义|
     |-|-|
-    |py_decrypt_func|可调用对象，一个Python函数，接受 (str cipher_text)，并返回 (str plain_text)|
-    |cipher_text|加密文本|
-    |plain_text|解密后的文本|
+    |tls_pk|私钥|
+    |tls_pk_pw|私钥口令|
+    |py_decrypt_func|私钥口令解密函数，一个Python函数，接受 (str cipher_text)，并返回 (str plain_text)|
     |返回值|成功时返回0,失败时返回错误代码|
 
 1. 分配内存
@@ -350,7 +350,7 @@
     |team|team id|
     |返回值|返回指定团队中PE的编号，出错时，返回-1|
 
-1. 
+1.
     ```python
     def pe_count(team)
     ```

@@ -103,7 +103,7 @@ echo "PROJECT_ROOT: $PROJECT_ROOT"
 echo "Test Case, M: ${M}, K: ${K}, N: ${N}"
 export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/install/memfabric_hybrid/lib/:${ASCEND_HOME_PATH}/lib64:$LD_LIBRARY_PATH
 for (( idx =0; idx < ${RANK_SIZE}; idx = idx + 1 )); do
-    ${PROJECT_ROOT}/build/bin/matmul_allreduce "$RANK_SIZE" "$idx" "$IPPORT" "$FIRST_NPU" "$M" "$K" "$N" $DATA_DIR &
+    msprof --application="${PROJECT_ROOT}/build/bin/matmul_allreduce $RANK_SIZE $idx $IPPORT $FIRST_NPU $M $K $N $DATA_DIR" --output=${PROJECT_ROOT}/examples/matmul_allreduce/output/ &
 done
 
 # Wait until all process exit

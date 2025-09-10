@@ -73,7 +73,7 @@ typedef struct {
     void *heap_base;
     void *p2p_heap_base[SHMEM_MAX_RANKS];
     void *sdma_heap_base[SHMEM_MAX_RANKS];
-    void *roce_heap_base[SHMEM_MAX_RANKS];
+    uint8_t topo_list[SHMEM_MAX_RANKS];
     size_t heap_size;
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];

@@ -54,7 +54,7 @@ int test_shmem_rdma_highlevel_put_pingpong_latency(int rank_id, int n_ranks, uin
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
+    aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -101,7 +101,7 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
+    aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -146,7 +146,7 @@ int test_shmem_rdma_highlevel_put_bw(int rank_id, int n_ranks, uint64_t local_me
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
+    aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -189,9 +189,9 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     int64_t *inHost;
     int64_t *outHost;
     size_t totalSize = message_length * n_ranks * 3;
-    aclrtMallocHost(static_cast<void **>(&inHost), totalSize);
-    aclrtMallocHost(static_cast<void **>(&outHost), totalSize);
-    memset_s(inHost, totalSize, 0, totalSize);
+    aclrtMallocHost(reinterpret_cast<void **>(&inHost), totalSize);
+    aclrtMallocHost(reinterpret_cast<void **>(&outHost), totalSize);
+    bzero(inHost, totalSize);
     double rdmaTotalTime = 0.0;
     double mteTotalTime = 0.0;
 

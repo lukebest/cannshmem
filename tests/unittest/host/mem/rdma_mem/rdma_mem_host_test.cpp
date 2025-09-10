@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <gtest/gtest.h>
+#include <string.h>
 
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
@@ -34,9 +35,9 @@ static void test_rdma_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id
     size_t totalSize = messageSize * rank_size;
     uint32_t block_dim = 1;
     
-    ASSERT_EQ(aclrtMallocHost(static_cast<void **>(&inHost), totalSize), 0);
-    ASSERT_EQ(aclrtMallocHost(static_cast<void **>(&outHost), totalSize), 0);
-    memset_s(inHost, totalSize, 0, totalSize);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&inHost), totalSize), 0);
+    ASSERT_EQ(aclrtMallocHost(reinterpret_cast<void **>(&outHost), totalSize), 0);
+    bzero(inHost, totalSize);
     for (uint32_t i = 0; i < messageSize / sizeof(uint32_t); i++) {
         inHost[i + rank_id * messageSize / sizeof(uint32_t)] = rank_id + 10;
     }

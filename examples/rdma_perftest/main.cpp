@@ -49,12 +49,12 @@ int test_shmem_rdma_highlevel_put_pingpong_latency(int rank_id, int n_ranks, uin
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t* gva = (uint8_t*)shmem_malloc(1024 * 1024 * 6);
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost((void **)(&xHost), totalSize);
+    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -96,12 +96,12 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t* gva = (uint8_t*)shmem_malloc(1024 * 1024 * 6);
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost((void **)(&xHost), totalSize);
+    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -141,12 +141,12 @@ int test_shmem_rdma_highlevel_put_bw(int rank_id, int n_ranks, uint64_t local_me
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t* gva = (uint8_t*)shmem_malloc(1024 * 1024 * 6);
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
-    aclrtMallocHost((void **)(&xHost), totalSize);
+    aclrtMallocHost(static_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
         xHost[i] = rank_id + 10;
     }
@@ -185,13 +185,13 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     shmem_mte_set_ub_params(0, 128 * 1024, 0);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t* gva = (uint8_t*)shmem_malloc(1024 * 1024 * 32);
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 32));
     int64_t *inHost;
     int64_t *outHost;
     size_t totalSize = message_length * n_ranks * 3;
-    aclrtMallocHost((void **)(&inHost), totalSize);
-    aclrtMallocHost((void **)(&outHost), totalSize);
-    memset(inHost, 0, totalSize);
+    aclrtMallocHost(static_cast<void **>(&inHost), totalSize);
+    aclrtMallocHost(static_cast<void **>(&outHost), totalSize);
+    memset_s(inHost, totalSize, 0, totalSize);
     double rdmaTotalTime = 0.0;
     double mteTotalTime = 0.0;
 

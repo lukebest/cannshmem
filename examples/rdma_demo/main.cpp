@@ -40,7 +40,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
-    uint8_t *ptr = (uint8_t*)shmem_malloc(1024);
+    uint8_t *ptr = static_cast<uint8_t*>(shmem_malloc(1024));
 
     // 初始化数据
     uint32_t trans_size = 16;

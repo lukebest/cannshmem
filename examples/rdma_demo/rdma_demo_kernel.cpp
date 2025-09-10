@@ -30,7 +30,7 @@ extern "C" __global__ __aicore__ void device_all_gather_test(GM_ADDR gva, int me
         if (i == my_rank) {
             continue;
         }
-        shmem_roce_put_mem_nbi(gva + message_length * my_rank, gva + message_length * my_rank, 
+        shmem_roce_put_mem_nbi(gva + message_length * my_rank, gva + message_length * my_rank,
                                 (__ubuf__ uint8_t*)ubLocal.GetPhyAddr(), message_length, i);
     }
 }

@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This file is a part of the CANN Open Software.
+ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include <iostream>
 #include <string>
 #include <vector>
@@ -25,9 +34,9 @@ static void test_rdma_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id
     size_t totalSize = messageSize * rank_size;
     uint32_t block_dim = 1;
     
-    ASSERT_EQ(aclrtMallocHost((void **)(&inHost), totalSize), 0);
-    ASSERT_EQ(aclrtMallocHost((void **)(&outHost), totalSize), 0);
-    memset(inHost, 0, totalSize);
+    ASSERT_EQ(aclrtMallocHost(static_cast<void **>(&inHost), totalSize), 0);
+    ASSERT_EQ(aclrtMallocHost(static_cast<void **>(&outHost), totalSize), 0);
+    memset_s(inHost, totalSize, 0, totalSize);
     for (uint32_t i = 0; i < messageSize / sizeof(uint32_t); i++) {
         inHost[i + rank_id * messageSize / sizeof(uint32_t)] = rank_id + 10;
     }
@@ -76,7 +85,8 @@ static void test_rdma_put_get(aclrtStream stream, uint8_t *gva, uint32_t rank_id
     ASSERT_EQ(aclrtFreeHost(outHost), 0);
 }
 
-void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
+void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size)
+{
     int32_t device_id = rank_id % test_gnpu_num + test_first_npu;
     aclrtStream stream;
     test_rdma_init(rank_id, n_ranks, local_mem_size, &stream);
@@ -86,13 +96,13 @@ void test_shmem_rdma_mem(int rank_id, int n_ranks, uint64_t local_mem_size) {
     test_rdma_put_get(stream, (uint8_t *)ptr, rank_id, n_ranks);
     std::cout << "[TEST] begin to exit...... rank_id: " << rank_id << std::endl;
     test_finalize(stream, device_id);
-    if (::testing::Test::HasFailure()){
+    if (::testing::Test::HasFailure()) {
         exit(1);
     }
 }
 
 TEST(TestMemApi, TestShmemRDMAMem)
-{   
+{
     const int processCount = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 64;
     test_mutil_task(test_shmem_rdma_mem, local_mem_size, processCount);

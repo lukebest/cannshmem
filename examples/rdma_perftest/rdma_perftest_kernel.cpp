@@ -72,7 +72,8 @@ extern "C" __global__ __aicore__ void rdma_highlevel_put_pingpong_latency(uint64
     }
 }
 
-void rdma_highlevel_put_pingpong_latency_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length) {
+void rdma_highlevel_put_pingpong_latency_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length)
+{
     rdma_highlevel_put_pingpong_latency<<<1, nullptr, stream>>>(fftsConfig, gva, message_length);
 }
 
@@ -107,7 +108,8 @@ extern "C" __global__ __aicore__ void rdma_postsend_cost(uint64_t fftsConfig, GM
     }
 }
 
-void rdma_postsend_cost_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length) {
+void rdma_postsend_cost_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length)
+{
     rdma_postsend_cost<<<1, nullptr, stream>>>(fftsConfig, gva, message_length);
 }
 
@@ -154,7 +156,8 @@ extern "C" __global__ __aicore__ void rdma_highlevel_put_bw(uint64_t fftsConfig,
     }
 }
 
-void rdma_highlevel_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length) {
+void rdma_highlevel_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length)
+{
     rdma_highlevel_put_bw<<<1, nullptr, stream>>>(fftsConfig, gva, message_length);
 }
 
@@ -234,6 +237,7 @@ extern "C" __global__ __aicore__ void rdma_mte_put_bw(uint64_t fftsConfig, GM_AD
     }
 }
 
-void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length, int64_t iter) {
+void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length, int64_t iter)
+{
     rdma_mte_put_bw<<<2, nullptr, stream>>>(fftsConfig, gva, message_length, iter);
 }

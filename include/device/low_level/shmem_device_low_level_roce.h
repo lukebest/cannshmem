@@ -113,8 +113,8 @@ struct SHMEMHybmDeviceMeta {
  */
 
 SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx, uint32_t idx,
-                                                        AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                        AscendC::LocalTensor<uint32_t> ubLocal32)
+                                          AscendC::LocalTensor<uint64_t> ubLocal64,
+                                          AscendC::LocalTensor<uint32_t> ubLocal32)
 {
     __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
@@ -139,7 +139,7 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
         }
         curTail++;
         uint32_t wqn = cqeAddr->byte16 & 0xFFFFFF; // reserved for multi WQ share the same CQ
-        
+
         // Check CQE status
         uint32_t status = (cqeAddr->byte4 >> 8) & 0xFF;
         if (status) {
@@ -342,8 +342,8 @@ SHMEM_DEVICE void shmemi_roce_read(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, 
  */
 
 SHMEM_DEVICE void shmemi_roce_quiet(uint32_t remoteRankId, uint32_t qpIdx,
-                                                AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                AscendC::LocalTensor<uint32_t> ubLocal32)
+                                    AscendC::LocalTensor<uint64_t> ubLocal64,
+                                    AscendC::LocalTensor<uint32_t> ubLocal32)
 {
     __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
@@ -428,7 +428,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     *(__gm__ uint64_t*)(gva + 40) = (uint64_t)curTail;
 
     AscendC::DataCopyExtParams copyParamsTail{1, 1 * sizeof(uint32_t), 0, 0, 0};
-    
+
     __gm__ SHMEMcqeCtx* cqeAddr = (__gm__ SHMEMcqeCtx*)(cqBaseAddr + cqeSize * (curTail & (depth - 1)));
     uint32_t cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
     while (!(cqeByte4 & (1 << 7))) {
@@ -457,7 +457,7 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     AscendC::DataCopyPad(WQTailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
     dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
-    
+
     // Check CQE status
     uint32_t status = (cqeAddr->byte4 >> 8) & 0xFF;
     *(__gm__ uint64_t*)(gva + 112) = status;

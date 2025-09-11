@@ -90,6 +90,14 @@ enum shmem_init_status_t {
     SHMEM_STATUS_INVALID = INT_MAX,    ///< Invalid status code.
 };
 
+/**
+ * @brief Different transports supported by SHMEM library.
+*/
+enum shmem_transport_t : uint8_t {
+    SHMEM_TRANSPORT_MTE = 1 << 0,    ///< MTE Transport.
+    SHMEM_TRANSPORT_ROCE = 1 << 1,   ///< RDMA Transport (RoCE).
+};
+
 /**@} */  // end of group_enums
 
 /**

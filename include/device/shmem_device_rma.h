@@ -13,9 +13,11 @@
 #include "kernel_operator.h"
 #include "internal/device/shmemi_device_common.h"
 #include "low_level/shmem_device_low_level_rma.h"
+#include "low_level/shmem_device_low_level_roce.h"
 #include "shmem_device_team.h"
 #include "internal/device/sync/shmemi_device_p2p.h"
 #include "shmem_device_sync.h"
+#include "host/shmem_host_def.h"
 
 /**
  * @brief Standard RMA Types and Names
@@ -241,17 +243,33 @@ SHMEM_DEVICE void shmem_getmem_nbi(__gm__ void *dst, __gm__ void *src, uint32_t 
      */                                                                                                              \
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(__gm__ TYPE *dst, __gm__ TYPE *src, uint32_t elem_size, int32_t pe) \
     {                                                                                                                \
-        /* ROCE */                                                                                                   \
-        /* RDMA */                                                                                                   \
-        /* MTE  */                                                                                                   \
         /* Global State Get */                                                                                       \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                        \
-        /* CopyUB Config Set */                                                                                      \
-        uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                        \
-        uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                    \
-        AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                      \
-        shmem_mte_get_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE *>(copy_ub), copy_ub_size, elem_size, pe,     \
-                              copy_event_id);                                                                        \
+        if (device_state->topo_list[pe] & SHMEM_TRANSPORT_MTE) {                                                     \
+            /* MTE  */                                                                                               \
+            /* CopyUB Config Set */                                                                                  \
+            uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                    \
+            uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                \
+            AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                  \
+            shmem_mte_get_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE *>(copy_ub), copy_ub_size, elem_size, pe, \
+                                    copy_event_id);                                                                  \
+        } else if (device_state->topo_list[pe] & SHMEM_TRANSPORT_ROCE) {                                             \
+            /* RoCE */                                                                                               \
+            auto ptr = shmem_ptr(src, pe);                                                                           \
+            if (ptr == nullptr) return;                                                                              \
+            /* Create LocalTensor */                                                                                 \
+            AscendC::LocalTensor<uint32_t> ub_tensor_32;                                                             \
+            ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                       \
+            ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR);         \
+            ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;                                                           \
+            AscendC::LocalTensor<uint64_t> ub_tensor_64;                                                             \
+            ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                       \
+            ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR           \
+                                                                             + UB_ALIGN_SIZE);                       \
+            ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                           \
+            shmemi_roce_read((__gm__ uint8_t*)dst, (__gm__ uint8_t*)ptr, pe, 0, elem_size * sizeof(TYPE),            \
+                                ub_tensor_64, ub_tensor_32);                                                         \
+        }                                                                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_NBI);
@@ -297,20 +315,36 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_DETAILED_NBI);
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(AscendC::GlobalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src, \
                                                  uint32_t elem_size, int pe)                                       \
     {                                                                                                              \
-        /* ROCE */                                                                                                 \
-        /* RDMA */                                                                                                 \
-        /* MTE  */                                                                                                 \
         /* Global State Get */                                                                                     \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                      \
-        /* CopyUB Config Set */                                                                                    \
-        uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                      \
-        /* Create LocalTensor */                                                                                   \
-        AscendC::LocalTensor<TYPE> ub_tensor;                                                                      \
-        ub_tensor.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECIN);                             \
-        ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                       \
-        ub_tensor.address_.dataLen = device_state->mte_config.ub_size;                                             \
-        AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                    \
-        shmem_mte_get_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                                  \
+        if (device_state->topo_list[pe] & SHMEM_TRANSPORT_MTE) {                                                   \
+            /* MTE  */                                                                                             \
+            /* CopyUB Config Set */                                                                                \
+            uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                  \
+            /* Create LocalTensor */                                                                               \
+            AscendC::LocalTensor<TYPE> ub_tensor;                                                                  \
+            ub_tensor.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECIN);                         \
+            ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                   \
+            ub_tensor.address_.dataLen = device_state->mte_config.ub_size;                                         \
+            AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                \
+            shmem_mte_get_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                              \
+        } else if (device_state->topo_list[pe] & SHMEM_TRANSPORT_ROCE) {                                           \
+            /* RoCE */                                                                                             \
+            auto ptr = shmem_ptr((__gm__ void *)src.GetPhyAddr(), pe);                                             \
+            if (ptr == nullptr) return;                                                                            \
+            /* Create LocalTensor */                                                                               \
+            AscendC::LocalTensor<uint32_t> ub_tensor_32;                                                           \
+            ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                     \
+            ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR);       \
+            ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;                                                         \
+            AscendC::LocalTensor<uint64_t> ub_tensor_64;                                                           \
+            ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                     \
+            ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR         \
+                                                                            + UB_ALIGN_SIZE);                      \
+            ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                         \
+            shmemi_roce_read((__gm__ uint8_t*)(dst.GetPhyAddr()), (__gm__ uint8_t*)ptr, pe, 0,                     \
+                                elem_size * sizeof(TYPE), ub_tensor_64, ub_tensor_32);                             \
+        }                                                                                                          \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_NBI);
@@ -357,17 +391,33 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI);
      */                                                                                                              \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(__gm__ TYPE *dst, __gm__ TYPE *src, uint32_t elem_size, int32_t pe) \
     {                                                                                                                \
-        /* ROCE */                                                                                                   \
-        /* RDMA */                                                                                                   \
-        /* MTE  */                                                                                                   \
         /* Global State Get */                                                                                       \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                        \
-        /* CopyUB Config Set */                                                                                      \
-        uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                        \
-        uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                    \
-        AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                      \
-        shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE *>(copy_ub), copy_ub_size, elem_size, pe,     \
-                              copy_event_id);                                                                        \
+        if (device_state->topo_list[pe] & SHMEM_TRANSPORT_MTE) {                                                     \
+            /* MTE  */                                                                                               \
+            /* CopyUB Config Set */                                                                                  \
+            uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                    \
+            uint32_t copy_ub_size = device_state->mte_config.ub_size;                                                \
+            AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                  \
+            shmem_mte_put_mem_nbi(dst, src, reinterpret_cast<__ubuf__ TYPE *>(copy_ub), copy_ub_size, elem_size, pe, \
+                                    copy_event_id);                                                                  \
+        } else if (device_state->topo_list[pe] & SHMEM_TRANSPORT_ROCE) {                                             \
+            /* RoCE */                                                                                               \
+            auto ptr = shmem_ptr(dst, pe);                                                                           \
+            if (ptr == nullptr) return;                                                                              \
+            /* Create LocalTensor */                                                                                 \
+            AscendC::LocalTensor<uint32_t> ub_tensor_32;                                                             \
+            ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                       \
+            ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR);         \
+            ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;                                                           \
+            AscendC::LocalTensor<uint64_t> ub_tensor_64;                                                             \
+            ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                       \
+            ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR           \
+                                                                            + UB_ALIGN_SIZE);                        \
+            ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                           \
+            shmemi_roce_write((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)src, pe, 0, elem_size * sizeof(TYPE),           \
+                                    ub_tensor_64, ub_tensor_32);                                                     \
+        }                                                                                                            \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_NBI);
@@ -412,20 +462,36 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI);
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(AscendC::GlobalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src, \
                                                  uint32_t elem_size, int pe)                                       \
     {                                                                                                              \
-        /* ROCE */                                                                                                 \
-        /* RDMA */                                                                                                 \
-        /* MTE  */                                                                                                 \
         /* Global State Get */                                                                                     \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                      \
-        /* CopyUB Config Set */                                                                                    \
-        uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                      \
-        /* Create LocalTensor */                                                                                   \
-        AscendC::LocalTensor<TYPE> ub_tensor;                                                                      \
-        ub_tensor.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECIN);                             \
-        ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                       \
-        ub_tensor.address_.dataLen = device_state->mte_config.ub_size;                                             \
-        AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                    \
-        shmem_mte_put_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                                  \
+        if (device_state->topo_list[pe] & SHMEM_TRANSPORT_MTE) {                                                   \
+            /* MTE  */                                                                                             \
+            /* CopyUB Config Set */                                                                                \
+            uint64_t copy_ub = device_state->mte_config.shmem_ub;                                                  \
+            /* Create LocalTensor */                                                                               \
+            AscendC::LocalTensor<TYPE> ub_tensor;                                                                  \
+            ub_tensor.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECIN);                         \
+            ub_tensor.address_.bufferAddr = reinterpret_cast<uint64_t>(copy_ub);                                   \
+            ub_tensor.address_.dataLen = device_state->mte_config.ub_size;                                         \
+            AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;                \
+            shmem_mte_put_mem_nbi(dst, src, ub_tensor, elem_size, pe, copy_event_id);                              \
+        } else if (device_state->topo_list[pe] & SHMEM_TRANSPORT_ROCE) {                                           \
+            /* RoCE */                                                                                             \
+            auto ptr = shmem_ptr((__gm__ void *)dst.GetPhyAddr(), pe);                                             \
+            if (ptr == nullptr) return;                                                                            \
+            /* Create LocalTensor */                                                                               \
+            AscendC::LocalTensor<uint32_t> ub_tensor_32;                                                           \
+            ub_tensor_32.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                     \
+            ub_tensor_32.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR);       \
+            ub_tensor_32.address_.dataLen = UB_ALIGN_SIZE;                                                         \
+            AscendC::LocalTensor<uint64_t> ub_tensor_64;                                                           \
+            ub_tensor_64.address_.logicPos = static_cast<uint8_t>(AscendC::TPosition::VECOUT);                     \
+            ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR         \
+                                                                            + UB_ALIGN_SIZE);                      \
+            ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;                                                         \
+            shmemi_roce_write((__gm__ uint8_t*)ptr, (__gm__ uint8_t*)(src.GetPhyAddr()), pe, 0,                    \
+                                                    elem_size * sizeof(TYPE), ub_tensor_64, ub_tensor_32);         \
+        }                                                                                                          \
     }
 
 SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI);
@@ -473,8 +539,6 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_TENSOR_DETAILED_NBI);
      */                                                                                                            \
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(__ubuf__ TYPE *dst, __gm__ TYPE *src, uint32_t elem_size, int pe) \
     {                                                                                                              \
-        /* ROCE */                                                                                                 \
-        /* RDMA */                                                                                                 \
         /* MTE  */                                                                                                 \
         /* Global State Get */                                                                                     \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                      \
@@ -497,8 +561,6 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_NBI);
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(AscendC::LocalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src, \
                                                  uint32_t elem_size, int pe)                                      \
     {                                                                                                             \
-        /* ROCE */                                                                                                \
-        /* RDMA */                                                                                                \
         /* MTE  */                                                                                                \
         /* Global State Get */                                                                                    \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                     \
@@ -521,8 +583,6 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_NBI);
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(__ubuf__ TYPE *dst, __gm__ TYPE *src,                     \
                                                  const non_contiguous_copy_param &copy_params, int pe)     \
     {                                                                                                      \
-        /* ROCE */                                                                                         \
-        /* RDMA */                                                                                         \
         /* MTE  */                                                                                         \
         /* Global State Get */                                                                             \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                              \
@@ -545,8 +605,6 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_DETAILED_NBI);
     SHMEM_DEVICE void shmem_get_##NAME##_mem_nbi(AscendC::LocalTensor<TYPE> dst, AscendC::GlobalTensor<TYPE> src, \
                                                  const non_contiguous_copy_param &copy_params, int pe)            \
     {                                                                                                             \
-        /* ROCE */                                                                                                \
-        /* RDMA */                                                                                                \
         /* MTE  */                                                                                                \
         /* Global State Get */                                                                                    \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                     \
@@ -566,8 +624,6 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_UB_TENSOR_DETAILED_NBI);
  */
 SHMEM_DEVICE void shmem_putmem_nbi(__gm__ void *dst, __gm__ void *src, uint32_t elem_size, int32_t pe)
 {
-    /* ROCE */
-    /* RDMA */
     /* MTE  */
     /* Global State Get */
     __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();
@@ -590,8 +646,6 @@ SHMEM_DEVICE void shmem_putmem_nbi(__gm__ void *dst, __gm__ void *src, uint32_t 
      */                                                                                                                \
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(__gm__ TYPE *dst, __ubuf__ TYPE *src, uint32_t elem_size, int32_t pe) \
     {                                                                                                                  \
-        /* ROCE */                                                                                                     \
-        /* RDMA */                                                                                                     \
         /* MTE  */                                                                                                     \
         /* Global State Get */                                                                                         \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                          \
@@ -613,8 +667,6 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_NBI);
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(AscendC::GlobalTensor<TYPE> dst, AscendC::LocalTensor<TYPE> src, \
                                                  uint32_t elem_size, int32_t pe)                                  \
     {                                                                                                             \
-        /* ROCE */                                                                                                \
-        /* RDMA */                                                                                                \
         /* MTE  */                                                                                                \
         /* Global State Get */                                                                                    \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                     \
@@ -637,8 +689,6 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_TENSOR_NBI);
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(__gm__ TYPE *dst, __ubuf__ TYPE *src,                       \
                                                  const non_contiguous_copy_param &copy_params, int32_t pe)   \
     {                                                                                                        \
-        /* ROCE */                                                                                           \
-        /* RDMA */                                                                                           \
         /* MTE  */                                                                                           \
         /* Global State Get */                                                                               \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                \
@@ -661,8 +711,6 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_UB_DETAILED_NBI);
     SHMEM_DEVICE void shmem_put_##NAME##_mem_nbi(AscendC::GlobalTensor<TYPE> dst, AscendC::LocalTensor<TYPE> src, \
                                                  const non_contiguous_copy_param &copy_params, int32_t pe)        \
     {                                                                                                             \
-        /* ROCE */                                                                                                \
-        /* RDMA */                                                                                                \
         /* MTE  */                                                                                                \
         /* Global State Get */                                                                                    \
         __gm__ shmemi_device_host_state_t *device_state = shmemi_get_state();                                     \

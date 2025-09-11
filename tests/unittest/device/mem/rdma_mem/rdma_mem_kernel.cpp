@@ -77,6 +77,7 @@ extern "C" __global__ __aicore__ void RDMAGetTestHighLevel(GM_ADDR gva, uint64_t
         }
         dest_addr = gva + peer * MESSAGE_SIZE;
         shmem_get_uint8_mem_nbi(dest_addr, dest_addr, MESSAGE_SIZE, peer);
+        AscendC::PipeBarrier<PIPE_ALL>();
     }
 }
 
@@ -98,6 +99,7 @@ extern "C" __global__ __aicore__ void RDMAPutTestHighLevel(GM_ADDR gva, uint64_t
         }
         src_addr = gva + rank * MESSAGE_SIZE;
         shmem_put_uint8_mem_nbi(src_addr, src_addr, MESSAGE_SIZE, peer);
+        AscendC::PipeBarrier<PIPE_ALL>();
     }
 }
 

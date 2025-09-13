@@ -11,7 +11,7 @@
 #include "smem_shm_aicore_base_api.h"
 
 #include "shmem_api.h"
-#include "unittest/utils/func_type.h"
+#include "func_type.h"
 
 #define KERNEL_UB_PUT_NUM_NON_CONTIGUOUS(NAME, TYPE)                                                                  \
     class kernel_ub_##NAME##_put_num_non_contiguous {                                                                 \

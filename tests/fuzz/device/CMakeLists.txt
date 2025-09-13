@@ -17,5 +17,6 @@ target_compile_options(shmem_fuzztest_device PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS
 target_include_directories(shmem_fuzztest_device PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
     ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device
-    ${PROJECT_SOURCE_DIR}/tests/unittest/include
+    ${PROJECT_SOURCE_DIR}/tests/fuzz/include
+    ${PROJECT_SOURCE_DIR}/tests/fuzz/include/utils
 )

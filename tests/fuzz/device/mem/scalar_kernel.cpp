@@ -3,7 +3,7 @@
 */
 #include "kernel_operator.h"
 #include "shmem_api.h"
-#include "unittest/utils/func_type.h"
+#include "func_type.h"
 
 #define KERNEL_P(NAME, TYPE)                                           \
     class kernel_##NAME##_p {                                          \

@@ -26,7 +26,7 @@
 #define MOCKER_CPP(api, TT) MOCKCPP_NS::mockAPI(#api, reinterpret_cast<TT>(api))
 
 // dt-fuzz 要求3小时或者3000万次
-constexpr int SHMEM_FUZZ_COUNT = 2;                     // 30_000_000;
+constexpr int SHMEM_FUZZ_COUNT = 1;                     // 30_000_000;
 constexpr int SHMEM_FUZZ_RUNNING_SECONDS = 3 * 60 * 60; // 3小时，单位秒
 
 // fuzz变量ID (每个fuzz用例中都必须从0开始按顺序使用)

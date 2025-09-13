@@ -55,7 +55,7 @@ void shmem_fuzz_test_init_attr(shmem_init_attr_t *attributes, aclrtStream *strea
     ASSERT_EQ(aclInit(nullptr), ACL_SUCCESS);
     ASSERT_EQ(aclrtSetDevice(shmem_fuzz_device_id(attributes->my_rank)), ACL_SUCCESS);
     ASSERT_EQ(aclrtCreateStream(&tmp_stream), ACL_SUCCESS);
-
+    ASSERT_EQ(shmem_set_conf_store_tls(false, nullptr, 0), 0);
     ASSERT_EQ(shmem_init_attr(attributes), SHMEM_SUCCESS);
 
     *stream = tmp_stream;

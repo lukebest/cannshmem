@@ -77,10 +77,15 @@ static void test_shmem_ub_mem(int rank_id, int n_ranks, uint64_t local_mem_size,
     EXPECT_EQ(aclrtSynchronizeStream(scope.stream), ACL_SUCCESS);
     EXPECT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), ACL_SUCCESS);
 
+    int32_t flag = 0;
     for (size_t i = 0; i < total_size; i++) {
         int golden = rank_id % n_ranks;
-        EXPECT_EQ(input[i], static_cast<Tp>(golden * test_multi)) << "where rank=" << rank_id << " and i=" << i;
+        if (input[i] != static_cast<Tp>(golden * test_multi)) {
+            flag = 1;
+            break;
+        }
     }
+    ASSERT_EQ(flag, 0);
 
     shmem_free(ptr);
     EXPECT_EQ(aclrtFree(dev_ptr), ACL_SUCCESS);

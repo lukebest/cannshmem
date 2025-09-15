@@ -120,7 +120,8 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
     __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
     uint32_t qpNum = RDMAInfo->qpNum;
-    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
+    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr
+        + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
     auto cqBaseAddr = cqCtxEntry->bufAddr;
     auto cqeSize = cqCtxEntry->cqeSize;
     auto depth = cqCtxEntry->depth;
@@ -180,7 +181,8 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     }
 
     // Update WQ tail
-    __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
+    __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr
+        + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     auto curWQTailAddr = wqCtxEntry->tailAddr;
     dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
     uint32_t curWQTail = *(__gm__ uint32_t*)(curWQTailAddr);
@@ -216,7 +218,8 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
     __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
     uint32_t qpNum = RDMAInfo->qpNum;
-    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
+    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr
+        + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     auto SHMEMmemInfoTable = RDMAInfo->memPtr;
     auto sqBaseAddr = qpCtxEntry->bufAddr;
     auto wqeSize = qpCtxEntry->wqeSize;
@@ -253,7 +256,8 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
     // Write SGE to HBM
     __gm__ uint8_t* sgeAddr = wqeAddr + sizeof(SHMEMwqeCtx);
     *(__gm__ uint32_t*)(sgeAddr) = messageLen; // message size in bytes
-    __gm__ SHMEMmemInfo* localMemInfo = (__gm__ SHMEMmemInfo*)(SHMEMmemInfoTable + sizeof(SHMEMmemInfo) * shmemi_get_my_pe());
+    __gm__ SHMEMmemInfo* localMemInfo = (__gm__ SHMEMmemInfo*)(SHMEMmemInfoTable
+        + sizeof(SHMEMmemInfo) * shmemi_get_my_pe());
     *(__gm__ uint32_t*)(sgeAddr + 4) = localMemInfo->lkey; // lkey
     *(__gm__ uint64_t*)(sgeAddr + 8) = (uint64_t)localAddr; // local VA
 
@@ -333,7 +337,8 @@ SHMEM_DEVICE void shmemi_roce_read(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, 
 }
 
 /**
- * @brief RDMA Quiet function. This synchronous function ensures all previous RDMA WQEs are completed (data has arrived at the destination NIC).
+ * @brief RDMA Quiet function. This synchronous function ensures all previous RDMA WQEs are completed
+ * (data has arrived at the destination NIC).
  *
  * @param remoteRankId           [in] destination rank ID
  * @param qpIdx                  [in] QP index in multi-QP scenario (default 0 for single QP)
@@ -349,7 +354,8 @@ SHMEM_DEVICE void shmemi_roce_quiet(uint32_t remoteRankId, uint32_t qpIdx,
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
     __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
     uint32_t qpNum = RDMAInfo->qpNum;
-    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
+    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr
+        + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     auto curHardwareHeadAddr = qpCtxEntry->headAddr;
     dcci_cachelines((__gm__ uint8_t*)curHardwareHeadAddr, 8);
     uint32_t curHead = *(__gm__ uint32_t*)(curHardwareHeadAddr);
@@ -364,7 +370,8 @@ SHMEM_DEVICE void shmemi_roce_qpinfo_test(__gm__ uint8_t* gva, uint32_t destRank
     *(__gm__ uint64_t*)(gva) = (uint64_t)RDMAInfo;
     uint32_t qpNum = RDMAInfo->qpNum;
     *(__gm__ uint64_t*)(gva + 8) = (uint64_t)qpNum;
-    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
+    __gm__ SHMEMWQCtx* qpCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr +
+        (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     *(__gm__ uint64_t*)(gva + 16) = (uint64_t)qpCtxEntry;
     auto SHMEMmemInfoTable = RDMAInfo->memPtr;
     *(__gm__ uint64_t*)(gva + 24) = (uint64_t)SHMEMmemInfoTable;
@@ -391,7 +398,8 @@ SHMEM_DEVICE void shmemi_roce_qpinfo_test(__gm__ uint8_t* gva, uint32_t destRank
     *(__gm__ uint64_t*)(gva + 88) = (uint64_t)(remoteMemInfo->rkey);
 
     // Write SGE to HBM
-    __gm__ SHMEMmemInfo* localMemInfo = (__gm__ SHMEMmemInfo*)(SHMEMmemInfoTable + sizeof(SHMEMmemInfo) * shmemi_get_my_pe());
+    __gm__ SHMEMmemInfo* localMemInfo = (__gm__ SHMEMmemInfo*)(SHMEMmemInfoTable
+        + sizeof(SHMEMmemInfo) * shmemi_get_my_pe());
     *(__gm__ uint64_t*)(gva + 96) = (uint64_t)(localMemInfo->lkey);; // lkey
 
     __gm__ uint64_t* doorBellAddr = (__gm__ uint64_t*)(qpCtxEntry->dbAddr);
@@ -413,7 +421,8 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
     __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
     uint32_t qpNum = RDMAInfo->qpNum;
-    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr + (destRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
+    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr
+        + (destRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
     *(__gm__ uint64_t*)(gva) = (uint64_t)cqCtxEntry;
     auto cqBaseAddr = cqCtxEntry->bufAddr;
     auto cqeSize = cqCtxEntry->cqeSize;
@@ -445,7 +454,8 @@ SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDm
     curTail++;
     // Process each CQE, and update WQ tail
     uint32_t wqn = cqeAddr->byte16 & 0xFFFFFF;
-    __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
+    __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr
+        + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
     *(__gm__ uint64_t*)(gva + 104) = (uint64_t)(wqCtxEntry->wqn == wqn);
     auto curWQTailAddr = wqCtxEntry->tailAddr;
     dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);

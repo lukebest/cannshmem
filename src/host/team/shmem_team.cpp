@@ -265,6 +265,7 @@ int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int
         SHM_LOG_ERROR("create team failed, update state failed!");
         return SHMEM_INNER_ERROR;
     }
+    SHM_LOG_INFO("create team success:" << shm::team_config2string(&my_team));
     *new_team = my_team.team_idx;
     return 0;
 }

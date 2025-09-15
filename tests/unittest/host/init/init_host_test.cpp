@@ -1,6 +1,7 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
@@ -12,6 +13,10 @@
 namespace shm {
 extern shmem_init_attr_t g_attr;
 constexpr uint32_t timeout = 50;
+void logger_test_example(int level, const char* msg)
+{
+    // do print here
+}
 }
 
 void test_shmem_init(int rank_id, int n_ranks, uint64_t local_mem_size)
@@ -109,6 +114,9 @@ void test_shmem_init_invalid_n_ranks(int rank_id, int n_ranks, uint64_t local_me
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_PARAM);
+    attributes->n_ranks = en_ranks;
+    status = shmem_init_attr(attributes);
+    EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_status();
     EXPECT_EQ(status, SHMEM_STATUS_NOT_INITIALIZED);
     EXPECT_EQ(aclrtResetDevice(device_id), 0);
@@ -354,4 +362,33 @@ TEST(TestInitAPI, TestShmemGlobalExit)
     const int process_count = test_gnpu_num;
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_global_exit, local_mem_size, process_count);
+}
+
+TEST(TestInitAPI, TestShmemSetLogLevel)
+{
+    auto ret = shmem_set_log_level(shm::DEBUG_LEVEL);
+    EXPECT_EQ(ret, 0);
+
+    setenv("SHMEM_LOG_LEVEL", "DEBUG", 1);
+    EXPECT_EQ(shmem_set_log_level(-1), 0);
+
+    setenv("SHMEM_LOG_LEVEL", "INFO", 1);
+    EXPECT_EQ(shmem_set_log_level(-1), 0);
+
+    setenv("SHMEM_LOG_LEVEL", "WARN", 1);
+    EXPECT_EQ(shmem_set_log_level(-1), 0);
+
+    setenv("SHMEM_LOG_LEVEL", "ERROR", 1);
+    EXPECT_EQ(shmem_set_log_level(-1), 0);
+
+    setenv("SHMEM_LOG_LEVEL", "FATAL", 1);
+    EXPECT_EQ(shmem_set_log_level(-1), 0);
+
+    unsetenv("SHMEM_LOG_LEVEL");
+}
+
+TEST(TestInitAPI, TestShmemSetExternLogger)
+{
+    auto ret = shmem_set_extern_logger(shm::logger_test_example);
+    EXPECT_EQ(ret, 0);
 }

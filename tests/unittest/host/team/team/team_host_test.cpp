@@ -188,3 +188,37 @@ TEST(TestTeamApi, TestShmemTeamConfig)
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     test_mutil_task(test_shmem_team_config, local_mem_size, process_count);
 }
+
+TEST(TestTeamApi, TestShmemTeamSplitStrided_failConditions)
+{
+    int ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, 1, 1, nullptr);
+    EXPECT_EQ(ret, SHMEM_INVALID_PARAM);
+
+    shmem_team_t team_odd;
+    ret = shmem_team_split_strided(-1, 0, 1, 1, &team_odd);
+    EXPECT_EQ(ret, SHMEM_INVALID_PARAM);
+
+    const int32_t pe_size = 2;
+    ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, 0, -1, pe_size, &team_odd);
+    EXPECT_EQ(ret, SHMEM_INVALID_PARAM);
+
+    const int32_t stride = 2;
+    const int32_t pe_start = SHMEM_MAX_RANKS - 1;
+    ret = shmem_team_split_strided(SHMEM_TEAM_WORLD, pe_start, stride, pe_size, &team_odd);
+    EXPECT_EQ(ret, SHMEM_INVALID_PARAM);
+}
+
+TEST(TestTeamApi, ShmemTeamSplit2d_failConditions)
+{
+    shmem_team_t team_x;
+    shmem_team_t team_y;
+    int x_range   = 2;
+    int errorCode = shmem_team_split_2d(SHMEM_TEAM_WORLD, x_range, &team_x, nullptr);
+    EXPECT_EQ(errorCode, SHMEM_INVALID_PARAM);
+
+    errorCode = shmem_team_split_2d(SHMEM_TEAM_WORLD, 0, &team_x, nullptr);
+    EXPECT_EQ(errorCode, SHMEM_INVALID_PARAM);
+
+    errorCode = shmem_team_split_2d(-1, 0, &team_x, nullptr);
+    EXPECT_EQ(errorCode, SHMEM_INVALID_PARAM);
+}

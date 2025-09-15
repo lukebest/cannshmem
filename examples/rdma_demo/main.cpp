@@ -28,6 +28,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     // 初始化ACL和SHMEM
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
+    const int num10 = 10;
     aclrtStream stream = nullptr;
 
     status = aclInit(nullptr);
@@ -46,7 +47,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     uint32_t trans_size = 16;
     std::vector<int32_t> input(trans_size, 0);
     for (int i = 0; i < trans_size; i++) {
-        input[i] = (rank_id + 10);
+        input[i] = (rank_id + num10);
     }
 
     status = aclrtMemcpy(ptr + shmem_my_pe() * trans_size * sizeof(int32_t), trans_size * sizeof(int32_t),
@@ -62,10 +63,10 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     size_t input_size = n_ranks * trans_size * sizeof(int32_t);
     status = aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
     status = aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
-    
+
     for (int i = 0; i < n_ranks; i++) {
-        if (y_host[trans_size * i] != 10 + i) {
-            std::cout << y_host[trans_size * i] << " != " << 10 + i << std::endl;
+        if (y_host[trans_size * i] != num10 + i) {
+            std::cout << y_host[trans_size * i] << " != " << num10 + i << std::endl;
             std::exit(EXIT_FAILURE);
         }
     }
@@ -86,16 +87,17 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
 
 int main(int argc, char *argv[])
 {
+    int argIdx = 1;
     int status = 0;
-    int n_ranks = atoi(argv[1]);
-    int rank_id = atoi(argv[2]);
-    ipport = argv[3];
-    g_npus = atoi(argv[4]);
-    f_rank = atoi(argv[5]);
-    f_npu = atoi(argv[6]);
+    int n_ranks = atoi(argv[argIdx++]);
+    int rank_id = atoi(argv[argIdx++]);
+    ipport = argv[argIdx++];
+    g_npus = atoi(argv[argIdx++]);
+    f_rank = atoi(argv[argIdx]);
+    f_npu = atoi(argv[argIdx++]);
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     status = test_shmem_team_all_gather(rank_id, n_ranks, local_mem_size);
     std::cout << "[SUCCESS] demo run success in rank " << rank_id << std::endl;
-    
+
     return 0;
 }

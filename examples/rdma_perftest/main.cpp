@@ -26,48 +26,55 @@ int f_rank = 0;
 int f_npu = 0;
 const char *test_type;
 
-extern void rdma_highlevel_put_pingpong_latency_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length);
-extern void rdma_postsend_cost_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length);
-extern void rdma_highlevel_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length);
-extern void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int message_length, int64_t iter);
+extern void rdma_highlevel_put_pingpong_latency_do(uint32_t block_dim, void* st, uint64_t cfg, uint8_t* gva, int len);
+extern void rdma_postsend_cost_do(uint32_t block_dim, void* stream, uint64_t fftsConfig, uint8_t* gva, int len);
+extern void rdma_highlevel_put_bw_do(uint32_t block_dim, void* stream, uint64_t cfg, uint8_t* gva, int len);
+extern void rdma_mte_put_bw_do(uint32_t block_dim, void* stream, uint64_t cfg, uint8_t* gva, int len, int64_t iter);
 
-int test_shmem_rdma_highlevel_put_pingpong_latency(int rank_id, int n_ranks, uint64_t local_mem_size, int message_length)
+int test_shmem_rdma_highlevel_put_pingpong_latency(int rank_id, int n_ranks, uint64_t mem_size, int message_length)
 {
     uint32_t iteration = 1;
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     aclrtStream stream = nullptr;
+    const double ration50 = 50.0;
+    const int times32 = 32;
+    const int iterRange = 10;
+    const int size6M = 6 * 1024 * 1024
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
     status = aclrtCreateStream(&stream);
 
     shmem_init_attr_t *attributes;
-    status = shmem_set_attr(rank_id, n_ranks, local_mem_size, ipport, &attributes);
+    status = shmem_set_attr(rank_id, n_ranks, mem_size, ipport, &attributes);
     attributes->option_attr.data_op_engine_type = SHMEM_DATA_OP_ROCE;
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(size6M));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
     aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
-        xHost[i] = rank_id + 10;
+        xHost[i] = rank_id + iterRange;
     }
     aclrtMemcpy(gva + rank_id * message_length, message_length, xHost, message_length, ACL_MEMCPY_HOST_TO_DEVICE);
-    aclrtMemcpy(gva + n_ranks * message_length + 32 * (rank_id + 1), 32, xHost, 32, ACL_MEMCPY_HOST_TO_DEVICE);
+    aclrtMemcpy(gva + n_ranks * message_length + times32 * (rank_id + 1), times32,
+        xHost, times32, ACL_MEMCPY_HOST_TO_DEVICE);
 
     for (uint32_t i = 0; i < iteration; i++) {
         rdma_highlevel_put_pingpong_latency_do(1, stream, fftsConfig, gva, message_length);
     }
     aclrtSynchronizeStream(stream);
     if (rank_id == 0) {
-        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks, sizeof(int64_t), ACL_MEMCPY_DEVICE_TO_HOST);
-        std::cout << "RDMA highlevel put pingpong latency test. Message length = " << message_length << " Byte; latency = " << xHost[0] / 50.0 << " us." << std::endl;
+        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks,
+            sizeof(int64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        std::cout << "RDMA highlevel put pingpong latency test. Message length = " << message_length
+            << " Byte; latency = " << xHost[0] / ration50 << " us." << std::endl;
     }
 
     aclrtFreeHost(xHost);
@@ -84,6 +91,9 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     aclrtStream stream = nullptr;
+    const double ration2500 = 50.0 * 500;
+    const int iterRange = 10;
+    const int size6M = 6 * 1024 * 1024
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -96,14 +106,14 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(size6M));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
     aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
-        xHost[i] = rank_id + 10;
+        xHost[i] = rank_id + iterRange;
     }
     aclrtMemcpy(gva + rank_id * message_length, message_length, xHost, message_length, ACL_MEMCPY_HOST_TO_DEVICE);
 
@@ -112,8 +122,10 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     }
     aclrtSynchronizeStream(stream);
     if (rank_id == 0) {
-        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks, sizeof(int64_t), ACL_MEMCPY_DEVICE_TO_HOST);
-        std::cout << "RDMA postsend cost test. Message length = " << message_length << " Byte; postsend cost = " << xHost[0] / (50.0 * 500) << " us." << std::endl;
+        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks,
+            sizeof(int64_t), ACL_MEMCPY_DEVICE_TO_HOST);
+        std::cout << "RDMA postsend cost test. Message length = " << message_length
+            << " Byte; postsend cost = " << xHost[0] / ration2500 << " us." << std::endl;
     }
 
     aclrtFreeHost(xHost);
@@ -129,6 +141,9 @@ int test_shmem_rdma_highlevel_put_bw(int rank_id, int n_ranks, uint64_t local_me
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     aclrtStream stream = nullptr;
+    const double ration50 = 50.0;
+    const int iterRange = 10;
+    const int size6M = 6 * 1024 * 1024
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -141,22 +156,24 @@ int test_shmem_rdma_highlevel_put_bw(int rank_id, int n_ranks, uint64_t local_me
     status = shmem_init_attr(attributes);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 6));
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(size6M));
 
     int64_t *xHost;
     size_t totalSize = message_length * n_ranks;
 
     aclrtMallocHost(reinterpret_cast<void **>(&xHost), totalSize);
     for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
-        xHost[i] = rank_id + 10;
+        xHost[i] = rank_id + iterRange;
     }
     aclrtMemcpy(gva + rank_id * message_length, message_length, xHost, message_length, ACL_MEMCPY_HOST_TO_DEVICE);
 
     rdma_highlevel_put_bw_do(1, stream, fftsConfig, gva, message_length);
     aclrtSynchronizeStream(stream);
     if (rank_id == 0) {
-        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks, sizeof(int64_t), ACL_MEMCPY_DEVICE_TO_HOST);
-        std::cout << "RDMA high level put bandwidth test. Message length = " << message_length << " Byte; time = " << xHost[0] / (50.0) << " us." << std::endl;
+        aclrtMemcpy(xHost, sizeof(int64_t), gva + message_length * n_ranks, sizeof(int64_t),
+            ACL_MEMCPY_DEVICE_TO_HOST);
+        std::cout << "RDMA high level put bandwidth test. Message length = " << message_length
+            << " Byte; time = " << xHost[0] / ration50 << " us." << std::endl;
     }
 
     aclrtFreeHost(xHost);
@@ -172,6 +189,8 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     aclrtStream stream = nullptr;
+    const int size32M = 32 * 1024 * 1024
+    const int size128K = 128 * 1024;
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -182,10 +201,10 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     attributes->option_attr.data_op_engine_type = SHMEM_DATA_OP_ROCE;
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
-    shmem_mte_set_ub_params(0, 128 * 1024, 0);
+    shmem_mte_set_ub_params(0, size128K, 0);
 
     uint64_t fftsConfig = shmemx_get_ffts_config();
-    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(1024 * 1024 * 32));
+    uint8_t *gva = static_cast<uint8_t*>(shmem_malloc(size32M));
     int64_t *inHost;
     int64_t *outHost;
     size_t totalSize = message_length * n_ranks * 3;
@@ -194,27 +213,36 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     bzero(inHost, totalSize);
     double rdmaTotalTime = 0.0;
     double mteTotalTime = 0.0;
+    const int mteIdx = 6;
+    const double ratio10 = 10.0;
+    const double ration50 = 50.0;
+    const int dstMax = 64;
+    const int iterRange = 10;
+    const int maxIter = 20;
+    const int rankTimes = 2;
 
-    for (int iter = 0; iter < 20; iter++) {
+    for (int iter = 0; iter < maxIter; iter++) {
         for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
-            inHost[i + rank_id * message_length / sizeof(int64_t)] = rank_id + 10 + iter;
+            inHost[i + rank_id * message_length / sizeof(int64_t)] = rank_id + iterRange + iter;
         }
         for (uint32_t i = 0; i < message_length / sizeof(int64_t); i++) {
-            inHost[i + (rank_id + n_ranks) * message_length / sizeof(int64_t)] = rank_id + 10 + iter;
+            inHost[i + (rank_id + n_ranks) * message_length / sizeof(int64_t)] = rank_id + iterRange + iter;
         }
         aclrtMemcpy(gva, totalSize, inHost, totalSize, ACL_MEMCPY_HOST_TO_DEVICE);
         shm::shmemi_control_barrier_all();
         rdma_mte_put_bw_do(1, stream, fftsConfig, gva, message_length, iter);
         aclrtSynchronizeStream(stream);
-        if (rank_id == 0 && iter >= 10) {
-            aclrtMemcpy(outHost, 64, gva + message_length * n_ranks * 2, 64, ACL_MEMCPY_DEVICE_TO_HOST);
-            rdmaTotalTime += outHost[0] / 50.0;
-            mteTotalTime += outHost[6] / 50.0;
+        if (rank_id == 0 && iter >= iterRange) {
+            aclrtMemcpy(outHost, dstMax, gva + message_length * n_ranks * rankTimes, dstMax, ACL_MEMCPY_DEVICE_TO_HOST);
+            rdmaTotalTime += outHost[0] / ration50;
+            mteTotalTime += outHost[mteIdx] / ration50;
         }
     }
     if (rank_id == 0) {
-        std::cout << "RDMA rdma mte test. Message length = " << message_length << " Byte; average RDMA time = " << rdmaTotalTime / 10.0 << " us." << std::endl;
-        std::cout << "RDMA rdma mte test. Message length = " << message_length << " Byte; average MTE time = " << mteTotalTime / 10.0 << " us." << std::endl;
+        std::cout << "RDMA rdma mte test. Message length = " << message_length << " Byte; average RDMA time = "
+            << rdmaTotalTime / ratio10 << " us." << std::endl;
+        std::cout << "RDMA rdma mte test. Message length = " << message_length << " Byte; average MTE time = "
+            << mteTotalTime / ratio10 << " us." << std::endl;
     }
 
     aclrtFreeHost(inHost);
@@ -228,13 +256,16 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
 
 int main(int argc, char *argv[])
 {
-    if (argc != 9) {
+    const int expected_argc = 9;
+    if (argc != expected_argc) {
         std::cout << "[ERROR] Paramater number mismatch." << std::endl;
-        std::cout << "[USAGE] ./rdma_perftest <n_ranks> <rank_id> <ipport> <g_npus> <f_rank> <f_npu> <test_type> <msg_len>. See README for more details." << std::endl;
+        std::cout << "[USAGE] ./rdma_perftest <n_ranks> <rank_id> <ipport> <g_npus> <f_rank> <f_npu> "
+            << "<test_type> <msg_len>. See README for more details." << std::endl;
     }
     int status = 0;
     int n_ranks = atoi(argv[1]);
-    if (n_ranks != 2) {
+    const int rank_max = 2;
+    if (n_ranks != rank_max) {
         std::cout << "[ERROR] Error number of ranks! Only support 2 ranks!" << std::endl;
     }
     int rank_id = atoi(argv[2]);

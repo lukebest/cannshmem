@@ -235,6 +235,8 @@ SHMEM_DEVICE void shmem_getmem_nbi(__gm__ void *dst, __gm__ void *src, uint32_t 
     /**                                                                                                              \
      * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to              \
      *                                                   address on the local PE.                                    \
+     *        WARNING: When using RDMA as the underlying transport, concurrent RMA/AMO operations to the             \
+     *                 same PE are not supported.                                                                    \
      *                                                                                                               \
      * @param dst               [in] Pointer on local device of the destination data.                                \
      * @param src               [in] Pointer on Symmetric memory of the source data.                                 \
@@ -306,6 +308,8 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_DETAILED_NBI);
     /**                                                                                                            \
      * @brief Asynchronous interface. Copy contiguous data on symmetric memory from the specified PE to            \
      *                           address on the local PE.                                                          \
+     *        WARNING: When using RDMA as the underlying transport, concurrent RMA/AMO operations to the           \
+     *                 same PE are not supported.                                                                  \
      *                                                                                                             \
      * @param dst               [in] GlobalTensor on local device of the destination data.                         \
      * @param src               [in] GlobalTensor on Symmetric memory of the source data.                          \
@@ -383,6 +387,8 @@ SHMEM_TYPE_FUNC(SHMEM_GET_TYPENAME_MEM_TENSOR_DETAILED_NBI);
 #define SHMEM_PUT_TYPENAME_MEM_NBI(NAME, TYPE)                                                                       \
     /**                                                                                                              \
      * @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.     \
+     *        WARNING: When using RDMA as the underlying transport, concurrent RMA/AMO operations to the             \
+     *                 same PE are not supported.                                                                    \
      *                                                                                                               \
      * @param dst               [in] Pointer on Symmetric memory of the destination data.                            \
      * @param src               [in] Pointer on local device of the source data.                                     \
@@ -453,6 +459,8 @@ SHMEM_TYPE_FUNC(SHMEM_PUT_TYPENAME_MEM_DETAILED_NBI);
 #define SHMEM_PUT_TYPENAME_MEM_TENSOR_NBI(NAME, TYPE)                                                              \
     /**                                                                                                            \
      * @brief Asynchronous interface. Copy contiguous data on local PE to symmetric address on the specified PE.   \
+     *        WARNING: When using RDMA as the underlying transport, concurrent RMA/AMO operations to the           \
+     *                 same PE are not supported.                                                                  \
      *                                                                                                             \
      * @param dst               [in] GlobalTensor on Symmetric memory of the destination data.                     \
      * @param src               [in] GlobalTensor on local device of the source data.                              \

@@ -43,7 +43,7 @@ void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *s
     *st = stream;
 }
 
-void test_rdma_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st)
+int32_t test_rdma_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st)
 {
     *st = nullptr;
     int status = 0;
@@ -64,8 +64,8 @@ void test_rdma_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStre
     shmem_set_attr(rank_id, n_ranks, local_mem_size, test_global_ipport, &attributes);
     attributes->option_attr.data_op_engine_type = SHMEM_DATA_OP_ROCE;
     status = shmem_init_attr(attributes);
-    EXPECT_EQ(status, 0);
     *st = stream;
+    return status;
 }
 
 void test_finalize(aclrtStream stream, int device_id)

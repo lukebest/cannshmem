@@ -49,7 +49,7 @@ function fn_build()
 
     cd build
     cmake -DBUILD_PYTHON=$PYEXPAND_TYPE $COMPILE_OPTIONS -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-    make install -j8
+    make install -j17
     cd -
 }
 

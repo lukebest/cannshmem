@@ -13,7 +13,6 @@
 #include "shmem_api.h"
 
 #include "common/shmemi_logger.h"
-#include "common/shmemi_functions.h"
 #include "init/shmemi_init.h"
 #include "team/shmemi_team.h"
 #include "mem/shmemi_mm.h"

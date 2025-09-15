@@ -138,8 +138,9 @@ cd "$BUILD_PATH"
 # Collect coverage
 mkdir -p "$COVERAGE_PATH"
 cd "$COVERAGE_PATH"
-lcov --d "$BUILD_PATH" --c --output-file "$COVERAGE_PATH/coverage.info" -rc lcov_branch_coverage=1 --rc lcov_excl_br_line="LCOV_EXCL_BR_LINE|SHM_LOG_*|SHM_ASSERT*|SHMEM_CHECK_RET"
+lcov -d "$BUILD_PATH" --c --output-file "$COVERAGE_PATH/coverage.info" -rc lcov_branch_coverage=1 --rc lcov_excl_br_line="LCOV_EXCL_BR_LINE|SHM_LOG_*|SHM_ASSERT*|SHMEM_CHECK_RET"
 lcov -e "$COVERAGE_PATH/coverage.info" "*/src/host/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
+lcov -r "$COVERAGE_PATH/coverage.info" "*src/host/common/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
 genhtml -o "$COVERAGE_PATH/result" "$COVERAGE_PATH/coverage.info" --show-details --legend --rc lcov_branch_coverage=1
 
 cd ${CURRENT_DIR}

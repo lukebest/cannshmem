@@ -181,7 +181,13 @@ void DefineShmemAttr(py::module_ &m)
         }))
         .def_readwrite("my_rank", &shmem_init_attr_t::my_rank)
         .def_readwrite("n_ranks", &shmem_init_attr_t::n_ranks)
-        .def_readwrite("ip_port", &shmem_init_attr_t::ip_port)
+        .def_property("ip_port",
+                      [](const shmem_init_attr_t &self) {return std::string(self.ip_port[0] != '\0' ? self.ip_port : "");},
+                      [](shmem_init_attr_t &self, const std::string &value) {
+                            size_t copy_len = std::min(value.size(), sizeof(self.ip_port) - 1);
+                            std::copy_n(value.c_str(), copy_len, self.ip_port);
+                            self.ip_port[copy_len] = '\0';
+                        })
         .def_readwrite("local_mem_size", &shmem_init_attr_t::local_mem_size)
         .def_readwrite("option_attr", &shmem_init_attr_t::option_attr);
 

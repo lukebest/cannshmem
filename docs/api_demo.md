@@ -23,7 +23,7 @@ typedef struct {
     int version;                            // 版本
     int my_rank;                             // 当前rank
     int n_ranks;                             // 总rank数
-    const char* ip_port;                     // ip端口
+    char ip_port[SHMEM_MAX_IP_PORT_LEN];      // ip端口
     uint64_t local_mem_size;                  // 本地申请内存大小
     shmem_init_optional_attr_t option_attr;  // 可选参数
 } shmem_init_attr_t;

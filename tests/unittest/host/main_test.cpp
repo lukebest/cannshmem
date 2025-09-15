@@ -9,13 +9,14 @@
  */
 #include <gtest/gtest.h>
 #include <iostream>
+#include <algorithm>
 #include "acl/acl.h"
 #include "shmem_api.h"
 #include "unittest_main_test.h"
 
 int test_global_ranks;
 int test_gnpu_num;
-const char* test_global_ipport;
+char test_global_ipport[SHMEM_MAX_IP_PORT_LEN];
 int test_first_rank;
 int test_first_npu;
 
@@ -102,7 +103,8 @@ int main(int argc, char** argv)
 {
     int idx = 1;
     test_global_ranks = std::atoi(argv[idx++]);
-    test_global_ipport = argv[idx++];
+    std::copy_n(argv[idx++], SHMEM_MAX_IP_PORT_LEN - 1, test_global_ipport);
+    test_global_ipport[SHMEM_MAX_IP_PORT_LEN - 1] = '\0';
     test_gnpu_num = std::atoi(argv[idx++]);
     test_first_rank = std::atoi(argv[idx++]);
     test_first_npu = std::atoi(argv[idx++]);

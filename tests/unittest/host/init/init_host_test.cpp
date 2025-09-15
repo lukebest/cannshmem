@@ -51,7 +51,8 @@ void test_shmem_init_attr(int rank_id, int n_ranks, uint64_t local_mem_size)
 
     EXPECT_EQ(status = shmem_set_conf_store_tls(false, nullptr, 0), 0);
     shmem_init_attr_t *attributes = new shmem_init_attr_t{
-        rank_id, n_ranks, test_global_ipport, local_mem_size, {0, SHMEM_DATA_OP_MTE, 120, 120, 120}};
+        rank_id, n_ranks, {}, local_mem_size, {0, SHMEM_DATA_OP_MTE, 120, 120, 120}};
+    std::copy_n(test_global_ipport, SHMEM_MAX_IP_PORT_LEN, attributes->ip_port);
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 

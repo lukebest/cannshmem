@@ -12,7 +12,7 @@
 
 extern int test_global_ranks;
 extern int test_gnpu_num;
-extern const char* test_global_ipport;
+extern char test_global_ipport[SHMEM_MAX_IP_PORT_LEN];
 extern int test_first_rank;
 extern int test_first_npu;
 

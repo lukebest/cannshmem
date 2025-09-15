@@ -61,6 +61,7 @@ extern "C" {
 #define SHMEM_VENDOR_MAJOR_VER 1
 #define SHMEM_VENDOR_MINOR_VER 1
 #define SHMEM_VENDOR_PATCH_VER 1
+#define SHMEM_MAX_IP_PORT_LEN 64
 /**@} */  // end of group_macros
 
 /**
@@ -129,7 +130,7 @@ typedef struct {
  *
  * - int my_rank: The rank of the current process.
  * - int n_ranks: The total rank number of all processes.
- * - const char* ip_port: The ip and port of the communication server. The port must not conflict
+ * - char ip_port[SHMEM_MAX_IP_PORT_LEN]: The ip and port of the communication server. The port must not conflict
  *   with other modules and processes.
  * - uint64_t local_mem_size: The size of shared memory currently occupied by current rank.
  * - shmem_init_optional_attr_t option_attr: Optional Parameters.
@@ -137,7 +138,7 @@ typedef struct {
 typedef struct {
     int my_rank;
     int n_ranks;
-    const char *ip_port;
+    char ip_port[SHMEM_MAX_IP_PORT_LEN];
     uint64_t local_mem_size;
     shmem_init_optional_attr_t option_attr;
 } shmem_init_attr_t;

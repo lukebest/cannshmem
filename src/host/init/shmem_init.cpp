@@ -13,6 +13,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "acl/acl.h"
 #include "shmemi_host_common.h"
 
@@ -55,7 +56,7 @@ shmemi_host_state_t g_state_host = {nullptr, DEFAULT_TEVENT, DEFAULT_BLOCK_NUM};
 shmem_init_attr_t g_attr;
 static smem_shm_t g_smem_handle = nullptr;
 static bool g_attr_init = false;
-static char *g_ipport = nullptr;
+static char g_ipport[SHMEM_MAX_IP_PORT_LEN] = {0};
 
 int32_t version_compatible()
 {
@@ -136,13 +137,12 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
             g_state.topo_list[i] |= SHMEM_TRANSPORT_ROCE;
         }
     }
-    if (shm::g_ipport != nullptr) {
-        delete[] shm::g_ipport;
-        shm::g_ipport = nullptr;
-        attributes->ip_port = nullptr;
+    if (shm::g_ipport[0] != '\0') {
+        g_ipport[0] = '\0';
+        bzero(attributes->ip_port, sizeof(attributes->ip_port));
     } else {
         SHM_LOG_WARN("my_rank:" << attributes->my_rank << " shm::g_ipport is released in advance!");
-        attributes->ip_port = nullptr;
+        bzero(attributes->ip_port, sizeof(attributes->ip_port));
     }
     g_state.is_shmem_created = true;
     return status;
@@ -206,31 +206,29 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
     SHM_ASSERT_RETURN(n_ranks <= SHMEM_MAX_RANKS, SHMEM_INVALID_VALUE);
     SHM_ASSERT_RETURN(my_rank <= SHMEM_MAX_RANKS, SHMEM_INVALID_VALUE);
     *attributes = &shm::g_attr;
-    if (ip_port == nullptr) {
+    if (ip_port == nullptr || ip_port[0] == '\0') {
         SHM_LOG_ERROR("my_rank:" << my_rank << " ip_port is NULL!");
         return SHMEM_INVALID_PARAM;
     }
     // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
-    if (ip_port == nullptr) {
+    if (ip_port == nullptr || ip_port[0] == '\0') {
         SHM_LOG_ERROR("my_rank:" << my_rank << " ip_port is NULL!");
         return SHMEM_INVALID_PARAM;
     }
     // 安全警告：此处strlen依赖ip_port以null结尾，如果ip_port不是合法的C字符串，将导致越界读取
-    size_t ip_len = strlen(ip_port);
-    shm::g_ipport = new (std::nothrow) char[ip_len + 1];
-    if (shm::g_ipport == nullptr) {
-        SHM_LOG_ERROR("my_rank:" << my_rank << " failed to allocate IP port string!");
-        return SHMEM_INNER_ERROR;
-    }
-    std::copy(ip_port, ip_port + ip_len + 1, shm::g_ipport);
-    if (shm::g_ipport == nullptr) {
+    size_t ip_len = std::min(strlen(ip_port), sizeof(shm::g_ipport) - 1);
+
+    std::copy_n(ip_port, ip_len, shm::g_ipport);
+    shm::g_ipport[ip_len] = '\0';
+    if (shm::g_ipport[0] == '\0') {
         SHM_LOG_ERROR("my_rank:" << my_rank << " shm::g_ipport is nullptr!");
         return SHMEM_INVALID_VALUE;
     }
     int attr_version = static_cast<int>((1 << 16) + sizeof(shmem_init_attr_t));
     shm::g_attr.my_rank = my_rank;
     shm::g_attr.n_ranks = n_ranks;
-    shm::g_attr.ip_port = shm::g_ipport;
+    std::copy_n(shm::g_ipport, ip_len, shm::g_attr.ip_port);
+    shm::g_attr.ip_port[ip_len] = '\0';
     shm::g_attr.local_mem_size = local_mem_size;
     shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT,
                                shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT};

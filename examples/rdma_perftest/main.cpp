@@ -262,22 +262,23 @@ int main(int argc, char *argv[])
         std::cout << "[USAGE] ./rdma_perftest <n_ranks> <rank_id> <ipport> <g_npus> <f_rank> <f_npu> "
             << "<test_type> <msg_len>. See README for more details." << std::endl;
     }
+    int sub = 1;
     int status = 0;
-    int n_ranks = atoi(argv[1]);
+    int n_ranks = atoi(argv[sub++]);
     const int rank_max = 2;
     if (n_ranks != rank_max) {
         std::cout << "[ERROR] Error number of ranks! Only support 2 ranks!" << std::endl;
     }
-    int rank_id = atoi(argv[2]);
+    int rank_id = atoi(argv[sub++]);
     if (rank_id >= 2) {
         std::cout << "[ERROR] Error rank ID! Only support 2 ranks!" << std::endl;
     }
-    ipport = argv[3];
-    g_npus = atoi(argv[4]);
-    f_rank = atoi(argv[5]);
-    f_npu = atoi(argv[6]);
-    test_type = argv[7];
-    int msg_len = atoi(argv[8]);
+    ipport = argv[sub++];
+    g_npus = atoi(argv[sub++]);
+    f_rank = atoi(argv[sub++]);
+    f_npu = atoi(argv[sub++]);
+    test_type = argv[sub++];
+    int msg_len = atoi(argv[sub++]);
     uint64_t local_mem_size = 1024UL * 1024UL * 64;
     if (std::string(test_type) == "highlevel_put_pingpong_latency") {
         test_shmem_rdma_highlevel_put_pingpong_latency(rank_id, n_ranks, local_mem_size, msg_len);

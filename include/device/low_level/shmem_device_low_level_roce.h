@@ -129,11 +129,12 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
     uint32_t curTail = *(__gm__ uint32_t*)(curHardwareTailAddr);
 
+    const uint32_t shiftWidth = 7;
     AscendC::DataCopyExtParams copyParamsTail{1, 1 * sizeof(uint32_t), 0, 0, 0};
     while (curTail != idx) {
         __gm__ SHMEMcqeCtx* cqeAddr = (__gm__ SHMEMcqeCtx*)(cqBaseAddr + cqeSize * (curTail & (depth - 1)));
         uint32_t cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
-        while (((cqeByte4 & (1 << 7)) != 0) == ((curTail & depth) != 0)) {
+        while (((cqeByte4 & (1 << shiftWidth)) != 0) == ((curTail & depth) != 0)) {
             int64_t tmp = AscendC::GetSystemCycle(); // reserved for timeout check
             dcci_cachelines((__gm__ uint8_t*)cqeAddr, 32);
             cqeByte4 = *(__gm__ uint32_t*)cqeAddr;

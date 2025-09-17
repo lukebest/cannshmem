@@ -40,7 +40,7 @@ int test_shmem_rdma_highlevel_put_pingpong_latency(int rank_id, int n_ranks, uin
     const double ration50 = 50.0;
     const int times32 = 32;
     const int iterRange = 10;
-    const int size6M = 6 * 1024 * 1024
+    const int size6M = 6 * 1024 * 1024;
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -93,7 +93,7 @@ int test_shmem_rdma_postsend_cost(int rank_id, int n_ranks, uint64_t local_mem_s
     aclrtStream stream = nullptr;
     const double ration2500 = 50.0 * 500;
     const int iterRange = 10;
-    const int size6M = 6 * 1024 * 1024
+    const int size6M = 6 * 1024 * 1024;
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -143,7 +143,7 @@ int test_shmem_rdma_highlevel_put_bw(int rank_id, int n_ranks, uint64_t local_me
     aclrtStream stream = nullptr;
     const double ration50 = 50.0;
     const int iterRange = 10;
-    const int size6M = 6 * 1024 * 1024
+    const int size6M = 6 * 1024 * 1024;
 
     status = aclInit(nullptr);
     status = aclrtSetDevice(device_id);
@@ -189,7 +189,7 @@ int test_shmem_rdma_mte_put_bw(int rank_id, int n_ranks, uint64_t local_mem_size
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     aclrtStream stream = nullptr;
-    const int size32M = 32 * 1024 * 1024
+    const int size32M = 32 * 1024 * 1024;
     const int size128K = 128 * 1024;
 
     status = aclInit(nullptr);

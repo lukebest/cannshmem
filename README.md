@@ -77,6 +77,9 @@ bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
 注：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
 
 3.在example及其他样例代码中提供设备侧打印函数`cce::printf`功能，用法与C标准库的printf一致。
+
+若想使用该功能需要修改`examples\CMakeLists.txt`，为`target_compile_options`添加编译选项`--cce-enable-print`。
+
 注：这个功能在CANN 8.2 T103版本支持。
 
 ## 功能自测用例

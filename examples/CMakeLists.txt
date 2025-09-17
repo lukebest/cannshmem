@@ -9,7 +9,7 @@
 function(shmem_add_fusion_example NAME)
     add_executable(${NAME} ${ARGN})
 
-    target_compile_options(${NAME} PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220 --cce-enable-print)
+    target_compile_options(${NAME} PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
     target_include_directories(${NAME} PRIVATE 
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host/

@@ -85,6 +85,27 @@ int32_t shmemi_state_init_attr(shmem_init_attr_t *attributes)
     return status;
 }
 
+void shmemi_reach_info_init(void *&gva)
+{
+    uint32_t reach_info = 0;
+    int32_t status = SHMEM_SUCCESS;
+    for (int32_t i = 0; i < g_state.npes; i++) {
+        status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
+        g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
+        if (reach_info & SMEMS_DATA_OP_MTE) {
+            g_state.topo_list[i] |= SHMEM_TRANSPORT_MTE;
+        }
+        if (reach_info & SMEMS_DATA_OP_SDMA) {
+            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
+        } else {
+            g_state.sdma_heap_base[i] = NULL;
+        }
+        if (reach_info & SMEMS_DATA_OP_RDMA) {
+            g_state.topo_list[i] |= SHMEM_TRANSPORT_ROCE;
+        }
+    }
+}
+
 int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
 {
     void *gva = nullptr;
@@ -121,22 +142,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         return SHMEM_SMEM_ERROR;
     }
     g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
-    uint32_t reach_info = 0;
-    for (int32_t i = 0; i < g_state.npes; i++) {
-        status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
-        g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
-        if (reach_info & SMEMS_DATA_OP_MTE) {
-            g_state.topo_list[i] |= SHMEM_TRANSPORT_MTE;
-        }
-        if (reach_info & SMEMS_DATA_OP_SDMA) {
-            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
-        } else {
-            g_state.sdma_heap_base[i] = NULL;
-        }
-        if (reach_info & SMEMS_DATA_OP_RDMA) {
-            g_state.topo_list[i] |= SHMEM_TRANSPORT_ROCE;
-        }
-    }
+    shmemi_reach_info_init(gva);
     if (shm::g_ipport[0] != '\0') {
         g_ipport[0] = '\0';
         bzero(attributes->ip_port, sizeof(attributes->ip_port));

@@ -15,7 +15,7 @@ import shmem as ash
 
 g_ash_size = 1024 * 1024 * 1024
 g_malloc_size = 8 * 1024 * 1024
-g_ip_port = "tcp://127.0.0.1:8666"
+G_IP_PORT = "tcp://127.0.0.1:8666"
 
 
 def decypt_handler_test(input_cipher):
@@ -34,7 +34,7 @@ def run_register_decrypt_tests():
     attributes.my_rank = rank
     attributes.n_ranks = world_size
     attributes.local_mem_size = g_ash_size
-    attributes.ip_port = g_ip_port
+    attributes.ip_port = G_IP_PORT
     ret = ash.shmem_init(attributes)
     if ret != 0:
         raise ValueError('[ERROR] shmem_init failed')
@@ -59,7 +59,7 @@ def run_set_tls_info():
     attributes.my_rank = rank
     attributes.n_ranks = world_size
     attributes.local_mem_size = g_ash_size
-    attributes.ip_port = g_ip_port
+    attributes.ip_port = G_IP_PORT
     ret = ash.shmem_init(attributes)
     if ret != 0:
         raise ValueError('[ERROR] shmem_init failed')
@@ -82,7 +82,7 @@ def run_tests():
     attributes.my_rank = rank
     attributes.n_ranks = world_size
     attributes.local_mem_size = g_ash_size
-    attributes.ip_port = g_ip_port
+    attributes.ip_port = G_IP_PORT
     ret = ash.shmem_init(attributes)
     if ret != 0:
         raise ValueError('[ERROR] shmem_init failed')
@@ -116,7 +116,7 @@ def exit_test():
     attributes.my_rank = rank
     attributes.n_ranks = world_size
     attributes.local_mem_size = g_ash_size
-    attributes.ip_port = g_ip_port
+    attributes.ip_port = G_IP_PORT
     ret = ash.shmem_init(attributes)
     if ret != 0:
         raise ValueError('[ERROR] aclshmem_init failed')

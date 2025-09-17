@@ -194,8 +194,8 @@ int32_t shmemi_team_finalize()
 
 }  // namespace shm
 
-int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int32_t pe_stride, int32_t pe_size,
-                                 shmem_team_t *new_team)
+int32_t shmem_team_split_strided_precheck(shmem_team_t parent_team, int32_t pe_start, int32_t pe_stride,
+                                          int32_t pe_size, shmem_team_t *&new_team)
 {
     if (new_team == nullptr) {
         SHM_LOG_ERROR("output team is null.");
@@ -208,35 +208,43 @@ int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int
         return SHMEM_INVALID_PARAM;
     }
 
-    shmemi_team_t my_team;
     shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
-
     if (pe_start >= SHMEM_MAX_RANKS || pe_stride >= SHMEM_MAX_RANKS || pe_size > SHMEM_MAX_RANKS) {
         SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
                                                                      << " pe_stride:" << pe_stride << " parent:"
                                                                      << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
+    return SHMEM_SUCCESS;
+}
 
+int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int32_t pe_stride, int32_t pe_size,
+                                 shmem_team_t *new_team)
+{
+    auto ret = shmem_team_split_strided_precheck(parent_team, pe_start, pe_stride, pe_size, new_team);
+    if (ret != 0) {
+        return ret;
+    }
+
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
     int32_t global_pe = src_team->mype;
     int32_t global_pe_start = src_team->start + pe_start * src_team->stride;
     int32_t global_pe_stride = src_team->stride * pe_stride;
     int32_t global_pe_end = global_pe_start + global_pe_stride * (pe_size - 1);
 
     if (pe_start < 0 || pe_start >= src_team->size || pe_size <= 0 || pe_size > src_team->size || pe_stride < 1) {
-        SHM_LOG_ERROR("create team failed, input invalid, pe_start:" << pe_start << " pe_size:" << pe_size
-                                                                     << " pe_stride:" << pe_stride << " parent:"
-                                                                     << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, input invalid:" << pe_start << ":" << pe_size << ":" << pe_stride << ":"
+            << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
     if (global_pe_start >= shmem_n_pes() || global_pe_end >= shmem_n_pes()) {
-        SHM_LOG_ERROR("create team failed, large than world size, pe_start:"
-                      << pe_start << " pe_size:" << pe_size << " pe_stride:" << pe_stride
-                      << " world_size:" << shmem_n_pes() << " parent:" << shm::team_config2string(src_team));
+        SHM_LOG_ERROR("create team failed, large than world size:" << pe_start << ":" << pe_size << ":" << pe_stride
+            << ":" << shmem_n_pes() << ":" << shm::team_config2string(src_team));
         return SHMEM_INVALID_PARAM;
     }
 
+    shmemi_team_t my_team;
     my_team.mype = (global_pe - global_pe_start) / global_pe_stride;
 
     if (global_pe < global_pe_start || (global_pe - global_pe_start) % global_pe_stride || my_team.mype >= pe_size) {
@@ -270,7 +278,7 @@ int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int
     return 0;
 }
 
-int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
+int shmemi_team_split_2d_precheck(shmem_team_t p_team, int x_range, shmem_team_t *&x_team, shmem_team_t *&y_team)
 {
     if (x_team == nullptr || y_team == nullptr) {
         SHM_LOG_ERROR("output team is null.");
@@ -284,13 +292,22 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
 
     *x_team = SHMEM_TEAM_INVALID;
     *y_team = SHMEM_TEAM_INVALID;
-    if (!shm::is_valid_team(parent_team)) {
-        SHM_LOG_ERROR("input parent team is invalid!, team: " << parent_team);
+    if (!shm::is_valid_team(p_team)) {
+        SHM_LOG_ERROR("input parent team is invalid!, team: " << p_team);
         return SHMEM_INVALID_PARAM;
     }
 
-    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
+    return SHMEM_SUCCESS;
+}
 
+int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
+{
+    auto ret = shmemi_team_split_2d_precheck(parent_team, x_range, x_team, y_team);
+    if (ret != 0) {
+        return ret;
+    }
+
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
     int32_t src_start = src_team->start;
     int32_t src_stride = src_team->stride;
     int32_t src_size = src_team->size;

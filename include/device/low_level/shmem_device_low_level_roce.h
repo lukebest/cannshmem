@@ -102,6 +102,11 @@ struct SHMEMHybmDeviceMeta {
     uint64_t reserved[12];  // total 128B, equal HYBM_DEVICE_PRE_META_SIZE
 };
 
+SHMEM_DEVICE void shmemi_roce_poll_cq_update_info(AscendC::LocalTensor<uint64_t> &ubLocal64,
+    AscendC::LocalTensor<uint32_t> &ubLocal32, uint32_t &curTail, uint32_t &rRankId, uint32_t &qpIdx);
+SHMEM_DEVICE void shmemi_rdma_post_send_update_info(AscendC::LocalTensor<uint64_t> &ubLocal64,
+    AscendC::LocalTensor<uint32_t> &ubLocal32, uint32_t &curHead, __gm__ SHMEMWQCtx *&qpCtxEntry);
+
 /**
  * @brief RDMA Poll Completion Queue (CQ) function. Return status: 0 means success, non-zero means error.
  *
@@ -111,7 +116,6 @@ struct SHMEMHybmDeviceMeta {
  * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
  * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
  */
-
 SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx, uint32_t idx,
                                           AscendC::LocalTensor<uint64_t> ubLocal64,
                                           AscendC::LocalTensor<uint32_t> ubLocal32)
@@ -157,6 +161,21 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     AscendC::DataCopyPad(TailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
 
+    shmemi_roce_poll_cq_update_info(ubLocal64, ubLocal32, curTail, remoteRankId, qpIdx);
+    return 0;
+}
+
+SHMEM_DEVICE void shmemi_roce_poll_cq_update_info(AscendC::LocalTensor<uint64_t> &ubLocal64,
+    AscendC::LocalTensor<uint32_t> &ubLocal32, uint32_t &curTail, uint32_t &remoteRankId, uint32_t &qpIdx)
+{
+    __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
+                                                                SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
+    __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
+    uint32_t qpNum = RDMAInfo->qpNum;
+    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr
+        + (remoteRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
+    AscendC::DataCopyExtParams copyParamsTail{1, 1 * sizeof(uint32_t), 0, 0, 0};
+
     // Ring CQ Doorbell
     auto cqDBAddr = cqCtxEntry->dbAddr;
     if (cqCtxEntry->dbMode == SHMEMDBMode::SW_DB) {
@@ -193,7 +212,6 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
     AscendC::PipeBarrier<PIPE_ALL>();
     AscendC::DataCopyPad(WQTailGlobalTensor, ubLocal32, copyParamsTail);
     AscendC::PipeBarrier<PIPE_ALL>();
-    return 0;
 }
 
 /**
@@ -208,12 +226,11 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
  * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
  * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
  */
-
 SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8_t* localAddr,
-                                                    uint32_t destRankId, uint32_t qpIdx,
-                                                    SHMEMAIVOPCODE opcode, uint64_t messageLen,
-                                                    AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                    AscendC::LocalTensor<uint32_t> ubLocal32)
+                                        uint32_t destRankId, uint32_t qpIdx,
+                                        SHMEMAIVOPCODE opcode, uint64_t messageLen,
+                                        AscendC::LocalTensor<uint64_t> ubLocal64,
+                                        AscendC::LocalTensor<uint32_t> ubLocal32)
 {
     __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
@@ -267,11 +284,19 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
     AscendC::PipeBarrier<PIPE_ALL>();
     curHead++;
 
+    shmemi_rdma_post_send_update_info(ubLocal64, ubLocal32, curHead, qpCtxEntry);
+}
+
+SHMEM_DEVICE void shmemi_rdma_post_send_update_info(AscendC::LocalTensor<uint64_t> &ubLocal64,
+    AscendC::LocalTensor<uint32_t> &ubLocal32, uint32_t &curHead, __gm__ SHMEMWQCtx *&qpCtxEntry)
+{
     uint64_t doorBellInfo = 0;
     doorBellInfo |= qpCtxEntry->wqn; // [0:23] DB_TAG = qp_num
     doorBellInfo |= 0 << 24; // [24:27] DB_CMD = HNS_ROCE_V2_SQ_DB(0)
     doorBellInfo |= ((uint64_t)curHead % 65536) << 32; // [32:47] DB_PI = sq.head
     doorBellInfo |= (uint64_t)(qpCtxEntry->sl) << 48; // [48:50] DB_SL = qp.sl
+
+    auto curHardwareHeadAddr = qpCtxEntry->headAddr;
 
     __gm__ uint64_t* doorBellAddr = (__gm__ uint64_t*)(qpCtxEntry->dbAddr);
     AscendC::PipeBarrier<PIPE_ALL>();
@@ -304,12 +329,11 @@ SHMEM_DEVICE void shmemi_rdma_post_send(__gm__ uint8_t* remoteAddr, __gm__ uint8
  * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
  * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
  */
-
 template<typename T>
 SHMEM_DEVICE void shmemi_roce_write(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, uint32_t destRankId,
-                                                uint32_t qpIdx, uint64_t messageLen,
-                                                AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                AscendC::LocalTensor<uint32_t> ubLocal32)
+                                    uint32_t qpIdx, uint64_t messageLen,
+                                    AscendC::LocalTensor<uint64_t> ubLocal64,
+                                    AscendC::LocalTensor<uint32_t> ubLocal32)
 {
     shmemi_rdma_post_send(destDmaAddr, srcDmaAddr, destRankId, qpIdx, SHMEMAIVOPCODE::OP_RDMA_WRITE,
                             messageLen, ubLocal64, ubLocal32);
@@ -326,12 +350,11 @@ SHMEM_DEVICE void shmemi_roce_write(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr,
  * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
  * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
  */
-
 template<typename T>
 SHMEM_DEVICE void shmemi_roce_read(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, uint32_t srcRankId,
-                                                uint32_t qpIdx, uint64_t messageLen,
-                                                AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                AscendC::LocalTensor<uint32_t> ubLocal32)
+                                   uint32_t qpIdx, uint64_t messageLen,
+                                   AscendC::LocalTensor<uint64_t> ubLocal64,
+                                   AscendC::LocalTensor<uint32_t> ubLocal32)
 {
     shmemi_rdma_post_send(srcDmaAddr, destDmaAddr, srcRankId, qpIdx, SHMEMAIVOPCODE::OP_RDMA_READ,
                             messageLen, ubLocal64, ubLocal32);
@@ -346,7 +369,6 @@ SHMEM_DEVICE void shmemi_roce_read(__gm__ T* destDmaAddr, __gm__ T* srcDmaAddr, 
  * @param ubLocal64              [in] temporary UB local tensor of uint64_t used as workspace
  * @param ubLocal32              [in] temporary UB local tensor of uint32_t used as workspace
  */
-
 SHMEM_DEVICE void shmemi_roce_quiet(uint32_t remoteRankId, uint32_t qpIdx,
                                     AscendC::LocalTensor<uint64_t> ubLocal64,
                                     AscendC::LocalTensor<uint32_t> ubLocal32)
@@ -407,93 +429,6 @@ SHMEM_DEVICE void shmemi_roce_qpinfo_test(__gm__ uint8_t* gva, uint32_t destRank
     *(__gm__ uint64_t*)(gva + 104) = (uint64_t)doorBellAddr;
     *(__gm__ uint64_t*)(gva + 112) = (uint64_t)gva;
     AscendC::PipeBarrier<PIPE_ALL>();
-}
-
-template<typename T>
-SHMEM_DEVICE void shmemi_roce_pollcq_test(__gm__ T* srcDmaAddr, __gm__ T* destDmaAddr, uint32_t destRankId,
-                                                    uint32_t qpIdx, uint64_t messageLen,
-                                                    AscendC::LocalTensor<uint64_t> ubLocal64,
-                                                    AscendC::LocalTensor<uint32_t> ubLocal32, __gm__ uint8_t* gva)
-{
-    shmemi_rdma_post_send(destDmaAddr, srcDmaAddr, destRankId, qpIdx, SHMEMAIVOPCODE::OP_RDMA_WRITE,
-                            messageLen, ubLocal64, ubLocal32);
-    uint32_t idx = 1;
-    __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
-                                                                SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
-    __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);
-    uint32_t qpNum = RDMAInfo->qpNum;
-    __gm__ SHMEMCQCtx* cqCtxEntry = (__gm__ SHMEMCQCtx*)(RDMAInfo->scqPtr
-        + (destRankId * qpNum + qpIdx) * sizeof(SHMEMCQCtx));
-    *(__gm__ uint64_t*)(gva) = (uint64_t)cqCtxEntry;
-    auto cqBaseAddr = cqCtxEntry->bufAddr;
-    auto cqeSize = cqCtxEntry->cqeSize;
-    auto depth = cqCtxEntry->depth;
-    *(__gm__ uint64_t*)(gva + 8) = (uint64_t)cqBaseAddr;
-    *(__gm__ uint64_t*)(gva + 16) = (uint64_t)cqeSize;
-    *(__gm__ uint64_t*)(gva + 24) = (uint64_t)depth;
-    auto curHardwareTailAddr = cqCtxEntry->tailAddr;
-    *(__gm__ uint64_t*)(gva + 32) = (uint64_t)curHardwareTailAddr;
-    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
-    uint32_t curTail = *(__gm__ uint32_t*)(curHardwareTailAddr);
-    *(__gm__ uint64_t*)(gva + 40) = (uint64_t)curTail;
-
-    AscendC::DataCopyExtParams copyParamsTail{1, 1 * sizeof(uint32_t), 0, 0, 0};
-
-    __gm__ SHMEMcqeCtx* cqeAddr = (__gm__ SHMEMcqeCtx*)(cqBaseAddr + cqeSize * (curTail & (depth - 1)));
-    uint32_t cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
-    while (!(cqeByte4 & (1 << 7))) {
-        int64_t tmp = AscendC::GetSystemCycle();
-        dcci_cachelines((__gm__ uint8_t*)cqeAddr, 32);
-        cqeByte4 = *(__gm__ uint32_t*)cqeAddr;
-    }
-    *(__gm__ uint64_t*)(gva + 56) = (uint64_t)(cqeAddr->byte4);
-    *(__gm__ uint64_t*)(gva + 64) = (uint64_t)(cqeAddr->immtdata);
-    *(__gm__ uint64_t*)(gva + 72) = (uint64_t)(cqeAddr->byte12);
-    *(__gm__ uint64_t*)(gva + 80) = (uint64_t)(cqeAddr->byte16);
-    *(__gm__ uint64_t*)(gva + 88) = (uint64_t)(cqeAddr->byteCnt);
-    *(__gm__ uint64_t*)(gva + 96) = (uint64_t)(cqeAddr->smac);
-    curTail++;
-    // Process each CQE, and update WQ tail
-    uint32_t wqn = cqeAddr->byte16 & 0xFFFFFF;
-    __gm__ SHMEMWQCtx* wqCtxEntry = (__gm__ SHMEMWQCtx*)(RDMAInfo->sqPtr
-        + (destRankId * qpNum + qpIdx) * sizeof(SHMEMWQCtx));
-    *(__gm__ uint64_t*)(gva + 104) = (uint64_t)(wqCtxEntry->wqn == wqn);
-    auto curWQTailAddr = wqCtxEntry->tailAddr;
-    dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
-    uint32_t curWQTail = *(__gm__ uint32_t*)(curWQTailAddr);
-    ubLocal32.SetValue(0, curWQTail + 1);
-    AscendC::GlobalTensor<uint32_t> WQTailGlobalTensor;
-    WQTailGlobalTensor.SetGlobalBuffer((__gm__ uint32_t*)curWQTailAddr);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    AscendC::DataCopyPad(WQTailGlobalTensor, ubLocal32, copyParamsTail);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    dcci_cachelines((__gm__ uint8_t*)curWQTailAddr, 8);
-
-    // Check CQE status
-    uint32_t status = (cqeAddr->byte4 >> 8) & 0xFF;
-    *(__gm__ uint64_t*)(gva + 112) = status;
-    if (status) {
-        return;
-    }
-
-    // Update tail
-    ubLocal32.SetValue(0, (uint32_t)curTail);
-    AscendC::GlobalTensor<uint32_t> TailGlobalTensor;
-    TailGlobalTensor.SetGlobalBuffer((__gm__ uint32_t*)curHardwareTailAddr);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    AscendC::DataCopyPad(TailGlobalTensor, ubLocal32, copyParamsTail);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    dcci_cachelines((__gm__ uint8_t*)curHardwareTailAddr, 8);
-
-    // Ring CQ Doorbell
-    auto cqDBAddr = cqCtxEntry->dbAddr;
-    ubLocal32.SetValue(0, (uint32_t)(curTail & 0xFFFFFF));
-    AscendC::GlobalTensor<uint32_t> CQDBGlobalTensor;
-    CQDBGlobalTensor.SetGlobalBuffer((__gm__ uint32_t*)cqDBAddr);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    AscendC::DataCopyPad(CQDBGlobalTensor, ubLocal32, copyParamsTail);
-    AscendC::PipeBarrier<PIPE_ALL>();
-    dcci_cachelines((__gm__ uint8_t*)cqDBAddr, 8);
 }
 
 #endif // SHMEM_DEVICE_LOW_LEVEL_ROCE_H

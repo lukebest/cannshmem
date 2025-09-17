@@ -327,7 +327,7 @@ int main(int argc, char **argv)
     std::cout << "Before calling MM_AR kernel " << std::endl;
     const int repeatTimes = 10;
     for (int i = 0; i < repeatTimes; i++) {
-        int64_t fftsConfig = shmemx_get_ffts_config();
+        uint64_t fftsConfig = shmemx_get_ffts_config();
         ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
                                                              cDevice, symmetricPtr, cocTiling);
     }

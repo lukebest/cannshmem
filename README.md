@@ -131,7 +131,7 @@ void operator()<AscendC::AIC>(Params &params)
 1. 打开工具的编译开关`-enable_ascendc_dump`， 使能AscendC算子调测API编译算子样例。
 
    ```sh
-   bash scripts/run.sh -enable_ascendc_dump -examples
+   bash scripts/build.sh -enable_ascendc_dump -examples
    ```
 2. 在shmem/examples/matmul_allreduce目录执行demo:
 

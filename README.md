@@ -106,21 +106,22 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
 // examples/matmul_allreduce/kernel/matmul_epilogue_comm.hpp
 template <>
 CATLASS_DEVICE
-void operator()<AscendC::AIV>(Params &params)
+void operator()<AscendC::AIC>(Params &params)
 {
-   BlockEpilogue blockAllReduceEpilogue(resource, params.epilogueParams, params.blockShape);
+   BlockScheduler matmulBlockScheduler(params.problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));
+   uint32_t coreLoops = matmulBlockScheduler.GetCoreLoops();
 
-   uint32_t aicoreNum = AscendC::GetBlockNum();
-   
-+  AscendC::printf("aicoreNum is %d\n", aicoreNum);
-+  AscendC::GlobalTensor<ElementA> gmA;
-+  gmA.SetGlobalBuffer((__gm__ ElementA *)params.ptrA);
-+  AscendC::DumpTensor(gmA, 5, 16);
+   BlockMmad blockMmad(resource);
 
-   auto loopNumPerComm = aicoreNum * params.pValue;
+   // Represent the full gm
+   AscendC::GlobalTensor<ElementA> gmA;
+   gmA.SetGlobalBuffer((__gm__ ElementA *)params.ptrA);
+   AscendC::GlobalTensor<ElementB> gmB;
+   gmB.SetGlobalBuffer((__gm__ ElementB *)params.ptrB);
+
++  AscendC::printf("coreLoops is %d\n", coreLoops);
++  AscendC::DumpTensor(gmA, coreLoops, 16);
    ...
-
-   }
 }
 ```
 

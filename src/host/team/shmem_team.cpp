@@ -70,6 +70,75 @@ inline int32_t device_team_update(int team_idx, shmemi_team_t *host_team_ptr)
     return SHMEM_SUCCESS;
 }
 
+int32_t shmemi_team_init_sync_pool()
+{
+    g_state.sync_pool = (uint64_t)shmem_malloc(SYNC_POOL_SIZE);
+    if (g_state.sync_pool == 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("malloc sync pool failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    auto ret = aclrtMemset((void *)g_state.sync_pool, SYNC_POOL_SIZE, 0, SYNC_POOL_SIZE);
+    if (ret != 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("memset sync pool failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    return SHMEM_SUCCESS;
+}
+
+int32_t shmemi_team_init_sync_counter()
+{
+    auto ret = aclrtMalloc((void **)&(g_state.sync_counter), SYNC_COUNTERS_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
+    if (ret != 0 || g_state.sync_counter == 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("malloc sync counter failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    ret = aclrtMemset((void *)g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
+    if (ret != 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("memset sync counter failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    return SHMEM_SUCCESS;
+}
+
+int32_t shmemi_team_init_core_sync_pool()
+{
+    auto ret = aclrtMalloc((void **)&(g_state.core_sync_pool), SHMEM_CORE_SYNC_POOL_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
+    if (ret != 0 || g_state.core_sync_pool == 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("malloc core sync pool failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    ret = aclrtMemset((void *)g_state.core_sync_pool, SHMEM_CORE_SYNC_POOL_SIZE, 0, SHMEM_CORE_SYNC_POOL_SIZE);
+    if (ret != 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("memset core sync pool failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    return SHMEM_SUCCESS;
+}
+
+int32_t shmemi_team_init_core_sync_counter()
+{
+    auto ret = aclrtMalloc((void **)&(g_state.core_sync_counter), SHMEM_CORE_SYNC_COUNTER_SIZE,
+        ACL_MEM_MALLOC_HUGE_FIRST);
+    if (ret != 0 || g_state.core_sync_counter == 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("malloc core sync counter failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    ret = aclrtMemset((void *)g_state.core_sync_counter, SHMEM_CORE_SYNC_COUNTER_SIZE, 0, SHMEM_CORE_SYNC_COUNTER_SIZE);
+    if (ret != 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("memset core sync counter failed.");
+        return SHMEM_INNER_ERROR;
+    }
+    return SHMEM_SUCCESS;
+}
+
 int32_t shmemi_team_init(int32_t rank, int32_t size)
 {
     /* Initialize SHMEM_TEAM_WORLD */
@@ -92,58 +161,22 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
     SHMEM_CHECK_RET(device_team_update(SHMEM_TEAM_WORLD, &shmem_team_world));
 
     /* Initialize TEAM SYNC */
-    g_state.sync_pool = (uint64_t)shmem_malloc(SYNC_POOL_SIZE);
-    if (g_state.sync_pool == 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("malloc sync pool failed.");
-        return SHMEM_INNER_ERROR;
-    }
-    auto ret = aclrtMemset((void *)g_state.sync_pool, SYNC_POOL_SIZE, 0, SYNC_POOL_SIZE);
+    auto ret = shmemi_team_init_sync_pool();
     if (ret != 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("memset sync pool failed.");
-        return SHMEM_INNER_ERROR;
+        return ret;
     }
 
-    ret = aclrtMalloc((void **)&(g_state.sync_counter), SYNC_COUNTERS_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
-    if (ret != 0 || g_state.sync_counter == 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("malloc sync counter failed.");
-        return SHMEM_INNER_ERROR;
-    }
-    ret = aclrtMemset((void *)g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
+    ret = shmemi_team_init_sync_counter();
     if (ret != 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("memset sync counter failed.");
-        return SHMEM_INNER_ERROR;
+        return ret;
     }
 
-    ret = aclrtMalloc((void **)&(g_state.core_sync_pool), SHMEM_CORE_SYNC_POOL_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
-    if (ret != 0 || g_state.core_sync_pool == 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("malloc core sync pool failed.");
-        return SHMEM_INNER_ERROR;
-    }
-    ret = aclrtMemset((void *)g_state.core_sync_pool, SHMEM_CORE_SYNC_POOL_SIZE, 0, SHMEM_CORE_SYNC_POOL_SIZE);
+    ret = shmemi_team_init_core_sync_pool();
     if (ret != 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("memset core sync pool failed.");
-        return SHMEM_INNER_ERROR;
+        return ret;
     }
 
-    ret = aclrtMalloc((void **)&(g_state.core_sync_counter), SHMEM_CORE_SYNC_COUNTER_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
-    if (ret != 0 || g_state.core_sync_counter == 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("malloc core sync counter failed.");
-        return SHMEM_INNER_ERROR;
-    }
-    ret = aclrtMemset((void *)g_state.core_sync_counter, SHMEM_CORE_SYNC_COUNTER_SIZE, 0, SHMEM_CORE_SYNC_COUNTER_SIZE);
-    if (ret != 0) {
-        shmemi_team_finalize();
-        SHM_LOG_ERROR("memset core sync counter failed.");
-        return SHMEM_INNER_ERROR;
-    }
-    return 0;
+    return shmemi_team_init_core_sync_counter();
 }
 
 int32_t first_free_idx_fetch()
@@ -300,27 +333,12 @@ int shmemi_team_split_2d_precheck(shmem_team_t p_team, int x_range, shmem_team_t
     return SHMEM_SUCCESS;
 }
 
-int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
+int shmemi_team_split_2d_x(shmem_team_t &parent_team, int32_t &x_team_counts, int32_t &src_size,
+                           int &x_range, shmem_team_t *&x_team)
 {
-    auto ret = shmemi_team_split_2d_precheck(parent_team, x_range, x_team, y_team);
-    if (ret != 0) {
-        return ret;
-    }
-
-    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
-    int32_t src_start = src_team->start;
-    int32_t src_stride = src_team->stride;
-    int32_t src_size = src_team->size;
-    double x_team_counts_double = std::ceil(src_size / static_cast<double>(x_range));
-    int32_t x_team_counts = static_cast<int32_t>(x_team_counts_double);
-    int32_t y_team_counts = x_range;
-
-    if (x_range > src_size) {
-        x_range = src_size;
-    }
-
     int start = 0;
     int errorCode = 0;
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
 
     for (int i = 0; i < x_team_counts; ++i) {
         shmem_team_t my_xteam;
@@ -341,8 +359,16 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
             }
         }
     }
+    return SHMEM_SUCCESS;
+}
 
-    start = 0;
+int shmemi_team_split_2d_y(shmem_team_t &parent_team, int32_t &y_team_counts, int32_t &src_size,
+                           int &x_range, shmem_team_t *&y_team)
+{
+    int start = 0;
+    int errorCode = 0;
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
+
     for (int i = 0; i < y_team_counts; ++i) {
         shmem_team_t my_yteam;
         int remainder = src_size % x_range;
@@ -364,7 +390,34 @@ int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_t
             }
         }
     }
-    return 0;
+    return SHMEM_SUCCESS;
+}
+
+int shmem_team_split_2d(shmem_team_t parent_team, int x_range, shmem_team_t *x_team, shmem_team_t *y_team)
+{
+    auto ret = shmemi_team_split_2d_precheck(parent_team, x_range, x_team, y_team);
+    if (ret != 0) {
+        return ret;
+    }
+
+    shmemi_team_t *src_team = &shm::g_shmem_team_pool[parent_team];
+    int32_t src_start = src_team->start;
+    int32_t src_stride = src_team->stride;
+    int32_t src_size = src_team->size;
+    double x_team_counts_double = std::ceil(src_size / static_cast<double>(x_range));
+    int32_t x_team_counts = static_cast<int32_t>(x_team_counts_double);
+    int32_t y_team_counts = x_range;
+
+    if (x_range > src_size) {
+        x_range = src_size;
+    }
+
+    ret = shmemi_team_split_2d_x(parent_team, x_team_counts, src_size, x_range, x_team);
+    if (ret != 0) {
+        return ret;
+    }
+
+    return shmemi_team_split_2d_y(parent_team, y_team_counts, src_size, x_range, y_team);
 }
 
 int32_t shmem_team_translate_pe(shmem_team_t src_team, int32_t src_pe, shmem_team_t dest_team)

@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
         std::cout << "[ERROR] Error number of ranks! Only support 2 ranks!" << std::endl;
     }
     int rank_id = atoi(argv[sub++]);
-    if (rank_id >= 2) {
+    if (rank_id >= rank_max) {
         std::cout << "[ERROR] Error rank ID! Only support 2 ranks!" << std::endl;
     }
     ipport = argv[sub++];

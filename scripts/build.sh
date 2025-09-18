@@ -292,6 +292,10 @@ while [[ $# -gt 0 ]]; do
             exit 0
             shift
             ;;
+        -enable_ascendc_dump)
+            COMPILE_OPTIONS="${COMPILE_OPTIONS} -DENABLE_ASCENDC_DUMP=ON"
+            shift
+            ;;
         *)
             echo "Error: Unknown option $1."
             exit 1

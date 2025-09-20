@@ -338,15 +338,16 @@ int main(int argc, char **argv)
     std::cout << "Before calling MM_AR kernel " << std::endl;
     const int repeatTimes = 10;
     for (int i = 0; i < repeatTimes; i++) {
+        uint64_t fftsConfig = shmemx_get_ffts_config();
 #if defined(ENABLE_ASCENDC_DUMP)
         uint8_t *deviceDump{nullptr};
         ACL_CHECK(aclrtMalloc(reinterpret_cast<void **>(&deviceDump), ALL_DUMPSIZE, ACL_MEM_MALLOC_HUGE_FIRST));
-        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(shmemx_get_ffts_config(), problemShape, aDevice, bDevice,
+        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
                                                              cDevice, symmetricPtr, cocTiling, deviceDump);
         ACL_CHECK(aclrtSynchronizeStream(stream));
         Adx::AdumpPrintWorkSpace(deviceDump, ALL_DUMPSIZE, stream, "test");
 #else
-        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(shmemx_get_ffts_config(), problemShape, aDevice, bDevice,
+        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
                                                              cDevice, symmetricPtr, cocTiling);
 #endif
     }

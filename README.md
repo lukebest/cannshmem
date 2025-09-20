@@ -106,7 +106,7 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
    ```diff
    // examples/matmul_allreduce/kernel/matmul_epilogue_comm.hpp
    template <>
-   CATLASS_DEVICE
+   __forceinline__ __aicore__
    void operator()<AscendC::AIC>(Params &params)
    {
       BlockScheduler matmulBlockScheduler(params.problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));

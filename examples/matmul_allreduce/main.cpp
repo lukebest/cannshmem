@@ -44,7 +44,7 @@
 #include "catlass/layout/layout.hpp"
 
 #if defined(ENABLE_ASCENDC_DUMP)
-#include "debug.hpp"
+#include "debug.h"
 #endif
 // from shmem-templates
 #include "kernel/matmul_epilogue_comm.hpp"

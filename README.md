@@ -100,30 +100,31 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
 
 ### 插入调试代码
 
-在想进行调试的层级，增加调测API调用。
+1. 修改使用该功能的核函数入口和相关调用代码，增加开启调测功能（`#if defined(ENABLE_ASCENDC_DUMP)`）的编译时代码，具体可参考`examples/matmul_allreduce/main.cpp`。
+2. 在想进行调试的层级，增加调测API调用。
 
-```diff
-// examples/matmul_allreduce/kernel/matmul_epilogue_comm.hpp
-template <>
-CATLASS_DEVICE
-void operator()<AscendC::AIC>(Params &params)
-{
-   BlockScheduler matmulBlockScheduler(params.problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));
-   uint32_t coreLoops = matmulBlockScheduler.GetCoreLoops();
+   ```diff
+   // examples/matmul_allreduce/kernel/matmul_epilogue_comm.hpp
+   template <>
+   CATLASS_DEVICE
+   void operator()<AscendC::AIC>(Params &params)
+   {
+      BlockScheduler matmulBlockScheduler(params.problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));
+      uint32_t coreLoops = matmulBlockScheduler.GetCoreLoops();
 
-   BlockMmad blockMmad(resource);
+      BlockMmad blockMmad(resource);
 
-   // Represent the full gm
-   AscendC::GlobalTensor<ElementA> gmA;
-   gmA.SetGlobalBuffer((__gm__ ElementA *)params.ptrA);
-   AscendC::GlobalTensor<ElementB> gmB;
-   gmB.SetGlobalBuffer((__gm__ ElementB *)params.ptrB);
+      // Represent the full gm
+      AscendC::GlobalTensor<ElementA> gmA;
+      gmA.SetGlobalBuffer((__gm__ ElementA *)params.ptrA);
+      AscendC::GlobalTensor<ElementB> gmB;
+      gmB.SetGlobalBuffer((__gm__ ElementB *)params.ptrB);
 
-+  AscendC::printf("coreLoops is %d\n", coreLoops);
-+  AscendC::DumpTensor(gmA, coreLoops, 16);
-   ...
-}
-```
+   +  AscendC::printf("coreLoops is %d\n", coreLoops);
+   +  AscendC::DumpTensor(gmA, coreLoops, 16);
+      ...
+   }
+   ```
 
 
 ### 编译运行

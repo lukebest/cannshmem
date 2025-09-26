@@ -30,6 +30,7 @@ RELEASE_DIR=$PROJECT_ROOT/ci/release
 
 BUILD_TYPE=RELEASE
 PYEXPAND_TYPE=OFF
+PACKAGE=OFF
 
 COMPILE_OPTIONS=""
 
@@ -65,6 +66,26 @@ function fn_whl_build()
   python3 setup.py bdist_wheel
 
   cd "${PROJECT_ROOT}"
+}
+
+function make_package()
+{
+    rm -rf "${PROJECT_ROOT}/package"
+    mkdir -p "${PROJECT_ROOT}/package"
+    if [ $( uname -a | grep -c -i "x86_64" ) -ne 0 ]; then
+        ARCH="x86_64"
+    elif [ $( uname -a | grep -c -i "aarch64" ) -ne 0 ]; then
+        ARCH="aarch64"
+    else
+        exit 1
+    fi
+
+    if [ "$PYEXPAND_TYPE" = "ON" ]; then
+         cp "${PROJECT_ROOT}"/src/python/dist/*.whl "${PROJECT_ROOT}"/package
+         echo "Python wheel is copy to ${PROJECT_ROOT}/package"
+    fi
+    cp -r "${PROJECT_ROOT}"/install/$ARCH "${PROJECT_ROOT}"/package
+    echo "SHMEM_${VERSION}_linux-${ARCH}.run is copy to ${PROJECT_ROOT}/package"
 }
 
 function fn_make_run_package()
@@ -108,8 +129,8 @@ EOF
         --help-header $PROJECT_ROOT/scripts/help.info --gzip --complevel 4 --nomd5 --sha256 --chown \
         ${OUTPUT_DIR} $RELEASE_DIR/$ARCH/SHMEM_${VERSION}_linux-${ARCH}.run "SHMEM-api" ./install.sh
     [ -d "$OUTPUT_DIR/$ARCH" ] && rm -rf "$OUTPUT_DIR/$ARCH"
-    mv $RELEASE_DIR/$ARCH $OUTPUT_DIR
-    echo "SHMEM_${VERSION}_linux-${ARCH}.run is successfully generated in $OUTPUT_DIR"
+    cp -r $RELEASE_DIR/$ARCH $OUTPUT_DIR
+    echo "SHMEM_${VERSION}_linux-${ARCH}.run is successfully generated in $OUTPUT_DIR/$ARCH"
 }
 
 function fn_build_googletest()
@@ -296,6 +317,10 @@ while [[ $# -gt 0 ]]; do
             COMPILE_OPTIONS="${COMPILE_OPTIONS} -DENABLE_ASCENDC_DUMP=ON"
             shift
             ;;
+        -package)
+            PACKAGE=ON
+            shift
+            ;;
         *)
             echo "Error: Unknown option $1."
             exit 1
@@ -312,6 +337,10 @@ fi
 fn_make_run_package
 if [ ${GEN_DOC} == "ON" ]; then
     fn_gen_doc
+fi
+
+if [ "$PACKAGE" == "ON" ]; then
+    make_package
 fi
 
 cd ${CURRENT_DIR}

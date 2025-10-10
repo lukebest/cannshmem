@@ -8,7 +8,10 @@
 
 function(shmem_add_fusion_example NAME)
     add_executable(${NAME} ${ARGN})
-
+    if(DEFINED ENABLE_ASCENDC_DUMP AND ENABLE_ASCENDC_DUMP)
+        target_compile_definitions(${NAME} PRIVATE ENABLE_ASCENDC_DUMP ASCENDC_DUMP=1 ASCENDC_DEBUG)
+    endif()
+    
     target_compile_options(${NAME} PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
     target_include_directories(${NAME} PRIVATE 
         ${PROJECT_SOURCE_DIR}/include
@@ -21,6 +24,9 @@ function(shmem_add_fusion_example NAME)
     )
     target_link_options(${NAME} PRIVATE --cce-fatobj-link)
     target_link_libraries(${NAME} PRIVATE shmem ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/lib/libmf_smem.so)
+    if(DEFINED ENABLE_ASCENDC_DUMP AND ENABLE_ASCENDC_DUMP)
+        target_link_libraries(${NAME} PRIVATE ascend_dump)
+    endif()
 endfunction()
 
 function(shmem_add_collective_example NAME)

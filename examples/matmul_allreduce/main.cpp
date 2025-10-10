@@ -43,6 +43,9 @@
 #include "catlass/gemm/gemm_type.hpp"
 #include "catlass/layout/layout.hpp"
 
+#if defined(ENABLE_ASCENDC_DUMP)
+#include "debug.h"
+#endif
 // from shmem-templates
 #include "kernel/matmul_epilogue_comm.hpp"
 
@@ -86,10 +89,18 @@ using LayoutA = layout::RowMajor;
 using LayoutB = layout::RowMajor;
 using LayoutC = layout::RowMajor;
 
+#if defined(ENABLE_ASCENDC_DUMP)
+CATLASS_GLOBAL
+void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c,
+                          GM_ADDR symmetricPtr, CoCTiling cocTiling, GM_ADDR dump)
+{
+    AscendC::InitDump(false, dump, ALL_DUMPSIZE);
+#else
 CATLASS_GLOBAL
 void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c,
                           GM_ADDR symmetricPtr, CoCTiling cocTiling)
 {
+#endif
     // Set FFTS address
     shmemx_set_ffts_config(fftsAddr);
 
@@ -328,8 +339,17 @@ int main(int argc, char **argv)
     const int repeatTimes = 10;
     for (int i = 0; i < repeatTimes; i++) {
         uint64_t fftsConfig = shmemx_get_ffts_config();
+#if defined(ENABLE_ASCENDC_DUMP)
+        uint8_t *deviceDump{nullptr};
+        ACL_CHECK(aclrtMalloc(reinterpret_cast<void **>(&deviceDump), ALL_DUMPSIZE, ACL_MEM_MALLOC_HUGE_FIRST));
+        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
+                                                             cDevice, symmetricPtr, cocTiling, deviceDump);
+        ACL_CHECK(aclrtSynchronizeStream(stream));
+        Adx::AdumpPrintWorkSpace(deviceDump, ALL_DUMPSIZE, stream, "test");
+#else
         ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
                                                              cDevice, symmetricPtr, cocTiling);
+#endif
     }
     std::cout << "After calling MM_AR kernel " << std::endl;
 

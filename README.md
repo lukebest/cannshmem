@@ -98,7 +98,55 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 # 8卡，ip:port 127.0.0.1:8666，运行所有*Init*用例
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
+## 在样例工程使用Ascend C算子调测API
 
+AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的打印、Tensor内容的查看(Dump)。
+
+关于kernel调测api的详细介绍，可参考[DumpTensor](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/82RC1alpha002/API/ascendcopapi/atlasascendc_api_07_0192.html)和[printf](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/82RC1alpha002/API/ascendcopapi/atlasascendc_api_07_0193.html).
+
+### 插入调试代码
+
+1. 修改使用该功能的核函数入口和相关调用代码，增加开启调测功能（`#if defined(ENABLE_ASCENDC_DUMP)`）的编译时代码，具体可参考`examples/matmul_allreduce/main.cpp`。
+2. 在想进行调试的层级，增加调测API调用。
+
+   ```diff
+   // examples/matmul_allreduce/kernel/matmul_epilogue_comm.hpp
+   template <>
+   __forceinline__ __aicore__
+   void operator()<AscendC::AIC>(Params &params)
+   {
+      BlockScheduler matmulBlockScheduler(params.problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));
+      uint32_t coreLoops = matmulBlockScheduler.GetCoreLoops();
+
+      BlockMmad blockMmad(resource);
+
+      // Represent the full gm
+      AscendC::GlobalTensor<ElementA> gmA;
+      gmA.SetGlobalBuffer((__gm__ ElementA *)params.ptrA);
+      AscendC::GlobalTensor<ElementB> gmB;
+      gmB.SetGlobalBuffer((__gm__ ElementB *)params.ptrB);
+
+   +  AscendC::printf("coreLoops is %d\n", coreLoops);
+   +  AscendC::DumpTensor(gmA, coreLoops, 16);
+      ...
+   }
+   ```
+
+
+### 编译运行
+
+1. 打开工具的编译开关`-enable_ascendc_dump`， 使能AscendC算子调测API编译算子样例。
+
+   ```sh
+   bash scripts/build.sh -enable_ascendc_dump -examples
+   ```
+2. 在shmem/examples/matmul_allreduce目录执行demo:
+
+   ```sh
+   bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
+   ```
+- ⚠ 注意事项
+  - 目前`AscendC算子调测API`**不**支持打印`FixPipe`上的数值。
 ## python侧test用例     [python接口API列表](./doc/pythonAPI.md)
 
 1. 在scripts目录下编译的时候，带上build python的选项

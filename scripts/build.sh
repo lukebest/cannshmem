@@ -63,6 +63,10 @@ function fn_whl_build()
 
   cd "${PROJECT_ROOT}/src/python"
   rm -rf build shmem.egg-info build dist
+  GIT_COMMIT=`git rev-parse HEAD`
+  {
+  echo "commit_id: ${GIT_COMMIT}"
+  } > "${PROJECT_ROOT}/src/python/shmem/VERSION"
   python3 setup.py bdist_wheel
 
   cd "${PROJECT_ROOT}"

@@ -120,6 +120,10 @@ SHMEM_DEVICE uint32_t shmemi_roce_poll_cq(uint32_t remoteRankId, uint32_t qpIdx,
                                           AscendC::LocalTensor<uint64_t> ubLocal64,
                                           AscendC::LocalTensor<uint32_t> ubLocal32)
 {
+    if (idx == 0) {
+        return 0;
+    }
+
     __gm__ SHMEMHybmDeviceMeta* metaPtr = (__gm__ SHMEMHybmDeviceMeta*)(SMEM_SHM_DEVICE_META_ADDR +
                                                                 SMEM_SHM_DEVICE_GLOBAL_META_SIZE);
     __gm__ SHMEMAIVRDMAInfo* RDMAInfo = (__gm__ SHMEMAIVRDMAInfo*)(metaPtr->qpInfoAddress);

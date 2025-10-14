@@ -39,6 +39,7 @@
 #include "internal/device/sync/shmemi_device_quiet.h"
 #include "internal/device/sync/shmemi_device_p2p.h"
 #include "internal/device/sync/shmemi_device_barrier.h"
+#include "internal/device/sync/shmemi_device_handle.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -89,13 +89,13 @@ int32_t shmemi_team_init_sync_pool()
 
 int32_t shmemi_team_init_sync_counter()
 {
-    auto ret = aclrtMalloc((void **)&(g_state.sync_counter), SYNC_COUNTERS_SIZE, ACL_MEM_MALLOC_HUGE_FIRST);
-    if (ret != 0 || g_state.sync_counter == 0) {
+    g_state.sync_counter = (uint64_t)shmem_malloc(SYNC_COUNTERS_SIZE);
+    if (g_state.sync_counter == 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("malloc sync counter failed.");
         return SHMEM_INNER_ERROR;
     }
-    ret = aclrtMemset((void *)g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
+    auto ret = aclrtMemset((void *)g_state.sync_counter, SYNC_COUNTERS_SIZE, 0, SYNC_COUNTERS_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
         SHM_LOG_ERROR("memset sync counter failed.");

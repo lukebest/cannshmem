@@ -55,8 +55,10 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
 
     // AllGather
     allgather_demo(1, stream, (uint8_t *)ptr, trans_size * sizeof(int32_t));
+    shmem_handle_t handle;
+    handle.team_id = SHMEM_TEAM_WORLD;
+    shmem_handle_wait(handle, stream);
     status = aclrtSynchronizeStream(stream);
-    shm::shmemi_control_barrier_all();
 
     // 结果校验打印
     int32_t *y_host;
@@ -93,7 +95,7 @@ int main(int argc, char *argv[])
     int rank_id = atoi(argv[argIdx++]);
     ipport = argv[argIdx++];
     g_npus = atoi(argv[argIdx++]);
-    f_rank = atoi(argv[argIdx]);
+    f_rank = atoi(argv[argIdx++]);
     f_npu = atoi(argv[argIdx++]);
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     status = test_shmem_team_all_gather(rank_id, n_ranks, local_mem_size);

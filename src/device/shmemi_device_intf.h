@@ -18,6 +18,6 @@ int32_t shmemi_memset(int32_t *array, int32_t len, int32_t val, int32_t count);
 
 int32_t shmemi_barrier_on_stream(shmem_team_t tid, void *stream);
 
-int32_t shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream);
+void shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream);
 
 #endif

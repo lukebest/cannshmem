@@ -36,11 +36,6 @@ SHMEM_DEVICE void shmemi_highlevel_signal_set(__gm__ int32_t *dst, __gm__ int32_
     ub_tensor_64.address_.bufferAddr = reinterpret_cast<uint64_t>(SHMEM_INTERNAL_UB_BUF_START_ADDR
                                                                         + UB_ALIGN_SIZE);
     ub_tensor_64.address_.dataLen = UB_ALIGN_SIZE;
-    dcci_cacheline((__gm__ uint8_t *)src);
-    int32_t count = shmemi_load(src) + 1;
-    shmemi_store(src, count);
-    // flush data cache to GM after signal to ensure it is visiable to other ranks
-    dcci_cacheline((__gm__ uint8_t *)src);
     shmemi_roce_write((__gm__ uint8_t*)shmem_ptr(dst, pe), (__gm__ uint8_t*)src, pe, 0, sizeof(int32_t),
         ub_tensor_64, ub_tensor_32);
     shmemi_roce_quiet(pe, 0, ub_tensor_64, ub_tensor_32);

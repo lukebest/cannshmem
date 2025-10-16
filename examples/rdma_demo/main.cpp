@@ -67,16 +67,13 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     status = aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
 
     for (int i = 0; i < n_ranks; i++) {
-        if (y_host[trans_size * i] != num10 + i) {
-            std::cout << y_host[trans_size * i] << " != " << num10 + i << std::endl;
-            std::exit(EXIT_FAILURE);
+        for (int j = 0; j < 16; j++) {
+            if (y_host[trans_size * i + trans_size / 16 * j] != num10 + i) {
+                std::cout << y_host[trans_size * i + trans_size / 16 * j] << " != " << num10 + i << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
         }
     }
-    std::cout << "rank: " << rank_id << " [";
-    for (int j = 0; j < trans_size * n_ranks; j++) {
-        std::cout << y_host[j] << ", ";
-    }
-    std::cout << "]" << std::endl;
     // 去初始化
     status = aclrtFreeHost(y_host);
     shmem_free(ptr);

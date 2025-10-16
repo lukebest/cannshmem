@@ -30,7 +30,8 @@ SHMEM_DEVICE void shmemi_barrier_cross_host(shmemi_team_t *team)
     int shift = 1;
     int my_pe_in_team = (my_pe - start) / stride;
     int32_t count = shmemi_load((__gm__ int32_t *)sync_counter) + 1;
-
+    shmemi_store((__gm__ int32_t *)sync_counter, count);
+    dcci_cacheline((__gm__ uint8_t *)sync_counter);
     while (shift < size) {
         int pre_pe_in_team = (my_pe_in_team - shift + size) % size;
         int next_pe_in_team = (my_pe_in_team + shift) % size;
@@ -46,8 +47,6 @@ SHMEM_DEVICE void shmemi_barrier_cross_host(shmemi_team_t *team)
 
         shift *= SHIFT_MULTIPLIER;
     }
-
-    shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
 
 SHMEM_DEVICE void shmemi_handle(shmem_team_t tid)

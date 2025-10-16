@@ -203,7 +203,7 @@ int32_t shmemi_team_finalize()
     }
 
     if (g_state.sync_counter != 0) {
-        aclrtFree(reinterpret_cast<void *>(g_state.sync_counter));
+        shmem_free(reinterpret_cast<void *>(g_state.sync_counter));
         g_state.sync_counter = 0;
     }
     if (g_state.sync_pool != 0) {

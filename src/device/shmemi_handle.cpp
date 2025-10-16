@@ -19,9 +19,8 @@ SHMEM_GLOBAL void k_shmem_handle_wait(int32_t tid)
 }
 
 // interfaces
-int32_t shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream)
+void shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream)
 {
     // call barrier kernel
     k_shmem_handle_wait<<<1, nullptr, stream>>>((int32_t)handle.team_id);
-    return aclrtSynchronizeStream(stream);
 }

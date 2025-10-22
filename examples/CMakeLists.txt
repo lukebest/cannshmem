@@ -59,6 +59,8 @@ foreach(EXAMPLE
     matmul_allreduce
     rdma_perftest
     rdma_demo
+    rdma_handlewait_test/unuse_handlewait
+    rdma_handlewait_test/use_handlewait
 )
     add_subdirectory(${EXAMPLE})
 endforeach()

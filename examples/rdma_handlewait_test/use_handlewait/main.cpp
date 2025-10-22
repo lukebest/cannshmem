@@ -45,7 +45,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
-    uint8_t *ptr = static_cast<uint32_t*>(shmem_malloc(mem_size));
+    uint8_t *ptr = static_cast<uint8_t*>(shmem_malloc(mem_size));
     uint8_t *ptr_A = ptr + half_mem_size;
 
     // 初始化数据
@@ -88,7 +88,6 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     }
 
     // 去初始化
-    status = aclrtFreeHost(y_host);
     shmem_free(ptr);
     status = shmem_finalize();
     status = aclrtDestroyStream(stream);

@@ -21,7 +21,7 @@ extern "C" __global__ __aicore__ void device_all_gather_test(GM_ADDR gva, int me
     AscendC::TBuf<AscendC::TPosition::VECOUT> buf;
     pipe.InitBuffer(buf, UB_ALIGN_SIZE * 2);
     // 需要用户指定一个长度大于等于64字节的LocalTensor用于RDMA任务下发
-    AscendC::LocalTensor<uint32_t> ubLocal = buf.GetWithOffset<uint32_t>(UB_ALIGN_SIZE * 2, 0);
+    AscendC::LocalTensor<uint8_t> ubLocal = buf.GetWithOffset<uint8_t>(UB_ALIGN_SIZE * 2, 0);
     int64_t my_rank = shmem_my_pe();
     int64_t pe_size = shmem_n_pes();
     AscendC::PipeBarrier<PIPE_ALL>();
@@ -31,7 +31,7 @@ extern "C" __global__ __aicore__ void device_all_gather_test(GM_ADDR gva, int me
             continue;
         }
         shmem_roce_put_mem_nbi(gva + message_length * my_rank, gva + message_length * my_rank,
-                                (__ubuf__ uint32_t*)ubLocal.GetPhyAddr(), message_length, i);
+                                (__ubuf__ uint8_t*)ubLocal.GetPhyAddr(), message_length, i);
     }
 }
 
@@ -48,12 +48,12 @@ extern "C" __global__ __aicore__ void device_copy(GM_ADDR src, GM_ADDR dst, int 
     shmem_quiet();
 }
 
-void allgather_demo(uint32_t block_dim, void* stream, uint32_t* gva, int elements)
+void allgather_demo(uint32_t block_dim, void* stream, uint8_t* gva, int elements)
 {
     device_all_gather_test<<<block_dim, nullptr, stream>>>(gva, elements);
 }
 
-void copy_demo(uint32_t block_dim, void* stream, uint32_t* src, uint32_t* dst, int elements)
+void copy_demo(uint32_t block_dim, void* stream, uint8_t* src, uint8_t* dst, int elements)
 {
     device_copy<<<block_dim, nullptr, stream>>>(src, dst, elements);
 }

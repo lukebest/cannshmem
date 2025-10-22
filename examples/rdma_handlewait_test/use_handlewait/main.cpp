@@ -21,8 +21,8 @@ int g_npus = 8;
 const char *ipport;
 int f_rank = 0;
 int f_npu = 0;
-extern void allgather_demo(uint32_t block_dim, void* stream, uint32_t* gva, int message_length);
-void copy_demo(uint32_t block_dim, void* stream, uint32_t* src, uint32_t* dst, int elements);
+extern void allgather_demo(uint32_t block_dim, void* stream, uint8_t* gva, int message_length);
+void copy_demo(uint32_t block_dim, void* stream, uint8_t* src, uint8_t* dst, int elements);
 
 int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
 {
@@ -45,8 +45,8 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
-    uint32_t *ptr = static_cast<uint32_t*>(shmem_malloc(mem_size));
-    uint32_t *ptr_A = ptr + half_mem_size;
+    uint8_t *ptr = static_cast<uint32_t*>(shmem_malloc(mem_size));
+    uint8_t *ptr_A = ptr + half_mem_size;
 
     // 初始化数据
     uint32_t trans_size = 32UL * 1024UL;
@@ -59,7 +59,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
                          input.data(), trans_size * sizeof(int32_t), ACL_MEMCPY_HOST_TO_DEVICE);
 
     // AllGather
-    allgather_demo(1, stream, (uint32_t *)ptr, trans_size * sizeof(int32_t));
+    allgather_demo(1, stream, (uint8_t *)ptr, trans_size * sizeof(int32_t));
 
     shmem_handle_t handle;
     handle.team_id = SHMEM_TEAM_WORLD;

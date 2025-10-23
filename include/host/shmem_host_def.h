@@ -154,6 +154,23 @@ typedef struct {
 typedef int (*shmem_decrypt_handler)(const char *cipherText, size_t cipherTextLen, char *plainText,
                                      size_t &plainTextLen);
 
+constexpr uint16_t SHMEM_UNIQUE_ID_INNER_LEN = 60;
+
+typedef struct {
+    int32_t version;
+    char internal[SHMEM_UNIQUE_ID_INNER_LEN];
+} shmem_uniqueid_t;
+
+constexpr int32_t SHMEM_UNIQUEID_VERSION = (1 << 16) + sizeof(shmem_uniqueid_t);
+
+#define SHMEM_UNIQUEID_INITIALIZER                      \
+    {                                                   \
+        SHMEM_UNIQUEID_VERSION,                         \
+        {                                               \
+            0                                           \
+        }                                               \
+    }                                                   \
+
 #ifdef __cplusplus
 }
 #endif

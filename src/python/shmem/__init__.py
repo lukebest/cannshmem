@@ -12,7 +12,8 @@ import os
 import sys
 import ctypes
 import torch_npu
-from ._pyshmem import (shmem_init, shmem_finialize, shmem_malloc, shmem_free, \
+from ._pyshmem import (shmem_init, shmem_get_unique_id, shmem_init_using_unique_id, \
+                       shmem_finialize, shmem_malloc, shmem_free, \
                        shmem_ptr, my_pe, pe_count, set_conf_store_tls_key, mte_set_ub_params, team_split_strided,
                        team_split_2d, team_translate_pe, \
                        team_destroy, InitAttr, OpEngineType, shmem_set_attributes, shmem_set_data_op_engine_type,
@@ -34,6 +35,8 @@ for lib in ["libshmem.so"]:
 
 __all__ = [
     'shmem_init',
+    'shmem_get_unique_id',
+    'shmem_init_using_unique_id',
     'shmem_finialize',
     'shmem_malloc',
     'shmem_free',

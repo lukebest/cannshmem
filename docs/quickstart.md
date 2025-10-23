@@ -135,3 +135,37 @@ shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
 torchrun --nproc-per-node=k test.py // k为想运行的ranksize
 ```
 看到日志中打印出“test.py running success!”即为demo运行成功
+
+## unique id 初始化方式
+
+注：使用unique id的接口初始化，需要手动配置环境变量SHMEM_UID_SESSION_ID或者SHMEM_UID_SOCK_IFNAM，同时配置时只读SHMEM_UID_SESSION_ID
+SHMEM_UID_SESSION_ID配置示例：
+SHMEM_UID_SOCK_IFNAM=127.0.0.1:1234
+SHMEM_UID_SOCK_IFNAM=[6666:6666:6666:6666:6666:6666:6666:6666]:886
+SHMEM_UID_SOCK_IFNAM配置示例：
+SHMEM_UID_SOCK_IFNAM=enpxxxx:inet4  取ipv4
+SHMEM_UID_SOCK_IFNAM=enpxxxx:inet6  取ipv6
+不配置默认取eth:inet4
+
+- python初始化例子
+```python
+import shmem as ash
+
+# xxx
+
+uid = ash.shmem_get_unique_id()
+ret = ash.shmem_init_using_unique_id(rank, world_size, mem_size, uid)
+
+# xxx
+```
+
+准备以上启动代码`init.py`后，使用`torchrun --nproc-per-node 8 init.py`，其中进程数 8 根据实际需要改动，更详细的例子，请参考`unique_id_test.py`文件。
+
+- c++初始化例子
+```cpp
+shmem_uniqueid_t uid;
+shmem_init_attr_t *attr;
+int ret = shmem_get_uniqueid(&uid);
+ret = shmem_set_attr(my_rank, n_ranks, mem_size, nullptr, &attr); // 第4个参数是ip_port，当前场景传入nullptr
+ret = shmem_set_attr_uniqueid_args(my_rank, n_ranks, &uid, attr);
+```

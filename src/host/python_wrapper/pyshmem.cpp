@@ -65,6 +65,30 @@ int shmem_initialize(shmem_init_attr_t &attributes)
     return 0;
 }
 
+py::bytes shmem_get_unique_id()
+{
+    shmem_uniqueid_t uid;
+    auto ret = shmem_get_uniqueid(&uid);
+    if (ret != 0) {
+        std::cerr << "get unique id failed " << ret << std::endl;
+    }
+    return py::bytes(reinterpret_cast<const char*>(&uid), sizeof(uid));
+}
+
+int shmem_initialize_unique_id(int rank, int world_size, int64_t mem_size, const std::string &bytes)
+{
+    shmem_uniqueid_t uid;
+    memcpy(&uid, bytes.data(), sizeof(uid));
+    shmem_init_attr_t *attr;
+    auto ret = shmem_set_attr(rank, world_size, mem_size, nullptr, &attr);
+    if (ret != 0) {
+        std::cerr << "set attr failed " << ret << std::endl;
+        return ret;
+    }
+
+    return shmem_set_attr_uniqueid_args(rank, world_size, &uid, attr);
+}
+
 int32_t shmem_set_op_engine_type(shmem_init_attr_t &attributes, data_op_engine_type_t value)
 {
     int ret = shmem_set_data_op_engine_type(&attributes, value);
@@ -225,6 +249,26 @@ Returns:
     m.def("shmem_finialize", &shmem_finalize, py::call_guard<py::gil_scoped_release>(),
           R"(
 Finalize share memory module.
+    )");
+
+    m.def("shmem_init_using_unique_id", &shm::shmem_initialize_unique_id, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
+          py::arg("npes"), py::arg("mem_size"), py::arg("uid"), R"(
+Initialize share memory module using unique id. This function need run with PTA.
+
+Arguments:
+    mype(int): local processing element index, range in [0, npes).
+    npes(int): total count of processing elements.
+    mem_size(int): memory size for each processing element in bytes.
+    uid(shmem_uid): shmem uid
+Returns:
+    returns zero on success. On error, -1 is returned.
+    )");
+
+    m.def("shmem_get_unique_id", &shm::shmem_get_unique_id, py::call_guard<py::gil_scoped_release>(), R"(
+Get the unique id. This function need run with PTA.
+
+Returns:
+    returns unique id on success. On error, None is returned.
     )");
 
     m.def("shmem_set_attributes", &shm::shmem_set_attributes, py::call_guard<py::gil_scoped_release>(),

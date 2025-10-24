@@ -77,7 +77,7 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
         // 校验 ptr_A 中的内容
         status = aclrtMallocHost(reinterpret_cast<void **>(&y_host), input_size);
         status = aclrtMemcpy(y_host, input_size, ptr_A, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
-        std::cout << "Rank " << rank_id << " AllGather result in ptr_A without handle_wait:" << std::endl;
+        std::cout << "Rank " << rank_id << " AllGather result in ptr_A after handle_wait:" << std::endl;
         int unexpected_count = 0;
         for (int i = 0; i < n_ranks; i++) {
             for (int j = 0; j < trans_size; j++) {

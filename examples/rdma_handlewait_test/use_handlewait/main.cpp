@@ -69,21 +69,24 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
 
     status = aclrtSynchronizeStream(stream);
 
-    // 打印NPU的内容
+    // 校验NPU的内容
     if (rank_id <= n_ranks) {
         int32_t *y_host;
         size_t input_size = n_ranks * trans_size * sizeof(int32_t);
-        
-        // 打印 ptr_A 中的内容
-        status = aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
+
+        // 校验 ptr_A 中的内容
+        status = aclrtMallocHost(reinterpret_cast<void **>(&y_host), input_size);
         status = aclrtMemcpy(y_host, input_size, ptr_A, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
-        std::cout << "Rank " << rank_id << " AllGather result in ptr_A after handle_wait:" << std::endl;
+        std::cout << "Rank " << rank_id << " AllGather result in ptr_A without handle_wait:" << std::endl;
+        int unexpected_count = 0;
         for (int i = 0; i < n_ranks; i++) {
             for (int j = 0; j < trans_size; j++) {
-                std::cout << y_host[trans_size * i + j] << " ";
+                if (y_host[trans_size * i + j] != num10 + i) {
+                    unexpected_count++;
+                }
             }
-            std::cout << std::endl;
         }
+        std::cout << "Rank " << rank_id << " has " << unexpected_count << " unexpected values." << std::endl;
         status = aclrtFreeHost(y_host);
     }
 

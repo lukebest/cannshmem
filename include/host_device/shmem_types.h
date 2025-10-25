@@ -100,6 +100,21 @@ typedef int shmem_team_t;
 
 /**@} */ // end of group_typedef
 
+/**
+ * @addtogroup group_structs
+ * @{
+*/
+/**
+ * @struct shmem_handle_t
+ * @brief Handle info used for non-blocking API synchronization.
+ *
+ * - shmem_team_t team_id: Team ID used for synchronization.
+*/
+struct shmem_handle_t {
+    shmem_team_t team_id;
+};
+
+/**@} */ // end of group_structs
 #ifdef __cplusplus
 }
 #endif

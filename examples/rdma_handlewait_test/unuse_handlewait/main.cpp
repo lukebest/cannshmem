@@ -22,6 +22,7 @@ const char *ipport;
 int f_rank = 0;
 int f_npu = 0;
 extern void allgather_demo(uint32_t block_dim, void* stream, uint8_t* gva, int message_length);
+void copy_demo(uint32_t block_dim, void* stream, uint8_t* src, uint8_t* dst, int elements);
 
 int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
 {
@@ -29,6 +30,9 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     int32_t device_id = rank_id % g_npus + f_npu;
     int status = 0;
     const int num10 = 10;
+    const uint32_t mem_size = 1024UL * 1024UL;
+    const uint32_t half_mem_size = 512UL * 1024UL;
+
     aclrtStream stream = nullptr;
 
     status = aclInit(nullptr);
@@ -41,10 +45,11 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     shmem_set_conf_store_tls(false, nullptr, 0);
     status = shmem_init_attr(attributes);
 
-    uint8_t *ptr = static_cast<uint8_t*>(shmem_malloc(1024));
+    uint8_t *ptr = static_cast<uint8_t*>(shmem_malloc(mem_size));
+    uint8_t *ptr_A = ptr + half_mem_size;
 
     // 初始化数据
-    uint32_t trans_size = 16;
+    uint32_t trans_size = 32UL * 1024UL;
     std::vector<int32_t> input(trans_size, 0);
     for (int i = 0; i < trans_size; i++) {
         input[i] = (rank_id + num10);
@@ -55,27 +60,33 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
 
     // AllGather
     allgather_demo(1, stream, (uint8_t *)ptr, trans_size * sizeof(int32_t));
-    shmem_handle_t handle;
-    handle.team_id = SHMEM_TEAM_WORLD;
-    shmem_handle_wait(handle, stream);
+
+    copy_demo(1, stream, ptr, ptr_A, n_ranks * trans_size * sizeof(int32_t));
+
     status = aclrtSynchronizeStream(stream);
 
-    // 结果校验打印
-    int32_t *y_host;
-    size_t input_size = n_ranks * trans_size * sizeof(int32_t);
-    status = aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
-    status = aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
+    // 校验NPU的内容
+    if (rank_id <= n_ranks) {
+        int32_t *y_host;
+        size_t input_size = n_ranks * trans_size * sizeof(int32_t);
 
-    for (int i = 0; i < n_ranks; i++) {
-        for (int j = 0; j < 16; j++) {
-            if (y_host[trans_size * i + trans_size / 16 * j] != num10 + i) {
-                std::cout << y_host[trans_size * i + trans_size / 16 * j] << " != " << num10 + i << std::endl;
-                std::exit(EXIT_FAILURE);
+        // 校验 ptr_A 中的内容
+        status = aclrtMallocHost(reinterpret_cast<void **>(&y_host), input_size);
+        status = aclrtMemcpy(y_host, input_size, ptr_A, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
+        std::cout << "Rank " << rank_id << " AllGather result in ptr_A without handle_wait:" << std::endl;
+        int unexpected_count = 0;
+        for (int i = 0; i < n_ranks; i++) {
+            for (int j = 0; j < trans_size; j++) {
+                if (y_host[trans_size * i + j] != num10 + i) {
+                    unexpected_count++;
+                }
             }
         }
+        std::cout << "Rank " << rank_id << " has " << unexpected_count << " unexpected values." << std::endl;
+        status = aclrtFreeHost(y_host);
     }
+
     // 去初始化
-    status = aclrtFreeHost(y_host);
     shmem_free(ptr);
     status = shmem_finalize();
     status = aclrtDestroyStream(stream);

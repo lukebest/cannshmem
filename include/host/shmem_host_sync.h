@@ -37,6 +37,12 @@ extern "C" {
  */
 SHMEM_HOST_API uint64_t shmemx_get_ffts_config();
 
+/**
+ * @fn SHMEM_HOST_API void shmem_handle_wait(shmem_handle_t handle)
+ * @brief Wait asynchronous RMA operations to finish.
+ */
+SHMEM_HOST_API void shmem_handle_wait(shmem_handle_t handle, aclrtStream stream);
+
 #ifdef __cplusplus
 }
 #endif

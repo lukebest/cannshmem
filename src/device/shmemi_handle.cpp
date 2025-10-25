@@ -7,17 +7,20 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef SHMEMI_DEVICE_INTF_H
-#define SHMEMI_DEVICE_INTF_H
+#include "acl/acl.h"
+#include "kernel_operator.h"
 
-#include "stdint.h"
-#include "host_device/shmem_types.h"
+#include "shmem_api.h"
 
-// internal kernels
-int32_t shmemi_memset(int32_t *array, int32_t len, int32_t val, int32_t count);
+// kernels
+SHMEM_GLOBAL void k_shmem_handle_wait(int32_t tid)
+{
+    shmemi_handle(tid);
+}
 
-int32_t shmemi_barrier_on_stream(shmem_team_t tid, void *stream);
-
-void shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream);
-
-#endif
+// interfaces
+void shmemi_handle_wait_on_stream(shmem_handle_t handle, aclrtStream stream)
+{
+    // call barrier kernel
+    k_shmem_handle_wait<<<1, nullptr, stream>>>((int32_t)handle.team_id);
+}

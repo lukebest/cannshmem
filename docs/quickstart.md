@@ -64,7 +64,7 @@ int32_t ret = shmem_set_conf_store_tls(false, null, 0);
 1.在shmem/目录编译:
 
 ```sh
-bash scripts/build.sh
+bash scripts/build.sh -examples
 ```
 
 2.在shmem/examples/matmul_allreduce目录执行demo:

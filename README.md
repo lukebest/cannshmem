@@ -1,16 +1,17 @@
 SHMEM
 ===
+🔥 [2025/10] SHMEM项目首次上线。
 
-## 介绍
+## 一、什么是SHMEM
+### 介绍
 本系统主要面向昇腾平台上的模型和算子开发者，提供便携易用的多机多卡内存访问方式，方便用户开发在卡间同步数据，加速通信或通算融合类算子开发。  
-详细资料请参考[SHMEM](https://shmem-doc.pages.dev/)
 
-## 软件架构
+### 软件架构
 共享内存库接口主要分为host和device接口部分：
 - host侧接口提供初始化、内存管理、通信域管理以及同步功能。
 - device侧接口提供内存访问、同步以及通信域管理功能。
 
-## 目录结构说明
+### 目录结构说明
 详细介绍见[code_organization](docs/code_organization.md)
 ``` 
 ├── 3rdparty // 依赖的第三方库
@@ -21,17 +22,42 @@ SHMEM
 ├── src      // 源代码
 └── tests    // 测试用例
 ```
+## 二、环境构建
 
-## 软件硬件配套说明
+### 软件硬件配套说明
 - 硬件型号支持 
   - Atlas 800I A2/A3 系列产品
   - Atlas 800T A2/A3 系列产品
 - 平台：aarch64/x86
-- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1及之后版本。Ascend HDK版本为商发版本，CANN版本为社区版本，暂无支持商用版本。（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/canncommercial/81RC1/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
+- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1及之后版本。Ascend HDK版本为商发版本，CANN版本为社区版本，暂无支持商用版本。（参考《[CANN软件安装指南](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha002/softwareinst/instg/instg_0000.html?Mode=PmIns&InstallType=local&OS=Ubuntu&Software=cannToolKit)》安装CANN开发套件包以及配套固件和驱动）  
 cmake >= 3.19  
 GLIBC >= 2.28
 
-## 快速上手
+### 快速安装CANN软件
+本节提供快速安装CANN软件的示例命令，更多安装步骤请参考[详细安装指南](#cann详细安装指南)。
+
+#### 安装前准备
+在线安装和离线安装时，需确保已具备Python环境及pip3，当前CANN支持Python3.7.x至3.11.4版本。
+离线安装时，请单击[获取链接](https://www.hiascend.com/developer/download/community/result?module=cann)下载CANN软件包，并上传到安装环境任意路径。
+#### 安装CANN
+```shell
+chmod +x Ascend-cann-toolkit_8.2.RC1_linux-$(arch).run
+./Ascend-cann-toolkit_8.2.RC1_linux-$(arch).run --install
+```
+#### 安装后配置
+配置环境变量脚本set_env.sh，当前安装路径以${HOME}/Ascend为例。
+```
+source ${HOME}/Ascend/ascend-toolkit/set_env.sh
+```  
+安装业务运行时依赖的Python第三方库（如果使用root用户安装，请将命令中的--user删除）。
+```
+pip3 install attrs cython 'numpy>=1.19.2,<=1.24.0' decorator sympy cffi pyyaml pathlib2 psutil protobuf==3.20.0 scipy requests absl-py --user
+```
+### CANN详细安装指南 
+开发者可访问[昇腾文档-昇腾社区](https://www.hiascend.com/document)->CANN社区版->软件安装，查看CANN软件安装引导，根据机器环境、操作系统和业务场景选择后阅读详细安装步骤。
+
+## 三、快速上手
+### SHMEM编译
  - 设置CANN环境变量<br>
     ```sh
     # root用户安装（默认路径）
@@ -56,55 +82,97 @@ GLIBC >= 2.28
     ```
     出现提示`xxx install success!`则安装成功
 
-shmem 默认开启tls通信加密。如果需要关闭，需要调用接口主动关闭：
+注意：shmem 默认开启tls通信加密。如果需要关闭，需要调用接口主动关闭：
 ```c
 int32_t ret = shmem_set_conf_store_tls(false, null, 0);
 ```
 具体细节详见安全声明章节
 
-执行一个样例matmul_allreduce算子。  
-1.在源码shmem/目录编译:
+### 执行样例算子Demo
+以执行一个样例matmul_allreduce算子Demo为例：  
+1. 在源码shmem/目录编译:
 
-```sh
-bash scripts/build.sh -examples
-```
+   ```sh
+   bash scripts/build.sh -examples
+   ```
 
-2.在shmem/examples/matmul_allreduce目录执行demo:
+2. 在shmem/examples/matmul_allreduce目录执行demo:
 
-```sh
-bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
-```
-注：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
+   ```sh
+   bash scripts/run.sh -ranks 2 -M 1024 -K 2048 -N 8192
+   ```
+   注意：example及其他样例代码仅供参考，在生产环境中请谨慎使用。
 
-3.在example及其他样例代码中提供设备侧打印函数`cce::printf`功能，用法与C标准库的printf一致。
+### 功能自测用例
 
-若想使用该功能需要修改`examples\CMakeLists.txt`，为`target_compile_options`添加编译选项`--cce-enable-print`。
-
-注：这个功能在CANN 8.2 T103版本支持。
-
-## 功能自测用例
-
- - 共享内存库接口单元测试
-在工程目录下执行
+共享内存库接口单元测试，在工程目录下执行
 ```sh
 bash scripts/build.sh -uttests
 bash scripts/run.sh
 ```
-run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的卡数、ip端口、gtest_filter等  
-
-例
+run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的卡数、ip端口、gtest_filter等，例如：
 
 ```sh
 # 8卡，ip:port 127.0.0.1:8666，运行所有*Init*用例
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
-## 在样例工程使用Ascend C算子调测API
 
+### python侧test用例 
+注意：python接口API列表可参考：[python接口API列表](./docs/pythonAPI.md)。
+
+1. 在scripts目录下编译的时候，带上build python的选项
+
+   ```sh
+   bash build.sh -python_extension
+   ```
+2. 在install目录下，source环境变量
+
+   ```sh
+   source set_env.sh
+   ```
+3. 在src/python目录下，进行setup，获取到wheel安装包
+
+   ```sh
+   python3 setup.py bdist_wheel
+   ```
+4. 在src/python/dist目录下，安装wheel包
+
+   ```sh
+   pip3 install shmem-xxx.whl --force-reinstall
+   ```
+5. 设置是否开启TLS认证，默认开启，若关闭TLS认证，请使用如下接口
+
+   ```python
+   import shmem as shm
+   shm.set_conf_store_tls(False, "")   # 关闭tls认证
+   ```
+
+   ```python
+   import shmem as shm
+   tls_info = "xxx"
+   shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
+   ```
+6. 使用torchrun运行测试demo
+
+   ```sh
+   torchrun --nproc-per-node=k test.py // k为想运行的ranksize
+   ```
+   看到日志中打印出“test.py running success!”即为demo运行成功
+
+## 四、在样例工程使用调测功能
+### cce::printf
+#### 介绍
+在example及其他样例代码中可使用设备侧打印函数`cce::printf`功能，用法与C标准库的printf一致。
+#### 开启方法
+若想使用该功能需要修改`examples\CMakeLists.txt`，为`target_compile_options`添加编译选项`--cce-enable-print`。
+
+注意：cce::printf功能为编译器侧提供的能力，仅在CANN 8.2 T103版本支持，若您不想安装该版本的CANN，可使用[Ascend C算子调测API](#ascend-c算子调测api)提供的方法。
+### Ascend C算子调测API
 AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的打印、Tensor内容的查看(Dump)。
 
-关于kernel调测api的详细介绍，可参考[DumpTensor](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/82RC1alpha002/API/ascendcopapi/atlasascendc_api_07_0192.html)和[printf](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/82RC1alpha002/API/ascendcopapi/atlasascendc_api_07_0193.html).
+关于kernel调测api的详细介绍，可参考[DumpTensor](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha003/API/ascendcopapi/atlasascendc_api_07_0192.html)和[printf](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha003/API/ascendcopapi/atlasascendc_api_07_0193.html)。
 
-### 插入调试代码
+#### 插入调试代码
 
 1. 修改使用该功能的核函数入口和相关调用代码，增加开启调测功能（`#if defined(ENABLE_ASCENDC_DUMP)`）的编译时代码，具体可参考`examples/matmul_allreduce/main.cpp`。
 2. 在想进行调试的层级，增加调测API调用。
@@ -132,8 +200,7 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
    }
    ```
 
-
-### 编译运行
+#### 编译运行
 
 1. 打开工具的编译开关`-enable_ascendc_dump`， 使能AscendC算子调测API编译算子样例。
 
@@ -147,70 +214,23 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
    ```
 - ⚠ 注意事项
   - 目前`AscendC算子调测API`**不**支持打印`FixPipe`上的数值。
-## python侧test用例     [python接口API列表](./doc/pythonAPI.md)
 
-1. 在scripts目录下编译的时候，带上build python的选项
+## 五、参与贡献
+ 
+1.  fork仓库
+2.  修改并提交代码
+3.  新建 Pull-Request
 
-```sh
-bash build.sh -python_extension
-```
-
-2. 在install目录下，source环境变量
-
-```sh
-source set_env.sh
-```
-
-3. 在src/python目录下，进行setup，获取到wheel安装包
-
-```sh
-python3 setup.py bdist_wheel
-```
-
-4. 在src/python/dist目录下，安装wheel包
-
-```sh
-pip3 install shmem-xxx.whl --force-reinstall
-```
-
-5. 设置是否开启TLS认证，默认开启，若关闭TLS认证，请使用如下接口
-
-```python
-import shmem as shm
-shm.set_conf_store_tls(False, "")   # 关闭tls认证
-```
-
-```python
-import shmem as shm
-tls_info = "xxx"
-shm.set_conf_store_tls(True, tls_info)      # 开启TLS认证
-```
-
-6. 使用torchrun运行测试demo
-
-```sh
-torchrun --nproc-per-node=k test.py // k为想运行的ranksize
-```
-看到日志中打印出“test.py running success!”即为demo运行成功
-
-## 文档介绍
-- [api_demo](docs/api_demo.md) - api调用示例
-- [example](docs/example.md) - AllGather算子demo
-- [related_scripts](docs/related_scripts.md) - 相关脚本介绍
-- [Troubleshooting_FAQs](docs/Troubleshooting_FAQs.md) - 使用限制&常见问题
-
-## 安全声明
-[安全声明](docs/security.md)
-
-## 版权声明
-Copyright (c) 2025 Huawei Technologies Co., Ltd.
-
-This file is a part of the CANN Open Software.
-Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
-Please refer to the License for details. You may not use this file except in compliance with the License.
-
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-See LICENSE in the root of the software repository for the full text of the License.
-
-## 许可证
-[CANN Open Software License Agreement Version 1.0](./LICENSE)
+详细步骤可参考[贡献指南](docs/CONTRIBUTING.md)
+## 六、学习资源
+- [api_demo](docs/api_demo.md)：api调用示例
+- [code_organization](docs/code_organization.md)：
+- [example](docs/example.md)：AllGather算子demo
+- [quickstart](docs/quickstart.md)：编译运行流程说明
+- [related_scripts](docs/related_scripts.md)：相关脚本介绍
+- [pythonAPI](docs/pythonAPI.md)：SHMEM对外接口说明
+- [Troubleshooting_FAQs](docs/Troubleshooting_FAQs.md)：使用限制&常见问题
+- [CONTRIBUTING](docs/CONTRIBUTING.md)：如何向SHMEM贡献代码
+## 七、参考文档
+- **[CANN社区版文档](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha002/index/index.html)**  
+- **[SHMEM文档](https://shmem-doc.pages.dev/)**

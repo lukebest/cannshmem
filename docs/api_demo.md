@@ -90,7 +90,7 @@ ret = shmem_set_log_level(level);
 
 ### 注册私钥口令解密函数
 
-shmem的多卡之间业务面TCP通信，通过memfabric_hybrid提供的能力实现，为了保证通信安全，该特性默认开启，使用时传入初始化TLS信息，TLS信息格式参考docs/security.md样例，其中私钥是密文，私钥口令以密文形式存储，需通过注册的解密回调函数进行解密，调用者实现具体的解密逻辑。
+shmem的多卡之间业务面TCP通信，通过memfabric_hybrid提供的能力实现，为了保证通信安全，该特性默认开启，使用时传入初始化TLS信息，TLS信息格式参考SECURITY.md样例，其中私钥是密文，私钥口令以密文形式存储，需通过注册的解密回调函数进行解密，调用者实现具体的解密逻辑。
 
 ```c
 int my_key_password_decrypt_handler(const char *cipherText, size_t cipherTextLen, char *plainText, size_t &plainTextLen)

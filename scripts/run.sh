@@ -115,7 +115,8 @@ while [[ $# -gt 0 ]]; do
                     echo "Invalid test_filter value"
                     exit 1
                 fi
-                TEST_FILTER="*$2*"
+                ESCAPED_VALUE=$(printf '%q' "$FILTERED_VALUE")
+                TEST_FILTER="*$ESCAPED_VALUE*"
                 shift 2
             else
                 echo "Error: -test_filter requires a value."

@@ -82,13 +82,13 @@ ASLR（address space layout randomization）开启后能增强漏洞攻击防护
 ## 公网地址声明
 本项目代码中包含的公网地址声明如下所示：
 
-| 类型  |        开源代码地址        | 文件名                  | 公网IP地址/公网URL地址/域名/邮箱地址/压缩文件地址                                           | 用途说明                                    |
-| :---: | :------------------------: | :---------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------ |
-| 依赖  |           不涉及           | build.sh                | https://gitee.com/ascend/catlass                                                            | 从gitee下载catlass源码，作用编译依赖        |
-| 依赖  | https://github.com/doxygen | build.sh                | https://github.com/doxygen/doxygen/releases/download/Release_1_9_6/doxygen-1.9.6.src.tar.gz | 从github下载doxygen-1.9.6源码，作用编译依赖 |
-| 依赖  |           不涉及           | build.sh                | https://gitee.com/mirrors/googletest.git                                                    | 从gitee下载googletest源码，单元测试框架依赖 |
-| 依赖  |           不涉及           | .gitmodules             | https://gitee.com/ascend/memfabric_hybrid.git                                               | 依赖的开源代码仓                            |
-| 文档  |           不涉及           | shmemi_device_barrier.h | https://www.inf.ed.ac.uk/teaching/courses/ppls/BarrierPaper.pdf                             | 并行编程语言和系统                          |
+| 类型  |        开源代码地址        | 文件名                  | 公网IP地址/公网URL地址/域名/邮箱地址/压缩文件地址                                           | 用途说明                                      |
+| :---: | :------------------------: | :---------------------- | :------------------------------------------------------------------------------------------ | :-------------------------------------------- |
+| 依赖  |           不涉及           | build.sh                | https://gitee.com/ascend/catlass                                                            | 从gitee下载catlass源码，作用编译依赖          |
+| 依赖  | https://github.com/doxygen | build.sh                | https://github.com/doxygen/doxygen/releases/download/Release_1_9_6/doxygen-1.9.6.src.tar.gz | 从github下载doxygen-1.9.6源码，作用编译依赖   |
+| 依赖  |           不涉及           | build.sh                | https://gitee.com/mirrors/googletest.git                                                    | 从gitee下载googletest源码，单元测试框架依赖   |
+| 依赖  |           不涉及           | .gitmodules             | https://gitee.com/ascend/memfabric_hybrid.git                                               | 从gitee下载memfabric_hybrid源码，作用编译依赖 |
+| 文档  |           不涉及           | shmemi_device_barrier.h | https://www.inf.ed.ac.uk/teaching/courses/ppls/BarrierPaper.pdf                             | 并行编程语言和系统                            |
 ## 漏洞机制说明
 [漏洞管理](https://gitcode.com/cann/community/blob/master/security/security.md)
 

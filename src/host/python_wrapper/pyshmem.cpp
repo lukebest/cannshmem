@@ -77,6 +77,12 @@ py::bytes shmem_get_unique_id()
 
 int shmem_initialize_unique_id(int rank, int world_size, int64_t mem_size, const std::string &bytes)
 {
+    if (bytes.size() < sizeof(shmem_uniqueid_t)) {
+        std::cerr << "Error: Input bytes size (" << bytes.size()
+                  << ") is smaller than required size (" << sizeof(shmem_uniqueid_t)
+                  << ")." << std::endl;
+        return -1;
+    }
     shmem_uniqueid_t uid;
     memcpy(&uid, bytes.data(), sizeof(uid));
     shmem_init_attr_t *attr;

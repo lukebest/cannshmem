@@ -338,7 +338,7 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
     int32_t result = SHMEM_SUCCESS;
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
         if ((ifa->ifa_addr == nullptr) || (ifa->ifa_addr->sa_family != sockType) || (ifa->ifa_netmask == nullptr) ||
-            (strcmp(ifa->ifa_name, masterIf) != 0)) {
+            ((masterIf[0] != '\0') && (ifa->ifa_name != nullptr) && (strcmp(ifa->ifa_name, masterIf) != 0))) {
             continue;
         }
         if (sockType == AF_INET) {
@@ -356,6 +356,7 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
         }
         break;
     }
+    freeifaddrs(ifaddr);
     return result;
 }
 
@@ -375,7 +376,7 @@ int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, c
             std::string ipStr = ipPortStr.substr(1, found);
             std::string portStr = ipPortStr.substr(found + 1);
 
-            std::strncpy(ip, ipStr.c_str(), MAX_IP);
+            std::snprintf(ip, MAX_IP, "%s", ipStr.c_str());
 
             port = std::stoi(portStr);
         } else {
@@ -388,7 +389,7 @@ int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, c
             std::string ipStr = ipPortStr.substr(0, found);
             std::string portStr = ipPortStr.substr(found + 1);
 
-            std::strncpy(ip, ipStr.c_str(), MAX_IP);
+            std::snprintf(ip, MAX_IP, "%s", ipStr.c_str());
 
             port = std::stoi(portStr);
         }
@@ -401,6 +402,7 @@ int32_t shmem_set_ip_info(shmem_uniqueid_t *uid, sa_family_t &sockType, char *pt
                           bool is_from_ifa)
 {
     // init default uid
+    SHM_ASSERT_RETURN(uid != nullptr, SHMEM_INVALID_PARAM);
     *uid = SHMEM_UNIQUEID_INITIALIZER;
     shmem_uniqueid_inner_t *innerUID = reinterpret_cast<shmem_uniqueid_inner_t *>(uid);
     SHMEM_CHECK_RET(shmem_get_uid_magic(innerUID));

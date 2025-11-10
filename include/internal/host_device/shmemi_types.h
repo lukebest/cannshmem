@@ -95,7 +95,7 @@ typedef struct {
 
 // host only state
 typedef struct {
-    // typedef void *aclrtStream; as in https://www.hiascend.com/document/detail/zh/canncommercial/80RC3/apiref/appdevgapi/aclcppdevg_03_1355.html
+    // typedef void *aclrtStream; as in https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1/API/appdevgapi/aclcppdevg_03_1355.html
     void *default_stream;
     int8_t default_event_id;
     uint32_t default_block_num;

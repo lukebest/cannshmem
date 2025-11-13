@@ -298,3 +298,11 @@ void shmem_putmem_signal(void *dst, void *src, size_t elem_size, void *sig_addr,
         SHM_LOG_ERROR("device calling transfer failed");
     }
 }
+
+void shmemx_getmem_on_stream(void* dst, void* src, size_t elem_size, int pe, aclrtStream stream)
+{
+    int ret = shmemi_getmem_on_stream((uint8_t *)dst, (uint8_t *)src, elem_size, pe, stream);
+    if (ret < 0) {
+        SHM_LOG_ERROR("shmemi_getmem_on_stream failed");
+    }
+}

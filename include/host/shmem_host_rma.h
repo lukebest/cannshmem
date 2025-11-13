@@ -10,6 +10,7 @@
 #ifndef SHMEM_HOST_RMA_H
 #define SHMEM_HOST_RMA_H
 
+#include "acl/acl.h"
 #include "shmem_host_def.h"
 
 #ifdef __cplusplus
@@ -237,6 +238,18 @@ SHMEM_HOST_API void shmem_putmem_signal_nbi(void* dst, void* src, size_t elem_si
  */
 SHMEM_HOST_API void shmem_putmem_signal(void* dst, void* src, size_t elem_size,
                                         void* sig_addr, int32_t signal, int sig_op, int pe);
+
+/**
+    * @brief Copy contiguous data on symmetric memory from the specified PE to address on the local PE.
+    *
+    * @param dst               [in] Pointer on local device of the destination data.
+    * @param src               [in] Pointer on Symmetric memory of the source data.
+    * @param elem_size         [in] Number of elements in the dest and source arrays.
+    * @param pe                [in] PE number of the remote PE.
+    * @param stream            [in] copy used stream(use default stream if stream == NULL).
+ */
+SHMEM_HOST_API void shmemx_getmem_on_stream(void* dst, void* src, size_t elem_size,
+                                            int pe, aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif

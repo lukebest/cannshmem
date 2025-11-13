@@ -52,7 +52,7 @@ public:
     inline HostGetMemStreamTest()
     {
     }
-    inline void Init(uint8_t *gva, uint8_t *dev, int32_t rank_size_, size_t element_size_, aclrtStream stream)
+    inline void Init(uint8_t *gva, uint8_t *dev, int32_t rank_size_, size_t element_size_, aclrtStream st)
     {
         gva_gm = gva;
         dev_gm = dev;
@@ -65,7 +65,7 @@ public:
     {
         int chunk_size = 16;
         for (int i = 0; i < rank_size; i++) {
-            shmem_getmem_on_stream(static_cast<void *>(dev_gm + chunk_size * i), static_cast<void *>(gva_gm),
+            shmemx_getmem_on_stream(static_cast<void *>(dev_gm + chunk_size * i), static_cast<void *>(gva_gm),
                 chunk_size, i % rank_size, stream);
         }
     }
@@ -112,7 +112,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     ASSERT_EQ(aclrtMemcpy(dev_ptr, input_size, input.data(), input_size, ACL_MEMCPY_HOST_TO_DEVICE), 0);
 
     void *ptr = shmem_malloc(1024);
-    host_test_putmem(ptr, dev_ptr, rank_id, input_size);
+    host_putmem(ptr, dev_ptr, rank_id, input_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
     sleep(sleep_time);
 

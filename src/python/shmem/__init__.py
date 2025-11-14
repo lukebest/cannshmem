@@ -11,6 +11,7 @@
 import os
 import sys
 import ctypes
+import logging
 import torch_npu
 from ._pyshmem import (shmem_init, shmem_get_unique_id, shmem_init_using_unique_id, \
                        shmem_finialize, shmem_malloc, shmem_free, \
@@ -31,7 +32,11 @@ current_dir = os.path.dirname(current_path)
 sys.path.append(current_dir)
 libs_path = os.path.join(os.getenv('SHMEM_HOME_PATH', current_dir), 'shmem/lib')
 for lib in ["libshmem.so"]:
-    ctypes.CDLL(os.path.join(libs_path, lib))
+    lib_path = os.path.join(libs_path, lib)
+    try:
+        ctypes.CDLL(lib_path)
+    except OSError as e:
+        logging.error(f"Failed to load shared library: {lib_path}, {e}")
 
 __all__ = [
     'shmem_init',

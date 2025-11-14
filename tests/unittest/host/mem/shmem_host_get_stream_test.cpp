@@ -61,7 +61,7 @@ public:
         element_size = element_size_;
         stream = st;
     }
-    inline void Process(bool is_nbi = false)
+    inline void Process()
     {
         int chunk_size = 16;
         for (int i = 0; i < rank_size; i++) {
@@ -127,10 +127,11 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     size_t ele_size = 16;
     host_test_getmem_stream((uint8_t *)ptr, (uint8_t *)dev_ptr, rank_size, ele_size, stream);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
+    sleep(sleep_time);
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
-    std::cout << "After getmem:" << p_name;
+    std::cout << "After getmemstream:" << p_name;
     for (int i = 0; i < total_size; i++) {
         std::cout << static_cast<int>(input[i]) << " ";
     }
@@ -139,7 +140,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     for (int i = 0; i < total_size; i++) {
         int stage = i / stage_total;
         if (static_cast<int>(input[i]) != (stage + stage_offset)) {
-            std::cout << "input:" << static_cast<int>(input[i]) << "stage:" << (stage + stage_offset) << std::endl;
+            std::cout << "input:" << static_cast<int>(input[i]) << ", stage:" << (stage + stage_offset) << std::endl;
             flag = 1;
         }
     }

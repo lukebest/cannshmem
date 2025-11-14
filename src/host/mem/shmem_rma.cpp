@@ -299,7 +299,7 @@ void shmem_putmem_signal(void *dst, void *src, size_t elem_size, void *sig_addr,
     }
 }
 
-void shmemx_getmem_on_stream(void* dst, void* src, size_t elem_size, int pe, aclrtStream stream)
+void shmemx_getmem_on_stream(void* dst, void* src, size_t elem_size, int32_t pe, aclrtStream stream)
 {
     int ret = shmemi_getmem_on_stream((uint8_t *)dst, (uint8_t *)src, elem_size, pe, stream);
     if (ret < 0) {

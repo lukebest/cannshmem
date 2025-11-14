@@ -249,7 +249,7 @@ SHMEM_HOST_API void shmem_putmem_signal(void* dst, void* src, size_t elem_size,
     * @param stream            [in] copy used stream(use default stream if stream == NULL).
  */
 SHMEM_HOST_API void shmemx_getmem_on_stream(void* dst, void* src, size_t elem_size,
-                                            int pe, aclrtStream stream);
+                                            int32_t pe, aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif

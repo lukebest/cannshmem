@@ -53,4 +53,18 @@
     FUNC(uint64, uint64_t);   \
     FUNC(char, char)
 
+#define SHMEM_ATOMIC_ADD_FUNC_TYPE_HOST(FUNC) \
+    FUNC(half, op::fp16_t);                   \
+    FUNC(float, float);                       \
+    FUNC(int8, int8_t);                       \
+    FUNC(int16, int16_t);                     \
+    FUNC(int32, int32_t);
+
+#define SHMEM_ATOMIC_ADD_FUNC_TYPE_KERNEL(FUNC) \
+    FUNC(half, half);                           \
+    FUNC(float, float);                         \
+    FUNC(int8, int8_t);                         \
+    FUNC(int16, int16_t);                       \
+    FUNC(int32, int32_t);
+
 #endif  // UT_FUNC_TYPE_H

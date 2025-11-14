@@ -43,6 +43,12 @@ SHMEM_HOST_API uint64_t shmemx_get_ffts_config();
  */
 SHMEM_HOST_API void shmem_handle_wait(shmem_handle_t handle, aclrtStream stream);
 
+/**
+ * @brief The shmemx_barrier_all_on_stream routine is a mechanism for synchronizing all PEs at once.
+ * @param stream           [in] copy used stream (use default stream if stream == NULL)
+ */
+SHMEM_HOST_API void shmemx_barrier_all_on_stream(aclrtStream stream);
+
 #ifdef __cplusplus
 }
 #endif

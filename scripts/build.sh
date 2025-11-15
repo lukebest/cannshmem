@@ -27,6 +27,7 @@ mkdir -p $OUTPUT_DIR
 THIRD_PARTY_DIR=$PROJECT_ROOT/3rdparty
 mkdir -p $THIRD_PARTY_DIR
 RELEASE_DIR=$PROJECT_ROOT/ci/release
+UNDER_DIR=$PROJECT_ROOT/src/
 
 BUILD_TYPE=RELEASE
 PYEXPAND_TYPE=OFF
@@ -40,11 +41,10 @@ GEN_DOC=OFF
 cann_default_path="/usr/local/Ascend/ascend-toolkit"
 
 cd ${PROJECT_ROOT}
-git submodule update --init 3rdparty/memfabric_hybrid
 
 function fn_build()
 {
-    fn_build_memfabric
+    fn_build_under_memfabric
     [ -d build ] && rm -rf build
     mkdir -p build
 
@@ -205,6 +205,21 @@ function fn_build_memfabric()
     cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
     cp -r $THIRD_PARTY_DIR/memfabric_hybrid/output/smem/include/smem $OUTPUT_DIR/memfabric_hybrid/include
     echo "Memfabric_hybrid is successfully installed to $THIRD_PARTY_DIR/memfabric_hybrid"
+}
+
+function fn_build_under_memfabric()
+{
+    cd $UNDER_DIR/memfabric_hybrid
+    bash script/build.sh $BUILD_TYPE OFF OFF $PYEXPAND_TYPE
+    ls -l output/smem
+    cd ${PROJECT_ROOT}
+
+    mkdir -p $OUTPUT_DIR/memfabric_hybrid/lib
+    mkdir -p $OUTPUT_DIR/memfabric_hybrid/include
+    cp -r $UNDER_DIR/memfabric_hybrid/output/hybm/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
+    cp -r $UNDER_DIR/memfabric_hybrid/output/smem/lib64/* $OUTPUT_DIR/memfabric_hybrid/lib
+    cp -r $UNDER_DIR/memfabric_hybrid/output/smem/include/smem $OUTPUT_DIR/memfabric_hybrid/include
+    echo "Memfabric_hybrid is successfully installed to $UNDER_DIR/memfabric_hybrid"
 }
 
 function fn_build_doxygen()

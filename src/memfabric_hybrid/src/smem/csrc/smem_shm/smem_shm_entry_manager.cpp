@@ -40,7 +40,7 @@ Result SmemShmEntryManager::Initialize(const char *configStoreIpPort, uint32_t w
     SM_ASSERT_RETURN(option.ExtractIpPortFromUrl(url) == SM_OK, SM_INVALID_PARAM);
 
     if (rankId == 0 && config->startConfigStore) {
-        store_ = ock::smem::StoreFactory::CreateStore(option.ip, option.port, true, 0);
+        store_ = ock::smem::StoreFactory::CreateStore(option.ip, option.port, true, 0, -1, config->sockFd);
         ip_ = option.ip;
         port_ = option.port;
     } else {

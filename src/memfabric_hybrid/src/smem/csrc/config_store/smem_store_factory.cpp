@@ -36,7 +36,7 @@ std::condition_variable StoreFactory::cv_;
 std::atomic<bool> StoreFactory::stop_{false};
 
 StorePtr StoreFactory::CreateStore(const std::string &ip, uint16_t port, bool isServer, int32_t rankId,
-                                   int32_t connMaxRetry) noexcept
+                                   int32_t connMaxRetry, int32_t sockFd) noexcept
 {
     std::string storeKey = std::string(ip).append(":").append(std::to_string(port));
 
@@ -46,7 +46,7 @@ StorePtr StoreFactory::CreateStore(const std::string &ip, uint16_t port, bool is
         return pos->second;
     }
 
-    auto store = SmMakeRef<TcpConfigStore>(ip, port, isServer, rankId);
+    auto store = SmMakeRef<TcpConfigStore>(ip, port, isServer, rankId, sockFd);
     SM_ASSERT_RETURN(store != nullptr, nullptr);
 
     if (!isTlsInitialized_ && InitTlsOption() != StoreErrorCode::SUCCESS) {

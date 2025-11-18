@@ -285,11 +285,13 @@ void AccTcpServerDefault::StopAndCleanWorkers(bool afterFork)
 Result AccTcpServerDefault::StartListener()
 {
     if (!options_.enableListener) {
+        LOG_DEBUG("listener disabled on current process");
         return ACC_OK;
     }
 
     AccTcpListenerPtr tmpListener = new (std::nothrow)
-        AccTcpListener(options_.listenIp, options_.listenPort, options_.reusePort, tlsOption_.enableTls, sslCtx_);
+        AccTcpListener(options_.listenIp, options_.listenPort, options_.reusePort, options_.sockFd,
+                       tlsOption_.enableTls, sslCtx_);
     ASSERT_RETURN(tmpListener.Get() != nullptr, ACC_NEW_OBJECT_FAIL);
 
     tmpListener->RegisterNewConnectionHandler(
@@ -460,6 +462,7 @@ void AccTcpServerDefault::WorkerLinkCntUpdate(uint32_t workerIdx)
 }
 
 static Result CreateSocket(const std::string &peerIp, IpType &type, int &sockfd)
+
 {
     if (AccCommonUtil::IsValidIPv4(peerIp)) {
         type = IpV4;
@@ -476,6 +479,7 @@ static Result CreateSocket(const std::string &peerIp, IpType &type, int &sockfd)
     }
     return ACC_OK;
 }
+
 
 void AccTcpServerDefault::ConstructSocketAddress(IpType ipType, mf_sockaddr &addr,
                                                  const std::string &peerIp, uint16_t port)

@@ -109,6 +109,7 @@ struct AccTcpServerOptions {
     int16_t magic = 0;                       /* magic number of  */
     int16_t version = 0;                     /* version */
     uint32_t maxWorldSize = UNO_1024;        /* max client number */
+    int32_t sockFd = -1;                     /* server sockFd for listen */
 };
 
 /**

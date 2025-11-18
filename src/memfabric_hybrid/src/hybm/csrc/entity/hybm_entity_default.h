@@ -101,6 +101,7 @@ private:
 
 private:
     bool initialized = false;
+    std::mutex mutex_;
     const int32_t id_; /* id of the engine */
     static thread_local bool isSetDevice_;
     hybm_options options_{};

@@ -38,10 +38,11 @@ public:
      * @param isServer is local store server side
      * @param rankId rank id, default 0
      * @param connMaxRetry Maximum number of retry times for the client to connect to the server.
+     * @param sockFd listen socket fd, default -1
      * @return Newly created store
      */
     static StorePtr CreateStore(const std::string &ip, uint16_t port, bool isServer, int32_t rankId = 0,
-        int32_t connMaxRetry = -1) noexcept;
+        int32_t connMaxRetry = -1, int32_t sockFd = -1) noexcept;
 
     /**
      * @brief Destroy on exist store

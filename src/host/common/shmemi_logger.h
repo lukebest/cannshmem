@@ -79,11 +79,11 @@ public:
         time_t time_stamp = tv.tv_sec;
         struct tm local_time {};
         if (strftime(str_time, sizeof str_time, "%Y-%m-%d %H:%M:%S.", localtime_r(&time_stamp, &local_time)) != 0) {
-            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level)
-                      << " " << syscall(SYS_gettid) << " " << oss.str() << std::endl;
+            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level) << " "
+                      << syscall(SYS_gettid) << " pid[" << getpid() << "] " << oss.str() << std::endl;
         } else {
-            std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid) << " " << oss.str()
-                      << std::endl;
+            std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid)
+                      << " pid[" << getpid() << "] " << oss.str() << std::endl;
         }
     }
 
@@ -110,7 +110,7 @@ private:
 private:
     const std::string m_log_level_desc[BUTT_LEVEL] = {"debug", "info", "warn", "error", "fatal"};
 
-    log_level m_log_level = ERROR_LEVEL;
+    log_level m_log_level = WARN_LEVEL;
     external_log m_log_func = nullptr;
 };
 }  // namespace shm

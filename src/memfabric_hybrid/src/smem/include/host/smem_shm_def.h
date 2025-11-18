@@ -41,6 +41,7 @@ typedef struct {
                                          default 120 second (min is 1, max is SMEM_BM_TIMEOUT_MAX) */
     bool startConfigStore;            /* whether to start config store, default true */
     uint32_t flags;                   /* other flag, default 0 */
+    int32_t sockFd;                   /* apply available port in advance, default -1 */
 } smem_shm_config_t;
 
 #ifdef __cplusplus

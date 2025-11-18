@@ -116,11 +116,12 @@ private:
 };
 
 std::atomic<uint32_t> TcpConfigStore::reqSeqGen_{0};
-TcpConfigStore::TcpConfigStore(std::string ip, uint16_t port, bool isServer, int32_t rankId) noexcept
+TcpConfigStore::TcpConfigStore(std::string ip, uint16_t port, bool isServer, int32_t rankId, int32_t sockFd) noexcept
     : serverIp_{std::move(ip)},
       serverPort_{port},
       isServer_{isServer},
-      rankId_{rankId}
+      rankId_{rankId},
+      sockFd_{sockFd}
 {
 }
 
@@ -169,7 +170,7 @@ Result TcpConfigStore::Startup(const AcclinkTlsOption &tlsOption, int reconnectR
     }
 
     if (isServer_) {
-        accServer_ = SmMakeRef<AccStoreServer>(serverIp_, serverPort_);
+        accServer_ = SmMakeRef<AccStoreServer>(serverIp_, serverPort_, sockFd_);
         if (accServer_ == nullptr) {
             SM_LOG_ERROR("Failed to create AccStoreServer instance");
             Shutdown();

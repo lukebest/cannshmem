@@ -115,6 +115,7 @@ enum shmem_transport_t : uint8_t {
  * - uint32_t shm_init_timeout: shm_init_timeout
  * - uint32_t shm_create_timeout: shm_create_timeout
  * - uint32_t control_operation_timeout: control_operation_timeout
+ * - int32_t sockFd: sock_fd for apply port in advance
 */
 typedef struct {
     int version;
@@ -122,6 +123,7 @@ typedef struct {
     uint32_t shm_init_timeout;
     uint32_t shm_create_timeout;
     uint32_t control_operation_timeout;
+    int32_t sockFd;
 } shmem_init_optional_attr_t;
 
 /**

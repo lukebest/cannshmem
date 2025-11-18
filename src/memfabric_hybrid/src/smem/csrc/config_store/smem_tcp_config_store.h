@@ -35,7 +35,7 @@ public:
 
 class TcpConfigStore : public ConfigStore {
 public:
-    TcpConfigStore(std::string ip, uint16_t port, bool isServer, int32_t rankId = 0) noexcept;
+    TcpConfigStore(std::string ip, uint16_t port, bool isServer, int32_t rankId = 0, int32_t sockFd = -1) noexcept;
     ~TcpConfigStore() noexcept override;
 
     Result Startup(const AcclinkTlsOption &tlsOption, int reconnectRetryTimes = -1) noexcept;
@@ -93,6 +93,7 @@ private:
     const uint16_t serverPort_;
     const bool isServer_;
     const int32_t rankId_;
+    const int32_t sockFd_;
 };
 using TcpConfigStorePtr = SmRef<TcpConfigStore>;
 }  // namespace smem

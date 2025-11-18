@@ -71,7 +71,7 @@ private:
 
 class AccStoreServer : public SmReferable {
 public:
-    AccStoreServer(std::string ip, uint16_t port) noexcept;
+    AccStoreServer(std::string ip, uint16_t port, int32_t sockFd = -1) noexcept;
     ~AccStoreServer() override = default;
 
     Result Startup(const AcclinkTlsOption &tlsOption) noexcept;
@@ -117,6 +117,7 @@ private:
 
     const std::string listenIp_;
     const uint16_t listenPort_;
+    const int32_t sockFd_;
     std::mutex mutex_;
 };
 using AccStoreServerPtr = SmRef<AccStoreServer>;

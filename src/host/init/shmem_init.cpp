@@ -28,7 +28,7 @@ using namespace std;
 namespace shm {
 #define MIN_PORT 1024
 #define MAX_PORT 65536
-#define MAX_ATTEMPTS 500
+#define MAX_ATTEMPTS 1000
 #define MAX_IFCONFIG_LENGTH 23
 #define MAX_IP 48
 constexpr int DEFAULT_MY_PE = -1;
@@ -77,6 +77,51 @@ int32_t version_compatible()
 {
     int32_t status = SHMEM_SUCCESS;
     return status;
+}
+
+int32_t bind_tcp_port_v4(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId)
+{
+    sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd != -1) {
+        int on_v4 = 1;
+        if (::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on_v4, sizeof(on_v4)) == 0) {
+            innerUId->addr.addr.addr4.sin_port = htons(port);
+            sockaddr *cur_addr = reinterpret_cast<sockaddr *>(&innerUId->addr.addr.addr4);
+            if (::bind(sockfd, cur_addr, sizeof(innerUId->addr.addr.addr4)) == 0) {
+                SHM_LOG_INFO("bind ipv4 success " << port << ", fd:" << sockfd);
+                return 0;
+            }
+        }
+        close(sockfd);
+        sockfd = -1;
+        SHM_LOG_ERROR("set socket4 opt fail");
+    } else {
+        SHM_LOG_ERROR("create socket4 fail");
+    }
+    return -1;
+}
+
+int32_t bind_tcp_port_v6(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId)
+{
+    sockfd = ::socket(AF_INET6, SOCK_STREAM, 0);
+    if (sockfd != -1) {
+        int on_v6 = 1;
+        if (::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on_v6, sizeof(on_v6)) == 0) {
+            innerUId->addr.addr.addr6.sin6_port = htons(port);
+            sockaddr *cur_addr = reinterpret_cast<sockaddr *>(&innerUId->addr.addr.addr6);
+            if (::bind(sockfd, cur_addr, sizeof(innerUId->addr.addr.addr6)) == 0) {
+                SHM_LOG_INFO("bind ipv6 success " << port << ", fd:" << sockfd);
+                return 0;
+            }
+        }
+        auto err = errno;
+        close(sockfd);
+        sockfd = -1;
+        SHM_LOG_ERROR("set socket6 opt fail:" << err << "," << strerror(err));
+    } else {
+        SHM_LOG_ERROR("create socket6 fail");
+    }
+    return -1;
 }
 
 int32_t shmemi_options_init()
@@ -139,6 +184,8 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("smem_shm_config_init Failed");
         return SHMEM_SMEM_ERROR;
     }
+    // set config.sockFd value
+    config.sockFd = attributes->option_attr.sockFd;
     status = smem_shm_init(attributes->ip_port, attributes->n_ranks, attributes->my_rank, device_id, &config);
     if (status != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("smem_shm_init Failed");
@@ -169,7 +216,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         aclrtMalloc(((void **)&g_state.sdma_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
     SHMEM_CHECK_RET(
         aclrtMalloc(((void **)&g_state.roce_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
-    
+
     g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
     shmemi_reach_info_init(gva);
     if (shm::g_ipport[0] != '\0') {
@@ -266,7 +313,7 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
     shm::g_attr.ip_port[ip_len] = '\0';
     shm::g_attr.local_mem_size = local_mem_size;
     shm::g_attr.option_attr = {attr_version, SHMEM_DATA_OP_MTE, shm::DEFAULT_TIMEOUT,
-                               shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT};
+                               shm::DEFAULT_TIMEOUT, shm::DEFAULT_TIMEOUT, 0};
     shm::g_attr_init = true;
     return SHMEM_SUCCESS;
 }
@@ -288,42 +335,65 @@ int32_t shmem_get_uid_magic(shmem_uniqueid_inner_t *innerUId)
     return SHMEM_SUCCESS;
 }
 
-uint16_t shmem_get_port_magic()
+int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId)
 {
     static std::random_device rd;
-    static std::mt19937 gen(rd());
     const int min_port = MIN_PORT;
     const int max_port = MAX_PORT;
     const int max_attempts = MAX_ATTEMPTS;
+    const int offset_bit = 32;
+    uint64_t seed = 1;
+    seed |= static_cast<uint64_t>(getpid()) << offset_bit;
+    seed |= static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count() & 0xFFFFFFFF);
+    static std::mt19937_64 gen(seed);
     std::uniform_int_distribution<> dis(min_port, max_port);
 
+    int sockfd = -1;
+    int32_t ret;
     for (int attempt = 0; attempt < max_attempts; ++attempt) {
         int port = dis(gen);
-        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (sockfd == -1) {
-            continue;
+        if (innerUId->addr.type == ADDR_IPv4) {
+            ret = shm::bind_tcp_port_v4(sockfd, port, innerUId);
+            if (ret == 0) {
+                innerUId->inner_sockFd = sockfd;
+                return 0;
+            }
+        } else {
+            ret = shm::bind_tcp_port_v6(sockfd, port, innerUId);
+            if (ret == 0) {
+                innerUId->inner_sockFd = sockfd;
+                return 0;
+            }
         }
-
-        int on = 1;
-        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
-            close(sockfd);
-            continue;
-        }
-
-        sockaddr_in bind_address{};
-        bind_address.sin_family = AF_INET;
-        bind_address.sin_port = htons(port);
-        bind_address.sin_addr.s_addr = INADDR_ANY;
-
-        if (bind(sockfd, reinterpret_cast<sockaddr *>(&bind_address), sizeof(bind_address)) == 0) {
-            close(sockfd);
-            return port;
-        }
-
-        close(sockfd);
     }
     SHM_LOG_ERROR("Not find a available tcp port");
-    return 0;
+    return -1;
+}
+
+int32_t shmem_using_env_port(shmem_uniqueid_inner_t *innerUId, uint16_t envPort)
+{
+    if (envPort < MIN_PORT) {   // envPort > MAX_PORT always false
+        SHM_LOG_ERROR("env port is invalid. " << envPort);
+        return SHMEM_INVALID_PARAM;
+    }
+
+    int sockfd = -1;
+    int32_t ret;
+    if (innerUId->addr.type == ADDR_IPv4) {
+        ret = shm::bind_tcp_port_v4(sockfd, envPort, innerUId);
+        if (ret == 0) {
+            innerUId->inner_sockFd = sockfd;
+            return 0;
+        }
+    } else {
+        ret = shm::bind_tcp_port_v6(sockfd, envPort, innerUId);
+        if (ret == 0) {
+            innerUId->inner_sockFd = sockfd;
+            return 0;
+        }
+    }
+    SHM_LOG_ERROR("init with env port fialed " << envPort << ", ret=" << ret);
+    return ret;
 }
 
 int32_t ParseInterfaceWithType(const char *ipInfo, char *IP, sa_family_t &sockType, bool &flag)
@@ -348,14 +418,14 @@ int32_t shmem_auto_get_ip(struct sockaddr *ifaAddr, char *local, sa_family_t &so
     sockType = ifaAddr->sa_family;
     if (sockType == AF_INET) {
         auto localIp = reinterpret_cast<struct sockaddr_in *>(ifaAddr)->sin_addr;
-        if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+        if (inet_ntop(sockType, &localIp, local, MAX_IP) == nullptr) {
             SHM_LOG_ERROR("convert local ipv4 to string failed. ");
             return SHMEM_INVALID_PARAM;
         }
         return SHMEM_SUCCESS;
     } else if (sockType == AF_INET6) {
         auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifaAddr)->sin6_addr;
-        if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+        if (inet_ntop(sockType, &localIp, local, MAX_IP) == nullptr) {
             SHM_LOG_ERROR("convert local ipv6 to string failed. ");
             return SHMEM_INVALID_PARAM;
         }
@@ -374,6 +444,7 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
     if (ipInfo == nullptr) {
         strncpy(ifaName, "eth", shm::DEFAULT_IFNAME_LNEGTH);
         ifaName[shm::DEFAULT_IFNAME_LNEGTH - 1] = '\0';
+        SHM_LOG_INFO("use default if to find IP:" << ifaName);
     } else if (ParseInterfaceWithType(ipInfo, ifaName, sockType, flag) != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("IP size set in SHMEM_CONF_STORE_MASTER_IF format has wrong length");
         return SHMEM_INVALID_PARAM;
@@ -382,10 +453,10 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
         SHM_LOG_ERROR("get local net interfaces failed: " << errno << ": " << strerror(errno));
         return SHMEM_INVALID_PARAM;
     }
-    int32_t result = SHMEM_SUCCESS;
+    int32_t result = SHMEM_INVALID_PARAM;
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
         if ((ifa->ifa_addr == nullptr) || (ifa->ifa_netmask == nullptr) || (ifa->ifa_addr->sa_family != sockType && flag) ||
-            (strncmp(ifa->ifa_name, ifaName, strlen(ifaName)) != 0) || !(ifa->ifa_flags & IFF_LOOPBACK) ||
+            (strncmp(ifa->ifa_name, ifaName, strlen(ifaName)) != 0) || (ifa->ifa_flags & IFF_LOOPBACK) ||
             !(ifa->ifa_flags & IFF_RUNNING) || !(ifa->ifa_flags & IFF_UP)) {
             continue;
         }
@@ -393,22 +464,26 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
             auto localIp = reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr)->sin_addr;
             if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv4 to string failed. ");
-                result = SHMEM_INVALID_PARAM;
                 continue;
             }
+            result = SHMEM_SUCCESS;
             break;
         } else if (sockType == AF_INET6 && flag) {
             auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr)->sin6_addr;
             if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv6 to string failed. ");
-                result = SHMEM_INVALID_PARAM;
                 continue;
             }
+            result = SHMEM_SUCCESS;
             break;
-        } else if (shmem_auto_get_ip(ifa->ifa_addr, local, sockType) != SHMEM_SUCCESS) {
-            continue;
+        } else {
+            auto ret = shmem_auto_get_ip(ifa->ifa_addr, local, sockType);
+            if (ret != SHMEM_SUCCESS) {
+                continue;
+            }
+            result = SHMEM_SUCCESS;
+            break;
         }
-        break;
     }
     freeifaddrs(ifaddr);
     return result;
@@ -459,26 +534,12 @@ int32_t shmem_set_ip_info(shmem_uniqueid_t *uid, sa_family_t &sockType, char *pt
     SHM_ASSERT_RETURN(uid != nullptr, SHMEM_INVALID_PARAM);
     *uid = SHMEM_UNIQUEID_INITIALIZER;
     shmem_uniqueid_inner_t *innerUID = reinterpret_cast<shmem_uniqueid_inner_t *>(uid);
-    SHMEM_CHECK_RET(shmem_get_uid_magic(innerUID));
-
-    // fill ip port as part of uid
-    uint16_t port = 0;
-    if (is_from_ifa) {
-        port = shmem_get_port_magic();
-    } else {
-        port = pta_env_port;
-    }
-    if (port == 0) {
-        SHM_LOG_ERROR("get available port failed.");
-        return SHMEM_INVALID_PARAM;
-    }
     if (sockType == AF_INET) {
         innerUID->addr.addr.addr4.sin_family = AF_INET;
         if (inet_pton(AF_INET, pta_env_ip, &(innerUID->addr.addr.addr4.sin_addr)) <= 0) {
             perror("inet_pton IPv4 failed");
             return SHMEM_NOT_INITED;
         }
-        innerUID->addr.addr.addr4.sin_port = htons(port);
         innerUID->addr.type = ADDR_IPv4;
     } else if (sockType == AF_INET6) {
         innerUID->addr.addr.addr6.sin6_family = AF_INET6;
@@ -486,18 +547,37 @@ int32_t shmem_set_ip_info(shmem_uniqueid_t *uid, sa_family_t &sockType, char *pt
             perror("inet_pton IPv6 failed");
             return SHMEM_NOT_INITED;
         }
-        innerUID->addr.addr.addr6.sin6_port = htons(port);
         innerUID->addr.type = ADDR_IPv6;
     } else {
         SHM_LOG_ERROR("IP Type is not IPv4 or IPv6");
         return SHMEM_INVALID_PARAM;
     }
+
+    // fill ip port as part of uid
+    if (is_from_ifa) {
+        int32_t ret = shmem_get_port_magic(innerUID);
+        if (ret != 0) {
+            SHM_LOG_ERROR("get available port failed.");
+            return SHMEM_INVALID_PARAM;
+        }
+    } else {
+        int32_t ret = shmem_using_env_port(innerUID, pta_env_port);
+        if (ret != 0) {
+            SHM_LOG_ERROR("using env port failed.");
+            return SHMEM_INVALID_PARAM;
+        }
+    }
+
     SHM_LOG_INFO("gen unique id success.");
     return SHMEM_SUCCESS;
 }
 
 int32_t shmem_get_uniqueid(shmem_uniqueid_t *uid)
 {
+    if (shmem_set_log_level(shm::WARN_LEVEL) != 0) {
+        SHM_LOG_ERROR("failed to set log level");
+        return SHMEM_INNER_ERROR;
+    }
     char pta_env_ip[MAX_IP];
     uint16_t pta_env_port;
     sa_family_t sockType;
@@ -512,7 +592,7 @@ int32_t shmem_get_uniqueid(shmem_uniqueid_t *uid)
     } else {
         is_from_ifa = true;
         if (shmem_get_ip_from_ifa(pta_env_ip, sockType, ipInfo) != SHMEM_SUCCESS) {
-            SHM_LOG_ERROR("cant get pta master addr.");
+            SHM_LOG_ERROR("cant get available ip port.");
             return SHMEM_INVALID_PARAM;
         }
     }
@@ -522,10 +602,6 @@ int32_t shmem_get_uniqueid(shmem_uniqueid_t *uid)
 
 int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_uniqueid_t *uid, shmem_init_attr_t *attr)
 {
-    if (shmem_set_log_level(shm::ERROR_LEVEL) != 0) {
-        return SHMEM_INNER_ERROR;
-    }
-
     if (attr == nullptr || uid == nullptr) {
         SHM_LOG_ERROR("set unique id attr/uid is null");
         return SHMEM_INVALID_PARAM;
@@ -563,6 +639,7 @@ int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_unique
     shm::g_ipport[ipPort.size()] = '\0';
     shm::g_attr.ip_port[ipPort.size()] = '\0';
     attr->ip_port[ipPort.size()] = '\0';
+    attr->option_attr.sockFd = innerUID->inner_sockFd;
     SHM_LOG_INFO("extract ip port:" << ipPort);
 
     return shmem_init_attr(attr);
@@ -591,7 +668,7 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
 
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
-    SHMEM_CHECK_RET(shmem_set_log_level(shm::ERROR_LEVEL));
+    SHMEM_CHECK_RET(shmem_set_log_level(shm::WARN_LEVEL));
     SHMEM_CHECK_RET(shm::check_attr(attributes));
     SHMEM_CHECK_RET(shm::version_compatible());
     SHMEM_CHECK_RET(shm::shmemi_options_init());
@@ -673,7 +750,7 @@ int32_t shmem_finalize(void)
     if (shm::g_state.roce_heap_device_base != nullptr) {
         aclrtFree(shm::g_state.roce_heap_device_base);
     }
-    
+
     if (shm::g_smem_handle != nullptr) {
         int32_t status = smem_shm_destroy(shm::g_smem_handle, 0);
         if (status != SHMEM_SUCCESS) {

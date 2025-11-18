@@ -29,6 +29,7 @@ typedef struct {
 
 typedef struct {
     int32_t version;
+    int32_t inner_sockFd;
     shmem_sockaddr_t addr;
     uint64_t magic;
 } shmem_uniqueid_inner_t;

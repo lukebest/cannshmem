@@ -29,11 +29,13 @@ MemEntityDefault::MemEntityDefault(int id) noexcept : id_(id), initialized(false
 
 MemEntityDefault::~MemEntityDefault()
 {
+    BM_LOG_WARN("Deconstruct MemEntity begin, try to release resource.");
     ReleaseResources();
 }
 
 int32_t MemEntityDefault::Initialize(const hybm_options *options) noexcept
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (initialized) {
         BM_LOG_WARN("The MemEntity has already been initialized, no action needs.");
         return BM_OK;
@@ -83,11 +85,13 @@ int32_t MemEntityDefault::SetThreadAclDevice()
 
 void MemEntityDefault::UnInitialize() noexcept
 {
+    BM_LOG_INFO("MemEntity UnInitialize begin, try to release resource.");
     ReleaseResources();
 }
 
 int32_t MemEntityDefault::ReserveMemorySpace(void **reservedMem) noexcept
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
         BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
@@ -98,6 +102,7 @@ int32_t MemEntityDefault::ReserveMemorySpace(void **reservedMem) noexcept
 
 int32_t MemEntityDefault::UnReserveMemorySpace() noexcept
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
         BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
@@ -108,6 +113,7 @@ int32_t MemEntityDefault::UnReserveMemorySpace() noexcept
 
 int32_t MemEntityDefault::AllocLocalMemory(uint64_t size, uint32_t flags, hybm_mem_slice_t &slice) noexcept
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
         BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
@@ -898,6 +904,7 @@ hybm_data_op_type MemEntityDefault::CanReachDataOperators(uint32_t remoteRank) c
 
 void MemEntityDefault::ReleaseResources()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
         return;
     }

@@ -14,7 +14,7 @@
 
 namespace ock {
 namespace acc {
-    
+
 void AccTcpListener::PrepareSockAddr(mf_sockaddr& addr) noexcept
 {
     if (addr.type == IpV4) {
@@ -28,6 +28,7 @@ void AccTcpListener::PrepareSockAddr(mf_sockaddr& addr) noexcept
     }
 }
 
+
 Result AccTcpListener::CreateSocketForStrat(mf_sockaddr &addr, int &tmpFD) noexcept
 {
     if (listenIp_.find(':') != std::string::npos) {
@@ -38,8 +39,10 @@ Result AccTcpListener::CreateSocketForStrat(mf_sockaddr &addr, int &tmpFD) noexc
         addr.type = IpV4;
     }
     if (tmpFD < 0) {
-        LOG_ERROR("Failed to create listen socket, error " << strerror(errno) <<
-            ", please check if running of fd limit");
+        char buffer[256];
+        auto ret = strerror_r(errno, buffer, sizeof(buffer));
+        LOG_ERROR("Failed to create listen socket, error " << buffer <<
+            ", please check if running of fd limit:" << ret);
         return ACC_ERROR;
     }
     ipType_ = addr.type;
@@ -85,22 +88,42 @@ Result AccTcpListener::Start() noexcept
     if (CreateSocketForStrat(addr, tmpFD) != ACC_OK) {
         return ACC_ERROR;
     }
+
+    LOG_INFO("create socket success " << tmpFD);
     /* assign address */
     PrepareSockAddr(addr);
-
+    int result_bind = -1;
     /* set option, bind and listen */
-    if (reusePort_) {
-        int flags = 1;
-        if (::setsockopt(tmpFD, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<void *>(&flags), sizeof(flags)) < 0) {
-            SafeCloseFd(tmpFD);
-            LOG_ERROR("Failed to set reuse port of " << NameAndPort() << " as " << strerror(errno));
-            return ACC_ERROR;
+    if (listenFd_ > 0) {
+        SafeCloseFd(tmpFD);
+        tmpFD = listenFd_;  // use already applied fd
+        result_bind = 0;
+        LOG_INFO("use already applied listen fd " << tmpFD);
+    } else {
+        if (reusePort_) {
+            int flags = 1;
+            if (::setsockopt(tmpFD, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<void *>(&flags), sizeof(flags)) < 0) {
+                SafeCloseFd(tmpFD);
+                LOG_ERROR("Failed to set reuse port of " << NameAndPort() << " as " << strerror(errno));
+                return ACC_ERROR;
+            }
         }
+        if (addr.type == IpV4) {
+            result_bind = ::bind(tmpFD, reinterpret_cast<struct sockaddr *>(&addr.ip.ipv4), sizeof(addr.ip.ipv4));
+        } else if (addr.type == IpV6) {
+            result_bind = ::bind(tmpFD, reinterpret_cast<struct sockaddr *>(&addr.ip.ipv6), sizeof(addr.ip.ipv6));
+        }
+        LOG_INFO("bind ip port success" << tmpFD);
     }
-
-    auto isListen = BindAndListenSocket(tmpFD, addr);
-    if (isListen != ACC_OK) {
-        return isListen;
+    if (result_bind < 0 || ::listen(tmpFD, 200L) < 0) {
+        auto errorNum = errno;
+        SafeCloseFd(tmpFD);
+        if (errorNum == EADDRINUSE) {
+            LOG_ERROR("address in use for bind listen on " << NameAndPort());
+            return ACC_LINK_ADDRESS_IN_USE;
+        }
+        LOG_ERROR("Failed to bind or listen on " << NameAndPort() << " as errno " << strerror(errorNum));
+        return ACC_ERROR;
     }
 
     auto ret = StartAcceptThread();

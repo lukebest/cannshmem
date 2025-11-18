@@ -17,9 +17,10 @@
 namespace ock {
 namespace smem {
 std::atomic<uint64_t> StoreWaitContext::idGen_{1UL};
-AccStoreServer::AccStoreServer(std::string ip, uint16_t port) noexcept
+AccStoreServer::AccStoreServer(std::string ip, uint16_t port, int32_t sockFd) noexcept
     : listenIp_{std::move(ip)},
       listenPort_{port},
+      sockFd_{sockFd},
       requestHandlers_{
           {MessageType::SET, &AccStoreServer::SetHandler},       {MessageType::GET, &AccStoreServer::GetHandler},
           {MessageType::ADD, &AccStoreServer::AddHandler},       {MessageType::REMOVE, &AccStoreServer::RemoveHandler},
@@ -35,6 +36,7 @@ SMErrorCode AccStoreServer::AccServerStart(ock::acc::AccTcpServerPtr &accTcpServ
     options.listenPort = listenPort_;
     options.enableListener = true;
     options.linkSendQueueSize = ock::acc::UNO_48;
+    options.sockFd = sockFd_;
 
     ock::acc::AccTlsOption tlsOpt = ConvertTlsOption(tlsOption);
     Result result;

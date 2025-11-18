@@ -79,7 +79,7 @@ int32_t version_compatible()
     return status;
 }
 
-int32_t bind_tcp_port_v4(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId)
+int32_t bind_tcp_port_v4(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId, char *ip_str)
 {
     sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd != -1) {
@@ -88,20 +88,23 @@ int32_t bind_tcp_port_v4(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId
             innerUId->addr.addr.addr4.sin_port = htons(port);
             sockaddr *cur_addr = reinterpret_cast<sockaddr *>(&innerUId->addr.addr.addr4);
             if (::bind(sockfd, cur_addr, sizeof(innerUId->addr.addr.addr4)) == 0) {
-                SHM_LOG_INFO("bind ipv4 success " << port << ", fd:" << sockfd);
+                SHM_LOG_INFO("bind ipv4 success " << ", fd:" << sockfd << ", " << ip_str << ":" << port);
                 return 0;
+            } else {
+                SHM_LOG_ERROR("bind socket fail:" << errno << "," << ip_str << ":" << port);
             }
+        } else {
+            SHM_LOG_ERROR("set socket opt fail:" << errno << ","  << ip_str << ":" << port);
         }
         close(sockfd);
         sockfd = -1;
-        SHM_LOG_ERROR("set socket4 opt fail");
     } else {
-        SHM_LOG_ERROR("create socket4 fail");
+        SHM_LOG_ERROR("create socket fail:" << errno << ", " << ip_str << ":" << port);
     }
     return -1;
 }
 
-int32_t bind_tcp_port_v6(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId)
+int32_t bind_tcp_port_v6(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId, char *ip_str)
 {
     sockfd = ::socket(AF_INET6, SOCK_STREAM, 0);
     if (sockfd != -1) {
@@ -110,16 +113,18 @@ int32_t bind_tcp_port_v6(int &sockfd, int port, shmem_uniqueid_inner_t *innerUId
             innerUId->addr.addr.addr6.sin6_port = htons(port);
             sockaddr *cur_addr = reinterpret_cast<sockaddr *>(&innerUId->addr.addr.addr6);
             if (::bind(sockfd, cur_addr, sizeof(innerUId->addr.addr.addr6)) == 0) {
-                SHM_LOG_INFO("bind ipv6 success " << port << ", fd:" << sockfd);
+                SHM_LOG_INFO("bind ipv6 success " << ", fd:" << sockfd << ", " << ip_str << ":" << port);
                 return 0;
+            } else {
+                SHM_LOG_ERROR("bind socket6 fail:" << errno << "," << ip_str << ":" << port);
             }
+        } else {
+            SHM_LOG_ERROR("set socket6 opt fail:" << errno << "," << ip_str << ":" << port);
         }
-        auto err = errno;
         close(sockfd);
         sockfd = -1;
-        SHM_LOG_ERROR("set socket6 opt fail:" << err << "," << strerror(err));
     } else {
-        SHM_LOG_ERROR("create socket6 fail");
+        SHM_LOG_ERROR("create socket6 fail:" << errno << "," << ip_str << ":" << port);
     }
     return -1;
 }
@@ -335,7 +340,7 @@ int32_t shmem_get_uid_magic(shmem_uniqueid_inner_t *innerUId)
     return SHMEM_SUCCESS;
 }
 
-int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId)
+int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId, char *ip_str)
 {
     static std::random_device rd;
     const int min_port = MIN_PORT;
@@ -353,13 +358,13 @@ int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId)
     for (int attempt = 0; attempt < max_attempts; ++attempt) {
         int port = dis(gen);
         if (innerUId->addr.type == ADDR_IPv4) {
-            ret = shm::bind_tcp_port_v4(sockfd, port, innerUId);
+            ret = shm::bind_tcp_port_v4(sockfd, port, innerUId, ip_str);
             if (ret == 0) {
                 innerUId->inner_sockFd = sockfd;
                 return 0;
             }
         } else {
-            ret = shm::bind_tcp_port_v6(sockfd, port, innerUId);
+            ret = shm::bind_tcp_port_v6(sockfd, port, innerUId, ip_str);
             if (ret == 0) {
                 innerUId->inner_sockFd = sockfd;
                 return 0;
@@ -370,7 +375,7 @@ int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId)
     return -1;
 }
 
-int32_t shmem_using_env_port(shmem_uniqueid_inner_t *innerUId, uint16_t envPort)
+int32_t shmem_using_env_port(shmem_uniqueid_inner_t *innerUId, char *ip_str, uint16_t envPort)
 {
     if (envPort < MIN_PORT) {   // envPort > MAX_PORT always false
         SHM_LOG_ERROR("env port is invalid. " << envPort);
@@ -380,13 +385,13 @@ int32_t shmem_using_env_port(shmem_uniqueid_inner_t *innerUId, uint16_t envPort)
     int sockfd = -1;
     int32_t ret;
     if (innerUId->addr.type == ADDR_IPv4) {
-        ret = shm::bind_tcp_port_v4(sockfd, envPort, innerUId);
+        ret = shm::bind_tcp_port_v4(sockfd, envPort, innerUId, ip_str);
         if (ret == 0) {
             innerUId->inner_sockFd = sockfd;
             return 0;
         }
     } else {
-        ret = shm::bind_tcp_port_v6(sockfd, envPort, innerUId);
+        ret = shm::bind_tcp_port_v6(sockfd, envPort, innerUId, ip_str);
         if (ret == 0) {
             innerUId->inner_sockFd = sockfd;
             return 0;
@@ -434,6 +439,40 @@ int32_t shmem_auto_get_ip(struct sockaddr *ifaAddr, char *local, sa_family_t &so
     return SHMEM_INVALID_PARAM;
 }
 
+bool shmem_check_ifa(struct ifaddrs *ifa, sa_family_t sockType, bool flag, char *ifaName, size_t ifaLen)
+{
+    if (ifa->ifa_addr == nullptr || ifa->ifa_netmask == nullptr || ifa->ifa_name == nullptr) {
+        SHM_LOG_DEBUG("loop ifa_addr/ifa_netmask/ifa_name is nullptr");
+        return false;
+    }
+
+    // socket type match and input env ifa valid
+    if (ifa->ifa_addr->sa_family != sockType && flag) {
+        SHM_LOG_DEBUG("sa family is not match, get " << ifa->ifa_addr->sa_family << ", expect " << sockType);
+        return false;
+    }
+
+    //  prefix match with input ifa name
+    if (strncmp(ifa->ifa_name, ifaName, ifaLen) != 0) {
+        SHM_LOG_DEBUG("ifa name prefix un-match, get " << ifa->ifa_name << ", expect " << ifaName);
+        return false;
+    }
+
+    // ignore ifa which is down or loopback or not running
+    if ((ifa->ifa_flags & IFF_LOOPBACK) || !(ifa->ifa_flags & IFF_RUNNING) || !(ifa->ifa_flags & IFF_UP)) {
+        SHM_LOG_DEBUG("ifa flag un-match, flag=" << ifa->ifa_flags);
+        return false;
+    }
+
+    if (sockType == AF_INET6) {
+        struct sockaddr_in6 *sa6 = reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr);
+        if (IN6_IS_ADDR_LINKLOCAL(&sa6->sin6_addr)) {
+            SHM_LOG_DEBUG("ifa is scope link addr " << ifaName);
+            return false;
+        }
+    }
+    return true;
+}
 
 int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ipInfo)
 {
@@ -450,14 +489,12 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
         return SHMEM_INVALID_PARAM;
     }
     if (getifaddrs(&ifaddr) == -1) {
-        SHM_LOG_ERROR("get local net interfaces failed: " << errno << ": " << strerror(errno));
+        SHM_LOG_ERROR("get local net interfaces failed: " << errno);
         return SHMEM_INVALID_PARAM;
     }
     int32_t result = SHMEM_INVALID_PARAM;
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-        if ((ifa->ifa_addr == nullptr) || (ifa->ifa_netmask == nullptr) || (ifa->ifa_addr->sa_family != sockType && flag) ||
-            (strncmp(ifa->ifa_name, ifaName, strlen(ifaName)) != 0) || (ifa->ifa_flags & IFF_LOOPBACK) ||
-            !(ifa->ifa_flags & IFF_RUNNING) || !(ifa->ifa_flags & IFF_UP)) {
+        if (!shmem_check_ifa(ifa, sockType, flag, ifaName, strlen(ifaName))) {
             continue;
         }
         if (sockType == AF_INET && flag) {
@@ -555,13 +592,13 @@ int32_t shmem_set_ip_info(shmem_uniqueid_t *uid, sa_family_t &sockType, char *pt
 
     // fill ip port as part of uid
     if (is_from_ifa) {
-        int32_t ret = shmem_get_port_magic(innerUID);
+        int32_t ret = shmem_get_port_magic(innerUID, pta_env_ip);
         if (ret != 0) {
             SHM_LOG_ERROR("get available port failed.");
             return SHMEM_INVALID_PARAM;
         }
     } else {
-        int32_t ret = shmem_using_env_port(innerUID, pta_env_port);
+        int32_t ret = shmem_using_env_port(innerUID, pta_env_ip, pta_env_port);
         if (ret != 0) {
             SHM_LOG_ERROR("using env port failed.");
             return SHMEM_INVALID_PARAM;

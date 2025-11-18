@@ -6,8 +6,12 @@
 #include <sstream>
 #include <unistd.h>
 #include <acl/acl.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <unistd.h>
 #include <gtest/gtest.h>
 #include "shmemi_host_common.h"
+#include "internal/host/shmemi_host_def.h"
 #include "unittest_main_test.h"
 
 namespace shm {
@@ -395,4 +399,46 @@ TEST(TestInitAPI, TestShmemSetExternLogger)
 {
     auto ret = shmem_set_extern_logger(shm::logger_test_example);
     EXPECT_EQ(ret, 0);
+}
+
+TEST(TestInitAPI, TestShmemGetUniqueId)
+{
+    const char *ipInfo = std::getenv("SHMEM_UID_SOCK_IFNAM");
+    if (ipInfo == nullptr) {
+        return;
+    }
+
+    for (int i = 0; i < 10; i++) {
+        shmem_uniqueid_t uid;
+        int ret = shmem_get_uniqueid(&uid);
+        EXPECT_EQ(ret, SHMEM_SUCCESS);
+
+        shmem_uniqueid_inner_t *innerUID = reinterpret_cast<shmem_uniqueid_inner_t *>(&uid);
+
+        // test bind ip:port again
+        int sockfd = ::socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd < 0) {
+            std::cout << "create socket failed" << std::endl;
+            return;
+        }
+
+        int reuse = 1;
+        ::setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+        struct sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_port = innerUID->addr.addr.addr4.sin_port;
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // 绑定 127.0.0.1
+
+        bool inUse = (::bind(sockfd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) != 0);
+        if (inUse) {
+            auto errorNum = errno;
+            std::cout << "the address is in use" << errorNum << std::endl;
+            EXPECT_TRUE(false);
+            break;
+        }
+
+        ::close(sockfd);
+        EXPECT_TRUE(true);
+    }
 }

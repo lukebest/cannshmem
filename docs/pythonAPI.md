@@ -25,7 +25,7 @@
     |-|-|
     |my_rank|int类型，当前秩|
     |n_ranks|int类型，秩的总数|
-    |local_mem_size|int类型，当前占用的共享内存大小|
+    |local_mem_size|int类型，当前占用的共享内存大小，最大40G|
     |ip_port|str类型，服务器的IP和端口号，例如tcp://ip:port|
     |attributes|InitAttr类型，设置的属性|
     |返回值|成功返回0，其他为错误码|

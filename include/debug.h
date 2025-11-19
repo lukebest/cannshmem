@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef SHMEM_DEBUG_HPP
-#define SHMEM_DEBUG_HPP
+#ifndef SHMEM_DEBUG_H
+#define SHMEM_DEBUG_H
 
 #pragma push_macro("inline")
 #include <iostream>
@@ -47,4 +47,4 @@ void AdumpPrintWorkSpace(const void *dumpBufferAddr,
                          const char *opType);
 } // namespace Adx
 
-#endif // SHMEM_DEBUG_HPP
+#endif // SHMEM_DEBUG_H

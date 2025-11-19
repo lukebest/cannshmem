@@ -39,26 +39,31 @@ constexpr int DEFAULT_ID = 0;
 constexpr int DEFAULT_TIMEOUT = 120;
 constexpr int DEFAULT_TEVENT = 0;
 constexpr int DEFAULT_BLOCK_NUM = 1;
+constexpr int DEFAULT_IFNAME_LNEGTH = 1;
 
 // initializer
-#define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                              \
-    {                                                                                    \
-        (1 << 16) + sizeof(shmemi_device_host_state_t), /* version */                    \
-            (DEFAULT_MY_PE),                            /* mype */                       \
-            (DEFAULT_N_PES),                            /* npes */                       \
-            NULL,                                       /* heap_base */                  \
-            {NULL},                                     /* p2p_heap_base */              \
-            {NULL},                                     /* sdma_heap_base */             \
-            {},                                         /* topo_list */                  \
-            SIZE_MAX,                                   /* heap_size */                  \
-            {NULL},                                     /* team_pools */                 \
-            0,                                          /* sync_pool */                  \
-            0,                                          /* sync_counter */               \
-            0,                                          /* core_sync_pool */             \
-            0,                                          /* core_sync_counter */          \
-            false,                                      /* shmem_is_shmem_initialized */ \
-            false,                                      /* shmem_is_shmem_created */     \
-            {0, 16 * 1024, 0},                          /* shmem_mte_config */           \
+#define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                            \
+    {                                                                                 \
+        (1 << 16) + sizeof(shmemi_device_host_state_t),  /* version */                     \
+            (DEFAULT_MY_PE),                           /* mype */                       \
+            (DEFAULT_N_PES),                           /* npes */                       \
+            NULL,                                    /* heap_base */                   \
+            NULL,                                  /* p2p_heap_host_base */           \
+            NULL,                                  /* sdma_heap_host_base */          \
+            NULL,                                  /* roce_heap_host_base */          \
+            NULL,                                  /* p2p_heap_device_base */        \
+            NULL,                                  /* sdma_heap_device_base */       \
+            NULL,                                  /* roce_heap_device_base */       \
+            {},                                     /* topo_list */                     \
+            SIZE_MAX,                                /* heap_size */                   \
+            {NULL},                                  /* team_pools */                  \
+            0,                                       /* sync_pool */                  \
+            0,                                       /* sync_counter */                \
+            0,                                      /* core_sync_pool */             \
+            0,                                      /* core_sync_counter */          \
+            false,                                   /* shmem_is_shmem_initialized */ \
+            false,                                   /* shmem_is_shmem_created */     \
+            {0, 16 * 1024, 0},                       /* shmem_mte_config */           \
     }
 
 shmemi_device_host_state_t g_state = SHMEM_DEVICE_HOST_STATE_INITIALIZER;
@@ -101,14 +106,14 @@ void shmemi_reach_info_init(void *&gva)
     int32_t status = SHMEM_SUCCESS;
     for (int32_t i = 0; i < g_state.npes; i++) {
         status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
-        g_state.p2p_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
+        g_state.p2p_heap_host_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
         if (reach_info & SMEMS_DATA_OP_MTE) {
             g_state.topo_list[i] |= SHMEM_TRANSPORT_MTE;
         }
         if (reach_info & SMEMS_DATA_OP_SDMA) {
-            g_state.sdma_heap_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
+            g_state.sdma_heap_host_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
         } else {
-            g_state.sdma_heap_base[i] = NULL;
+            g_state.sdma_heap_host_base[i] = NULL;
         }
         if (reach_info & SMEMS_DATA_OP_RDMA) {
             g_state.topo_list[i] |= SHMEM_TRANSPORT_ROCE;
@@ -151,6 +156,20 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
         SHM_LOG_ERROR("smem_shm_create Failed");
         return SHMEM_SMEM_ERROR;
     }
+    SHMEM_CHECK_RET(
+        aclrtMallocHost(((void **)&g_state.p2p_heap_host_base), g_state.npes * sizeof(void *)));
+    SHMEM_CHECK_RET(
+        aclrtMallocHost(((void **)&g_state.sdma_heap_host_base), g_state.npes * sizeof(void *)));
+    SHMEM_CHECK_RET(
+        aclrtMallocHost(((void **)&g_state.roce_heap_host_base), g_state.npes * sizeof(void *)));
+
+    SHMEM_CHECK_RET(
+        aclrtMalloc(((void **)&g_state.p2p_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
+    SHMEM_CHECK_RET(
+        aclrtMalloc(((void **)&g_state.sdma_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
+    SHMEM_CHECK_RET(
+        aclrtMalloc(((void **)&g_state.roce_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
+    
     g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
     shmemi_reach_info_init(gva);
     if (shm::g_ipport[0] != '\0') {
@@ -175,6 +194,10 @@ int32_t update_device_state()
     if (!g_state.is_shmem_created) {
         return SHMEM_NOT_INITED;
     }
+
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.p2p_heap_device_base, g_state.npes * sizeof(void *), g_state.p2p_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.sdma_heap_device_base, g_state.npes * sizeof(void *), g_state.sdma_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.roce_heap_device_base, g_state.npes * sizeof(void *), g_state.roce_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
     return smem_shm_set_extra_context(g_smem_handle, (void *)&g_state, sizeof(shmemi_device_host_state_t));
 }
 
@@ -233,6 +256,8 @@ int32_t shmem_set_attr(int32_t my_rank, int32_t n_ranks, uint64_t local_mem_size
             SHM_LOG_ERROR("my_rank:" << my_rank << " shm::g_ipport is nullptr!");
             return SHMEM_INVALID_VALUE;
         }
+    } else {
+        SHM_LOG_WARN("init with my_rank:" << my_rank << " ip_port is nullptr!");
     }
 
     int attr_version = static_cast<int>((1 << 16) + sizeof(shmem_init_attr_t));
@@ -301,7 +326,7 @@ uint16_t shmem_get_port_magic()
     return 0;
 }
 
-int32_t ParseInterfaceWithType(const char *ipInfo, char *IP, sa_family_t &sockType)
+int32_t ParseInterfaceWithType(const char *ipInfo, char *IP, sa_family_t &sockType, bool &flag)
 {
     const char *delim = ":";
     const char *sep = strchr(ipInfo, delim[0]);
@@ -313,46 +338,75 @@ int32_t ParseInterfaceWithType(const char *ipInfo, char *IP, sa_family_t &sockTy
         strncpy(IP, ipInfo, leftLen);
         IP[leftLen] = '\0';
         sockType = (strcmp(sep + 1, "inet6") != 0) ? AF_INET : AF_INET6;
+        flag = true;
     }
     return SHMEM_SUCCESS;
 }
 
+int32_t shmem_auto_get_ip(struct sockaddr *ifaAddr, char *local, sa_family_t &sockType)
+{
+    sockType = ifaAddr->sa_family;
+    if (sockType == AF_INET) {
+        auto localIp = reinterpret_cast<struct sockaddr_in *>(ifaAddr)->sin_addr;
+        if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+            SHM_LOG_ERROR("convert local ipv4 to string failed. ");
+            return SHMEM_INVALID_PARAM;
+        }
+        return SHMEM_SUCCESS;
+    } else if (sockType == AF_INET6) {
+        auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifaAddr)->sin6_addr;
+        if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+            SHM_LOG_ERROR("convert local ipv6 to string failed. ");
+            return SHMEM_INVALID_PARAM;
+        }
+        return SHMEM_SUCCESS;
+    }
+    return SHMEM_INVALID_PARAM;
+}
+
+
 int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ipInfo)
 {
     struct ifaddrs *ifaddr;
-    char masterIf[MAX_IFCONFIG_LENGTH];
+    char ifaName[MAX_IFCONFIG_LENGTH];
     sockType = AF_INET;
+    bool flag = false;
     if (ipInfo == nullptr) {
-        strncpy(masterIf, "eth", sizeof(masterIf));
-        masterIf[sizeof(masterIf) - 1] = '\0';
-        sockType = AF_INET;
-    } else if (ParseInterfaceWithType(ipInfo, masterIf, sockType) != SHMEM_SUCCESS) {
+        strncpy(ifaName, "eth", shm::DEFAULT_IFNAME_LNEGTH);
+        ifaName[shm::DEFAULT_IFNAME_LNEGTH - 1] = '\0';
+    } else if (ParseInterfaceWithType(ipInfo, ifaName, sockType, flag) != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("IP size set in SHMEM_CONF_STORE_MASTER_IF format has wrong length");
         return SHMEM_INVALID_PARAM;
     }
-
     if (getifaddrs(&ifaddr) == -1) {
         SHM_LOG_ERROR("get local net interfaces failed: " << errno << ": " << strerror(errno));
         return SHMEM_INVALID_PARAM;
     }
     int32_t result = SHMEM_SUCCESS;
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-        if ((ifa->ifa_addr == nullptr) || (ifa->ifa_addr->sa_family != sockType) || (ifa->ifa_netmask == nullptr) ||
-            ((masterIf[0] != '\0') && (ifa->ifa_name != nullptr) && (strcmp(ifa->ifa_name, masterIf) != 0))) {
+        if ((ifa->ifa_addr == nullptr) || (ifa->ifa_netmask == nullptr) || (ifa->ifa_addr->sa_family != sockType && flag) ||
+            (strncmp(ifa->ifa_name, ifaName, strlen(ifaName)) != 0) || !(ifa->ifa_flags & IFF_LOOPBACK) ||
+            !(ifa->ifa_flags & IFF_RUNNING) || !(ifa->ifa_flags & IFF_UP)) {
             continue;
         }
-        if (sockType == AF_INET) {
+        if (sockType == AF_INET && flag) {
             auto localIp = reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr)->sin_addr;
             if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv4 to string failed. ");
                 result = SHMEM_INVALID_PARAM;
+                continue;
             }
-        } else {
+            break;
+        } else if (sockType == AF_INET6 && flag) {
             auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr)->sin6_addr;
             if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv6 to string failed. ");
                 result = SHMEM_INVALID_PARAM;
+                continue;
             }
+            break;
+        } else if (shmem_auto_get_ip(ifa->ifa_addr, local, sockType) != SHMEM_SUCCESS) {
+            continue;
         }
         break;
     }
@@ -373,8 +427,8 @@ int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, c
                 SHM_LOG_ERROR("get env SHMEM_UID_SESSION_ID is invalid");
                 return SHMEM_INVALID_PARAM;
             }
-            std::string ipStr = ipPortStr.substr(1, found);
-            std::string portStr = ipPortStr.substr(found + 1);
+            std::string ipStr = ipPortStr.substr(1, found - 1);
+            std::string portStr = ipPortStr.substr(found + 2);
 
             std::snprintf(ip, MAX_IP, "%s", ipStr.c_str());
 
@@ -599,6 +653,27 @@ int32_t shmem_set_conf_store_tls(bool enable, const char *tls_info, const uint32
 int32_t shmem_finalize(void)
 {
     SHMEM_CHECK_RET(shm::shmemi_team_finalize());
+
+    if (shm::g_state.p2p_heap_host_base != nullptr) {
+        aclrtFree(shm::g_state.p2p_heap_host_base);
+    }
+    if (shm::g_state.sdma_heap_host_base != nullptr) {
+        aclrtFree(shm::g_state.sdma_heap_host_base);
+    }
+    if (shm::g_state.roce_heap_host_base != nullptr) {
+        aclrtFree(shm::g_state.roce_heap_host_base);
+    }
+
+    if (shm::g_state.p2p_heap_device_base != nullptr) {
+        aclrtFree(shm::g_state.p2p_heap_device_base);
+    }
+    if (shm::g_state.sdma_heap_device_base != nullptr) {
+        aclrtFree(shm::g_state.sdma_heap_device_base);
+    }
+    if (shm::g_state.roce_heap_device_base != nullptr) {
+        aclrtFree(shm::g_state.roce_heap_device_base);
+    }
+    
     if (shm::g_smem_handle != nullptr) {
         int32_t status = smem_shm_destroy(shm::g_smem_handle, 0);
         if (status != SHMEM_SUCCESS) {

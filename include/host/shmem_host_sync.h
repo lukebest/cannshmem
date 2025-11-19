@@ -38,6 +38,19 @@ extern "C" {
 SHMEM_HOST_API uint64_t shmemx_get_ffts_config();
 
 /**
+ * @brief The shmemx_barrier_on_stream is a collective synchronization routine over a team.
+ * @param tid              [in] team to do barrier
+ * @param stream           [in] copy used stream (use default stream if stream == NULL)
+ */
+SHMEM_HOST_API void shmemx_barrier_on_stream(shmem_team_t tid, aclrtStream stream);
+
+/**
+ * @brief The shmemx_barrier_all_on_stream routine is a mechanism for synchronizing all PEs at once.
+ * @param stream           [in] copy used stream (use default stream if stream == NULL)
+ */
+SHMEM_HOST_API void shmemx_barrier_all_on_stream(aclrtStream stream);
+
+/**
  * @fn SHMEM_HOST_API void shmem_handle_wait(shmem_handle_t handle)
  * @brief Wait asynchronous RMA operations to finish.
  */

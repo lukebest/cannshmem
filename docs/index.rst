@@ -37,6 +37,7 @@ Welcome to Shmem's Documentation!
     :caption: Architecture
     :name: Architecture
 
+    principles.md
     code_organization.md
 
 .. toctree::

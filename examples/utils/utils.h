@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -10,12 +10,36 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <acl/acl.h>
 #include <climits>
 #include <iostream>
+#include <fstream>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <runtime/rt_ffts.h>
 
 #define INFO_LOG(fmt, args...) fprintf(stdout, "[INFO] " fmt "\n", ##args)
 #define WARN_LOG(fmt, args...) fprintf(stdout, "[WARN] " fmt "\n", ##args)
 #define ERROR_LOG(fmt, args...) fprintf(stdout, "[ERROR] " fmt "\n", ##args)
+
+// Macro function for unwinding acl errors.
+#define ACL_CHECK(status)                                                                    \
+    do {                                                                                     \
+        aclError error = status;                                                             \
+        if (error != ACL_ERROR_NONE) {                                                       \
+            std::cerr << __FILE__ << ":" << __LINE__ << " aclError:" << error << std::endl;  \
+        }                                                                                    \
+    } while (0)
+
+// Macro function for unwinding rt errors.
+#define RT_CHECK(status)                                                                     \
+    do {                                                                                     \
+        rtError_t error = status;                                                            \
+        if (error != RT_ERROR_NONE) {                                                        \
+            std::cerr << __FILE__ << ":" << __LINE__ << " rtError:" << error << std::endl;   \
+        }                                                                                    \
+    } while (0)
 
 inline bool ReadFile(const std::string &filePath, void *buffer, size_t bufferSize)
 {

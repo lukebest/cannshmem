@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -14,8 +14,8 @@
 extern "C" {
 #endif
 
-#define SHMEM_MAX_RANKS 1024
-#define SHMEM_MAX_TEAMS 32
+#define SHMEM_MAX_RANKS 16384
+#define SHMEM_MAX_TEAMS 2048
 #define SHMEM_MAX_LOCAL_SIZE (4UL * 1024 * 1024 * 1024)
 
 /* arch related */
@@ -30,11 +30,12 @@ extern "C" {
 #define SHMEMI_SYNCBIT_SIZE SCALAR_DATA_CACHELINE_SIZE
 
 // npu level sync
-#define SYNC_ARRAY_SIZE (SHMEMI_SYNCBIT_SIZE * SHMEM_MAX_RANKS)
+#define SYNC_LOG_MAX_RANKS 5 // ceil(log_{8}^{16384}) = 5
+#define SHMEM_BARRIER_TG_DISSEM_KVAL 8
+#define SYNC_ARRAY_SIZE (SHMEMI_SYNCBIT_SIZE * SYNC_LOG_MAX_RANKS * SHMEM_BARRIER_TG_DISSEM_KVAL)
 #define SYNC_COUNTER_SIZE SHMEMI_SYNCBIT_SIZE
 #define SYNC_POOL_SIZE (SYNC_ARRAY_SIZE * SHMEM_MAX_TEAMS)
 #define SYNC_COUNTERS_SIZE (SYNC_COUNTER_SIZE * SHMEM_MAX_TEAMS)
-#define SHMEM_BARRIER_TG_DISSEM_KVAL 8
 
 // core level sync
 #define SHMEM_MAX_AIV_PER_NPU 48
@@ -43,7 +44,7 @@ extern "C" {
 #define SHMEM_CORE_SYNC_COUNTER_SIZE SHMEMI_SYNCBIT_SIZE
 
 // Total extra
-#define SHMEM_EXTRA_SIZE_UNALIGHED (SYNC_POOL_SIZE + SYNC_COUNTERS_SIZE)
+#define SHMEM_EXTRA_SIZE_UNALIGHED SYNC_POOL_SIZE
 #define SHMEM_EXTRA_SIZE ALIGH_TO(SHMEM_EXTRA_SIZE_UNALIGHED, SHMEM_PAGE_SIZE)
 
 // synchronization
@@ -60,7 +61,7 @@ typedef struct {
 
 // mte_config
 typedef struct {
-    uint64_t shmem_ub;        // __ubuf__ Ptr, Shmem memcpy needed.
+    int64_t shmem_ub;        // __ubuf__ Ptr, Shmem memcpy needed.
     uint32_t ub_size;        // UB's Size, in Bytes.
     uint32_t event_id;       // TEventID, for Shmem memcpy sync.
 } shmemi_mte_config_t;
@@ -71,15 +72,19 @@ typedef struct {
     int mype;
     int npes;
     void *heap_base;
-    void *p2p_heap_base[SHMEM_MAX_RANKS];
-    void *sdma_heap_base[SHMEM_MAX_RANKS];
+
+    void **p2p_heap_host_base;
+    void **sdma_heap_host_base;
+    void **roce_heap_host_base;
+    void **p2p_heap_device_base;
+    void **sdma_heap_device_base;
+    void **roce_heap_device_base;
     uint8_t topo_list[SHMEM_MAX_RANKS];
     size_t heap_size;
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];
-
-    // Using shmemi_sync_bit instead of basic types to shmemi_store flag,
-    // avoiding concurrent write due to cacheline sharing.
+    
+    // Using shmemi_sync_bit instead of basic types to shmemi_store flag, avoiding concurrent write due to cacheline sharing.
     // Refer to shmemi_barrier.h for more details.
     // These members are 'shmemi_sync_bit *' types actully, but are defined as 'uint64_t' due to compiler restriction.
     uint64_t sync_pool;

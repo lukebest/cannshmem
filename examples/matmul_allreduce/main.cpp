@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -11,43 +11,18 @@
 
 #include <iostream>
 #include <vector>
-
-// misc
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <cstdio>
-#include <fstream>
-#include <iomanip>
-#include <string>
-#include <sys/file.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include "helper.hpp"
-#include "golden.hpp"
-#include "fp16_t.h"
+#include <cstring>
 
 // from catlass
 #include "catlass/catlass.hpp"
 #include "catlass/arch/arch.hpp"
-#include "catlass/epilogue/dispatch_policy.hpp"
-#include "catlass/epilogue/block/block_epilogue.hpp"
 #include "catlass/epilogue/tile/tile_copy.hpp"
-#include "catlass/epilogue/tile/tile_elemwise_add.hpp"
+#include "catlass/epilogue/tile/tile_swizzle.hpp"
 #include "catlass/gemm/block/block_mmad.hpp"
 #include "catlass/gemm/block/block_swizzle.hpp"
 #include "catlass/gemm/dispatch_policy.hpp"
-#include "catlass/gemm/kernel/matmul_epilogue.hpp"
 #include "catlass/gemm/gemm_type.hpp"
 #include "catlass/layout/layout.hpp"
-
-#if defined(ENABLE_ASCENDC_DUMP)
-#include "debug.h"
-#endif
-// from shmem-templates
-#include "kernel/matmul_epilogue_comm.hpp"
 
 // shmem_host
 #include "host/shmem_host_def.h"
@@ -59,306 +34,256 @@
 // utils
 #include "utils.h"
 
-static uint32_t gNpuNum = 8;
-static uint64_t gNpuMallocSpace = 1024UL * 1024UL * 1024;
+#include "catcoc/catcoc.h"
+#include "catcoc/comm_epilogue/comm_dispatch_policy.h"
+#include "catcoc/comm_epilogue/block/comm_block_epilogue.h"
+#include "catcoc/comm_epilogue/block/comm_block_swizzle.h"
+#include "catcoc/comm_epilogue/tile/tile_remote_copy.h"
+#include "catcoc/detail/remote_copy_type.h"
+#include "catcoc/dgemm/kernel/matmul_allreduce.h"
 
-using namespace AscendC;
-using namespace Catlass;
-using fp16_t = op::fp16_t;
-
-struct CoCTiling {
-    uint32_t m = 0;
-    uint32_t k = 0;
-    uint32_t n = 0;
-    uint32_t m0 = 0;
-    uint32_t k0 = 0;
-    uint32_t n0 = 0;
-    uint32_t swizzleDirect = 0;
-    uint32_t swizzleOffset = 0;
-    uint32_t ubMoveNum = 0;
-    uint32_t pValue = 0;
-    uint32_t commNpuSplit = 0;
-    uint32_t commDataSplit = 0;
-    uint32_t lenPerLoop = 0;
-};
+constexpr size_t NPU_MALLOC_SPACE = 1024UL * 1024 * 1024;
 
 constexpr uint32_t BLOCK_NUM = 20;
-constexpr int32_t BLOCK_SIZE_16 = 16;
 
-using LayoutA = layout::RowMajor;
-using LayoutB = layout::RowMajor;
-using LayoutC = layout::RowMajor;
+using namespace AscendC;
+using namespace Catcoc;
 
-#if defined(ENABLE_ASCENDC_DUMP)
+using LayoutA = Catlass::layout::RowMajor;
+using LayoutB = Catlass::layout::RowMajor;
+using LayoutC = Catlass::layout::RowMajor;
+using LayoutD = Catlass::layout::RowMajor;
+
+using ElementA = half;
+using ElementB = half;
+using ElementC = half;
+using ElementD = half;
+
 CATLASS_GLOBAL
-void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c,
-                          GM_ADDR symmetricPtr, CoCTiling cocTiling, GM_ADDR dump)
+void ShmemMatmulAllReduce(
+    uint64_t fftsAddr,
+    GM_ADDR gmA, GM_ADDR gmB, GM_ADDR gmD, GM_ADDR gmSymmetric,
+    uint32_t m, uint32_t n, uint32_t k
+)
 {
-    AscendC::InitDump(false, dump, ALL_DUMPSIZE);
-#else
-CATLASS_GLOBAL
-void ShmemMatmulAllReduce(uint64_t fftsAddr, GemmCoord problemShape, GM_ADDR a, GM_ADDR b, GM_ADDR c,
-                          GM_ADDR symmetricPtr, CoCTiling cocTiling)
-{
-#endif
-    // Set FFTS address
     shmemx_set_ffts_config(fftsAddr);
 
-    // Define ArchTag
-    using ArchTag = Arch::AtlasA2;
+    using ArchTag = Catlass::Arch::AtlasA2;
 
-    // unzip cocTiling
-    uint32_t m = cocTiling.m;
-    uint32_t n = cocTiling.n;
-    uint32_t k = cocTiling.k;
-    uint32_t m0 = cocTiling.m0;
-    uint32_t k0 = cocTiling.k0;
-    uint32_t n0 = cocTiling.n0;
-    uint32_t swizzleOffset = cocTiling.swizzleOffset;
-    uint32_t swizzleDirect = cocTiling.swizzleDirect;
-    uint32_t pValue = cocTiling.pValue;
-    uint32_t commDataSplit = cocTiling.commDataSplit;
-    uint32_t commNpuSplit = cocTiling.commNpuSplit;
-    uint32_t ubMoveNum = cocTiling.ubMoveNum;
-    uint32_t lenPerLoop = cocTiling.lenPerLoop;
-
-    // Prepare comm address
-    uint32_t rank = shmem_my_pe();
+    uint32_t rankIdx = shmem_my_pe();
     uint32_t rankSize = shmem_n_pes();
-    using ElementC = half;
 
-    // Block level, Define the layout of each input matrix
-    layout::RowMajor layoutA{m, k, k};
-    layout::RowMajor layoutB{k, n, n};
-    layout::RowMajor layoutC{m, n, n};
+    Catlass::GemmCoord problemShape{m, n, k};
+    LayoutA layoutA{m, k};
+    LayoutB layoutB{k, n};
+    LayoutD layoutD{m, n};
 
-    GemmCoord blockShape{m0, n0, k0};
+    constexpr bool ENABLE_UNIT_FLAG = true;
+    using MmadDispatchPolicy = Catlass::Gemm::MmadAtlasA2Pingpong<ENABLE_UNIT_FLAG>;
+    using L1TileShape = Catlass::GemmShape<128, 256, 256>;
+    using L0TileShape = Catlass::GemmShape<128, 256, 64>;
+    using AType = Catlass::Gemm::GemmType<ElementA, LayoutA>;
+    using BType = Catlass::Gemm::GemmType<ElementB, LayoutB>;
+    using CType = Catlass::Gemm::GemmType<ElementC, LayoutC>;
+    using DType = Catlass::Gemm::GemmType<ElementD, LayoutD>;
+    using BlockMmad = Catlass::Gemm::Block::BlockMmad<
+        MmadDispatchPolicy, L1TileShape, L0TileShape, AType, BType, CType
+    >;
 
-    // Block level, define BlockMmad
-    constexpr bool enableUnitFlag = true;
-    using MmadDispatchPolicy = Gemm::MmadAtlasA2Pingpong<enableUnitFlag>;
-    using L1TileShape = GemmShape<128U, 256U, 256U>;
-    using L0TileShape = GemmShape<128U, 256U, 64U>;
-    using AType = Gemm::GemmType<half, LayoutA>;
-    using BType = Gemm::GemmType<half, LayoutB>;
-    using CType = Gemm::GemmType<half, LayoutC>;
-    using BlockMmad = Gemm::Block::BlockMmad<MmadDispatchPolicy, L1TileShape, L0TileShape, AType, BType, CType>;
+    using BlockMmadScheduler = Catlass::Gemm::Block::GemmIdentityBlockSwizzle<7, 1>;
+    using BlockEpilogueScheduler = Catcoc::CommEpilogue::Block::BlockCommSwizzle<0>;
 
-    using ElementStore = half;
+    using RemoteSrcType = CType;
+    using RemoteDstType = DType;
+    using CopyDirect = Catcoc::detail::CopyDirect;
+    using TileRemoteCopy = CommEpilogue::Tile::TileRemoteCopy<ArchTag, RemoteSrcType, RemoteDstType, CopyDirect::Get>;
+    using TileScheduler = Catlass::Epilogue::Tile::EpilogueIdentityTileSwizzle;
 
-    using BlockScheduler = typename Gemm::Block::GemmIdentityBlockSwizzle<7U, 1U>;
-    using CommBlockSwizzle = Gemm::Block::CommBlockSwizzleDynamic;
+    using CommBlockShape = Catlass::MatrixShape<64, 256>;
+    using CommCoreSplit = Catlass::MatrixShape<20, 1>;
 
-    // Block level, define BlockAllReduceEpilogue(ReduceScatter + AllGather)
-    using BlockAllReduceEpilogue = Epilogue::Block::EpilogueAllReduce<BlockScheduler, CommBlockSwizzle>;
+    constexpr uint32_t UB_STAGES = 2;
+    using EpilogueReduceScatterTileShape = Catlass::MatrixShape<32, 256>;
+    using EpilogueReduceScatterDispatch = CommEpilogue::EpilogueAtlasA2CommRemoteCopy<UB_STAGES,
+        Catcoc::detail::CopyMode::Scatter>;
+    using BlockEpilogueReduceScatter = CommEpilogue::Block::CommBlockEpilogue<
+        EpilogueReduceScatterDispatch,
+        RemoteSrcType, RemoteDstType,
+        CommCoreSplit,
+        CommBlockShape,
+        EpilogueReduceScatterTileShape, TileRemoteCopy, TileScheduler
+    >;
 
-    // Kernel level
-    using MatmulAllReduceKernel = Gemm::Kernel::MatmulEpilogueComm<BlockMmad, BlockAllReduceEpilogue, BlockScheduler>;
+    using EpilogueAllGatherTileShape = Catlass::MatrixShape<32, 256>;
+    using EpilogueAllGatherDispatch = CommEpilogue::EpilogueAtlasA2CommRemoteCopy<UB_STAGES,
+        Catcoc::detail::CopyMode::Gather>;
+    using BlockEpilogueAllGather = CommEpilogue::Block::CommBlockEpilogue<
+        EpilogueAllGatherDispatch,
+        RemoteSrcType, RemoteDstType,
+        CommCoreSplit,
+        CommBlockShape,
+        EpilogueAllGatherTileShape, TileRemoteCopy, TileScheduler
+    >;
 
-    // Prepare EpilogueComm params
-    uint32_t maxUbPingPongSize = ubMoveNum / 2;
+    constexpr uint32_t WORKSPACE_STAGES = 2;
+    constexpr uint32_t COMM_INTERVAL = 3;
+    using MatmulAllReduceKernel = DGemm::Kernel::MatmulAllReduce<
+        BlockMmad,
+        BlockEpilogueReduceScatter,
+        BlockEpilogueAllGather,
+        BlockMmadScheduler,
+        BlockEpilogueScheduler,
+        WORKSPACE_STAGES
+    >;
 
-    BlockScheduler matmulBlockScheduler(problemShape, MakeCoord(L1TileShape::M, L1TileShape::N));
+    typename BlockEpilogueReduceScatter::Params reduceScatterParams{};
+    typename BlockEpilogueAllGather::Params allGatherParams{};
 
-    MatrixCoord commBlockShape{lenPerLoop / n0, n0};
-    MatrixCoord commProcessShape{maxUbPingPongSize / n0, n0};
+    typename MatmulAllReduceKernel::Params params{
+        problemShape, rankIdx, rankSize,
+        COMM_INTERVAL,
+        gmA, layoutA,
+        gmB, layoutB,
+        gmD, layoutD,
+        gmSymmetric,
+        reduceScatterParams,
+        allGatherParams
+    };
 
-    CommBlockSwizzle commSwizzle{commBlockShape, rank, rankSize, 0, commDataSplit, commNpuSplit};
-
-    AscendC::GlobalTensor<ElementStore> refC;
-    refC.SetGlobalBuffer((__gm__ ElementStore *)c);
-    typename BlockAllReduceEpilogue::Params epilogueCommParams{refC,
-                                                               layout::RowMajor(m, n, n),
-                                                               0,
-                                                               (__gm__ ElementC *)symmetricPtr,
-                                                               commBlockShape,
-                                                               commProcessShape,
-                                                               matmulBlockScheduler,
-                                                               commSwizzle
-                                                               };
-
-    // Prepare params
-    typename MatmulAllReduceKernel::Params params{problemShape, blockShape, pValue, rank, rankSize, a, layoutA, b,
-                                                  layoutB, symmetricPtr, epilogueCommParams};
-
-    // Call kernel
-    MatmulAllReduceKernel matmulCommKernel;
-    matmulCommKernel(params);
+    MatmulAllReduceKernel matmulAllReduceKernel;
+    matmulAllReduceKernel(params);
 }
 
 struct Options {
-    static constexpr auto helper =
-        "Usage: matmul_allreduce m n k transA transB [--block m0 n0 k0 --ubMoveNum ubMoveNum --pValue pValue --split "
-        "commNpuSplit commDataSplit lenPerLoop --swizzle swizzleOffset swizzleDirect]\n";
+    static constexpr auto HELPER =
+       "Usage: matmul_allreduce rank_size rank_id ip_port m n k [device_id_list]\n";
 
-    uint32_t m = 0;
-    uint32_t n = 0;
-    uint32_t k = 0;
-    uint32_t m0 = 128;
-    uint32_t k0 = 256;
-    uint32_t n0 = 256;
-    uint32_t transA = 0;
-    uint32_t transB = 0;
-    uint32_t swizzleDirect = 1;
-    uint32_t swizzleOffset = 7;
-    uint32_t ubMoveNum = 16 * 1024;
-    uint32_t pValue = 3;
-    uint32_t commNpuSplit = 2;
-    uint32_t commDataSplit = 1;
-    uint32_t lenPerLoop = m0 * n0 / 2;
+    int rankSize;
+    int rankId;
+    std::string ipPort;
+    uint32_t m{0};
+    uint32_t n{0};
+    uint32_t k{0};
+    std::string dataPath;
+    std::vector<int> deviceIdList{};
 
     int Parse(int argc, char **argv)
     {
-        if (argc < 6U) {
-            printf(helper);
+        enum ArgsIndex {
+            RANK_SIZE_INDEX = 1,
+            RANK_ID_INDEX,
+            IP_PORT_INDEX,
+            M_INDEX,
+            N_INDEX,
+            K_INDEX,
+            DATA_PATH_INDEX,
+            DEVICE_LIST_INDEX,
+            INDEX_MAX
+        };
+
+        if (argc > INDEX_MAX) {
+            printf(HELPER);
             return -1;
         }
 
-        uint32_t argIndex = 1;
-        m = std::atoi(argv[argIndex++]);
-        n = std::atoi(argv[argIndex++]);
-        k = std::atoi(argv[argIndex++]);
-        transA = std::atoi(argv[argIndex++]);
-        transB = std::atoi(argv[argIndex++]);
-
-        while (argIndex < argc) {
-            std::string flag = std::string(argv[argIndex++]);
-            if (flag == "--pValue") {
-                pValue = std::atoi(argv[argIndex++]);
-            } else if (flag == "--ubMoveNum") {
-                ubMoveNum = std::atoi(argv[argIndex++]);
-            } else if (flag == "--split") {
-                commNpuSplit = std::atoi(argv[argIndex++]);
-                commDataSplit = std::atoi(argv[argIndex++]);
-                lenPerLoop = std::atoi(argv[argIndex++]);
-            } else if (flag == "--block") {
-                m0 = std::atoi(argv[argIndex++]);
-                n0 = std::atoi(argv[argIndex++]);
-                k0 = std::atoi(argv[argIndex++]);
-            } else if (flag == "--swizzle") {
-                swizzleOffset = std::atoi(argv[argIndex++]);
-                swizzleDirect = std::atoi(argv[argIndex++]);
-            } else {
-                printf(helper);
-                return -1;
+        rankSize = std::atoi(argv[RANK_SIZE_INDEX]);
+        rankId = std::atoi(argv[RANK_ID_INDEX]);
+        ipPort = argv[IP_PORT_INDEX];
+        m = std::atoi(argv[M_INDEX]);
+        n = std::atoi(argv[N_INDEX]);
+        k = std::atoi(argv[K_INDEX]);
+        dataPath = argv[DATA_PATH_INDEX];
+        if (argc > DEVICE_LIST_INDEX) {
+            char *idListStr = argv[DEVICE_LIST_INDEX];
+            for (char *idToken = std::strtok(idListStr, ","); idToken; idToken = std::strtok(nullptr, ",")) {
+                deviceIdList.push_back(std::atoi(idToken));
+            }
+        } else {
+            for (size_t i = 0; i < rankSize; ++i) {
+                deviceIdList.push_back(i);
             }
         }
-
         return 0;
+    }
+
+    std::string GetDataPath(std::string const &fileName = "") const
+    {
+        return dataPath + "/" + fileName;
     }
 };
 
 int main(int argc, char **argv)
 {
     int status = SHMEM_SUCCESS;
-    int rankSize = atoi(argv[1]);
-    int rankId = atoi(argv[2]);
-    std::string ipport = argv[3];
+    Options options;
+    if (options.Parse(argc, argv) != 0) {
+        std::cerr << "Invalid arguments\n";
+        return 1;
+    }
+    int rankSize = options.rankSize;
+    int rankId = options.rankId;
+    std::string ipPort = options.ipPort;
+    uint32_t m = options.m;
+    uint32_t n = options.n;
+    uint32_t k = options.k;
+    int32_t deviceId = options.deviceIdList[rankId];
 
-    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId << " input_ip: " << ipport
-              << std::endl;
+    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId << " input_ip: " << ipPort << "\n";
 
-    ACL_CHECK(aclInit(nullptr));
-    int32_t deviceId = atoi(argv[4]) + rankId % gNpuNum;
-    ACL_CHECK(aclrtSetDevice(deviceId));
     aclrtStream stream = nullptr;
+    ACL_CHECK(aclInit(nullptr));
+    ACL_CHECK(aclrtSetDevice(deviceId));
     ACL_CHECK(aclrtCreateStream(&stream));
     status = shmem_set_conf_store_tls(false, nullptr, 0);
     shmem_init_attr_t *attributes;
-    status = shmem_set_attr(rankId, rankSize, gNpuMallocSpace, ipport.c_str(), &attributes);
+    status = shmem_set_attr(rankId, rankSize, NPU_MALLOC_SPACE, ipPort.c_str(), &attributes);
     status = shmem_init_attr(attributes);
     status = shmem_init_status();
 
-    Options options;
-    uint32_t m = atoi(argv[5]);
-    uint32_t k = atoi(argv[6]);
-    uint32_t n = atoi(argv[7]);
-    uint32_t m0 = 128;
-    uint32_t k0 = 256;
-    uint32_t n0 = 256;
-    uint32_t swizzleDirect = 1;
-    uint32_t swizzleOffset = 7;
-    uint32_t ubMoveNum = 16 * 1024;
-    uint32_t pValue = 3;
-    uint32_t commNpuSplit = 2;
-    uint32_t commDataSplit = 1;
-    uint32_t lenPerLoop = m0 * n0 / 2;
-
-    // m, n, k
-    GemmCoord problemShape{m, n, k};
-
     size_t aSize = static_cast<size_t>(m) * k * sizeof(__fp16);
     size_t bSize = static_cast<size_t>(k) * n * sizeof(__fp16);
-    size_t cSize = static_cast<size_t>(m) * n * sizeof(__fp16);
-    size_t workspaceSize = static_cast<size_t>(m) * n * sizeof(__fp16);
+    size_t dSize = static_cast<size_t>(m) * n * sizeof(__fp16);
 
     uint8_t *aDevice;
-    ACL_CHECK(aclrtMalloc((void **)(&aDevice), aSize, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&aDevice), aSize, ACL_MEM_MALLOC_HUGE_FIRST));
     uint8_t *aHost;
     ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&aHost), aSize));
-    std::string dataPath = argv[8];
-    std::string aPath = dataPath + "/rank_" + std::to_string(rankId) + "_a.bin";
-    ReadFile(aPath.c_str(), aHost, aSize);
+    ReadFile(options.GetDataPath("rank_" + std::to_string(rankId) + "_a.bin"), aHost, aSize);
     ACL_CHECK(aclrtMemcpy(aDevice, aSize, aHost, aSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
     uint8_t *bDevice;
-    ACL_CHECK(aclrtMalloc((void **)(&bDevice), bSize, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&bDevice), bSize, ACL_MEM_MALLOC_HUGE_FIRST));
     uint8_t *bHost;
-    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void **>(&bHost), bSize));
-    std::string bPath = dataPath + "/rank_" + std::to_string(rankId) + "_b.bin";
-    ReadFile(bPath.c_str(), bHost, bSize);
+    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&bHost), bSize));
+    ReadFile(options.GetDataPath("rank_" + std::to_string(rankId) + "_b.bin"), bHost, bSize);
     ACL_CHECK(aclrtMemcpy(bDevice, bSize, bHost, bSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
-    uint8_t *cDevice;
-    ACL_CHECK(aclrtMalloc((void **)(&cDevice), cSize, ACL_MEM_MALLOC_HUGE_FIRST));
-    uint8_t *cHost;
-    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&cHost), cSize));
-    std::fill(cHost, cHost + cSize, 0);  // 零初始化 C 矩阵
-    ACL_CHECK(aclrtMemcpy(cDevice, cSize, cHost, cSize, ACL_MEMCPY_HOST_TO_DEVICE));
+    uint8_t *dDevice;
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&dDevice), dSize, ACL_MEM_MALLOC_HUGE_FIRST));
+    uint8_t *dHost;
+    ACL_CHECK(aclrtMallocHost(reinterpret_cast<void**>(&dHost), dSize));
+    aclrtMemset(dHost, dSize, 0, dSize);  // 零初始化 C 矩阵
+    ACL_CHECK(aclrtMemcpy(dDevice, dSize, dHost, dSize, ACL_MEMCPY_HOST_TO_DEVICE));
 
     void *symmPtr = shmem_malloc((204 * 1024 * 1024) * sizeof(__fp16));
-    uint8_t *symmetricPtr = (uint8_t *)symmPtr;
-
-    CoCTiling cocTiling;
-    cocTiling.m = m;
-    cocTiling.n = n;
-    cocTiling.k = k;
-    cocTiling.m0 = m0;
-    cocTiling.n0 = n0;
-    cocTiling.k0 = k0;
-    cocTiling.swizzleOffset = swizzleOffset;
-    cocTiling.swizzleDirect = swizzleDirect;
-    cocTiling.pValue = pValue;
-    cocTiling.ubMoveNum = ubMoveNum;
-    cocTiling.commNpuSplit = commNpuSplit;
-    cocTiling.commDataSplit = commDataSplit;
-    cocTiling.lenPerLoop = lenPerLoop;
+    uint8_t *symmetricPtr = reinterpret_cast<uint8_t *>(symmPtr);
 
     ACL_CHECK(aclrtSynchronizeStream(stream));
     std::cout << "Before calling MM_AR kernel " << std::endl;
-    const int repeatTimes = 10;
-    for (int i = 0; i < repeatTimes; i++) {
-        uint64_t fftsConfig = shmemx_get_ffts_config();
-#if defined(ENABLE_ASCENDC_DUMP)
-        uint8_t *deviceDump{nullptr};
-        ACL_CHECK(aclrtMalloc(reinterpret_cast<void **>(&deviceDump), ALL_DUMPSIZE, ACL_MEM_MALLOC_HUGE_FIRST));
-        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
-                                                             cDevice, symmetricPtr, cocTiling, deviceDump);
-        ACL_CHECK(aclrtSynchronizeStream(stream));
-        Adx::AdumpPrintWorkSpace(deviceDump, ALL_DUMPSIZE, stream, "test");
-#else
-        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(fftsConfig, problemShape, aDevice, bDevice,
-                                                             cDevice, symmetricPtr, cocTiling);
-#endif
+    for (int i = 0; i < 1; i++) {
+        uint64_t fftsAddr = shmemx_get_ffts_config();
+        ShmemMatmulAllReduce<<<BLOCK_NUM, nullptr, stream>>>(
+            fftsAddr,
+            aDevice, bDevice, dDevice, symmetricPtr,
+            m, n, k
+        );
     }
+    ACL_CHECK(aclrtSynchronizeStream(stream));
     std::cout << "After calling MM_AR kernel " << std::endl;
 
-    ACL_CHECK(aclrtSynchronizeStream(stream));
-
-    ACL_CHECK(aclrtMemcpy(cHost, cSize, cDevice, cSize, ACL_MEMCPY_DEVICE_TO_HOST));
     if (rankId == 0) {
-        std::string cPath = dataPath + "/shmem_output.bin";
-        WriteFile(cPath.c_str(), cHost, cSize);
+        ACL_CHECK(aclrtMemcpy(dHost, dSize, dDevice, dSize, ACL_MEMCPY_DEVICE_TO_HOST));
+        WriteFile(options.GetDataPath("shmem_output.bin"), dHost, dSize);
         std::printf("test finished\n");
     }
 
@@ -366,10 +291,10 @@ int main(int argc, char **argv)
 
     ACL_CHECK(aclrtFreeHost(aHost));
     ACL_CHECK(aclrtFreeHost(bHost));
-    ACL_CHECK(aclrtFreeHost(cHost));
+    ACL_CHECK(aclrtFreeHost(dHost));
     ACL_CHECK(aclrtFree(aDevice));
     ACL_CHECK(aclrtFree(bDevice));
-    ACL_CHECK(aclrtFree(cDevice));
+    ACL_CHECK(aclrtFree(dDevice));
 
     std::cout << "[TEST] begin to exit...... rankId: " << rankId << std::endl;
     status = shmem_finalize();

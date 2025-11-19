@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -29,7 +29,7 @@ int32_t shmemi_sync_init()
     return rtGetC2cCtrlAddr(&ffts_config, &len);
 }
 
-}  // namespace shm
+} // namespace
 
 uint64_t shmemx_get_ffts_config()
 {
@@ -47,12 +47,12 @@ void shmem_barrier_all()
     shmem_barrier(SHMEM_TEAM_WORLD);
 }
 
-void shmem_barrier_on_stream(shmem_team_t tid, aclrtStream stream)
+void shmemx_barrier_on_stream(shmem_team_t tid, aclrtStream stream)
 {
     shmemi_barrier_on_stream(tid, stream);
 }
 
-void shmem_barrier_all_on_stream(aclrtStream stream)
+void shmemx_barrier_all_on_stream(aclrtStream stream)
 {
     shmemi_barrier_on_stream(SHMEM_TEAM_WORLD, stream);
 }

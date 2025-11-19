@@ -34,7 +34,8 @@ protected:
         EXPECT_EQ(shm::g_state.mype, rank_id);
         EXPECT_EQ(shm::g_state.npes, n_ranks);
         EXPECT_NE(shm::g_state.heap_base, nullptr);
-        EXPECT_NE(shm::g_state.p2p_heap_base[rank_id], nullptr);
+        EXPECT_NE(shm::g_state.p2p_heap_host_base[rank_id], nullptr);
+        EXPECT_NE(shm::g_state.p2p_heap_device_base[rank_id], nullptr);
         EXPECT_EQ(shm::g_state.heap_size, local_mem_size + SHMEM_EXTRA_SIZE);
         EXPECT_NE(shm::g_state.team_pools[0], nullptr);
         status = shmem_init_status();

@@ -15,3 +15,8 @@ if [[ -f "$set_env_path" ]] && [[ "$(basename "$set_env_path")" == "set_env.sh" 
     export LD_LIBRARY_PATH=$SHMEM_HOME_PATH/shmem/lib:$SHMEM_HOME_PATH/memfabric_hybrid/lib:$LD_LIBRARY_PATH
     export PATH=$SHMEM_HOME_PATH/bin:$PATH
 fi
+# 是否有python扩展
+if [[ -d "$SHMEM_HOME_PATH/../examples/shared_lib/output" ]] && [[ -d "$SHMEM_HOME_PATH/../examples/python_extension/output" ]]; then
+    echo "Export the environment variable for the shmem python extension. "
+    export LD_LIBRARY_PATH=$SHMEM_HOME_PATH/../examples/shared_lib/output/lib:$SHMEM_HOME_PATH/../examples/python_extension/output/lib:$LD_LIBRARY_PATH
+fi

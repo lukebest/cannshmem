@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -11,105 +11,43 @@
 CURRENT_DIR=$(pwd)
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$( dirname $( dirname $(dirname "$SCRIPT_DIR")))
+UTILS_PATH=${PROJECT_ROOT}/examples/utils
+CSV_FILE="${SCRIPT_DIR}/test_shapes.csv"
 
-# Default Args
-RANK_SIZE="2"
-IPPORT="tcp://127.0.0.1:8766"
-FIRST_NPU="0"
-
-# Args Parse
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -ranks)
-            if [ -n "$2" ]; then
-                RANK_SIZE="$2"
-                shift 2
-            else
-                echo "Error: -ranks requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        -fnpu)
-            if [ -n "$2" ]; then
-                FIRST_NPU="$2"
-                shift 2
-            else
-                echo "Error: -fnpu requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        -ipport)
-            if [ -n "$2" ]; then
-                IPPORT="$2"
-                shift 2
-            else
-                echo "Error: -ipport requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        -M)
-            if [ -n "$2" ]; then
-                M="$2"
-                shift 2
-            else
-                echo "Error: -M requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        -K)
-            if [ -n "$2" ]; then
-                K="$2"
-                shift 2
-            else
-                echo "Error: -K requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        -N)
-            if [ -n "$2" ]; then
-                N="$2"
-                shift 2
-            else
-                echo "Error: -N requires a value. Please add a parameter."
-                exit 1
-            fi
-            ;;
-        *)
-            echo "Error: Unknown option $1."
-            exit 1
-            ;;
-    esac
-done
+IFS=',' read -ra DEVICE_ID_LIST <<< "$1"
+RANK_SIZE=${#DEVICE_ID_LIST[@]}
+if [ $RANK_SIZE -gt 8 ]; then
+    echo "Rank size is illegal"
+    exit 1
+fi
 
 cd ${PROJECT_ROOT}/examples/matmul_allreduce/
-
 DATA_DIR=`realpath ./out`
 echo "DATA_DIR: $DATA_DIR"
+EXEC_BIN=${PROJECT_ROOT}/build/bin/matmul_allreduce
 
-# Generate golden data
-rm -rf out/*.bin
-python3 ./scripts/gen_data.py \
-    --data_dir ./out \
-    --out_data_type 1 \
-    --rank_size ${RANK_SIZE}\
-    --m ${M} \
-    --n ${N} \
-    --k ${K} \
-    --transA 0 \
-    --transB 0
+source ${PROJECT_ROOT}/install/set_env.sh
 
-# Start Process
-echo "PROJECT_ROOT: $PROJECT_ROOT"
-echo "Test Case, M: ${M}, K: ${K}, N: ${N}"
-export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/install/memfabric_hybrid/lib/:${ASCEND_HOME_PATH}/lib64:$LD_LIBRARY_PATH
-for (( idx =0; idx < ${RANK_SIZE}; idx = idx + 1 )); do
-    msprof --application="${PROJECT_ROOT}/build/bin/matmul_allreduce $RANK_SIZE $idx $IPPORT $FIRST_NPU $M $K $N $DATA_DIR" --output=${PROJECT_ROOT}/examples/matmul_allreduce/output/ &
+tail -n +2 "$CSV_FILE" | while IFS=',' read -r M K N; do
+    echo "Processing test case: M=${M}, K=${K}, N=${N}"
+
+    #Generate golden data
+    rm -rf ./out/*.bin
+    python3 ${UTILS_PATH}/gen_data.py 0 1 ${RANK_SIZE} ${M} ${N} ${K} 0 0 ${DATA_DIR}
+
+    # Set necessary parameters
+    IPPORT="tcp://127.0.0.1:8788"
+
+    # Start Process
+    for (( idx = 0; idx < ${RANK_SIZE}; idx = idx + 1 )); do
+        ${EXEC_BIN} "$RANK_SIZE" "$idx" "$IPPORT" "$M" "$N" "$K" "${DATA_DIR}" "$1" &
+    done
+
+    # Wait until all process exit
+    wait
+
+    # Verify output
+    python3 ${UTILS_PATH}/verify_result.py ${DATA_DIR}/shmem_output.bin ${DATA_DIR}/golden.bin 1 ${M} ${N} ${K}
 done
-
-# Wait until all process exit
-wait
-
-# Verify output
-python3 ./scripts/verify_result.py ${DATA_DIR}/shmem_output.bin ${DATA_DIR}/golden.bin 1 ${M} ${N} ${K}
 
 cd ${CURRENT_DIR}

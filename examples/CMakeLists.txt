@@ -20,6 +20,7 @@ function(shmem_add_fusion_example NAME)
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/include
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
         ${PROJECT_SOURCE_DIR}/examples/${NAME}
+        ${PROJECT_SOURCE_DIR}/examples/templates/include
         ${PROJECT_SOURCE_DIR}/examples/utils
     )
     target_link_options(${NAME} PRIVATE --cce-fatobj-link)
@@ -48,6 +49,7 @@ function(shmem_add_collective_example NAME)
         ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host/
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
         ${PROJECT_SOURCE_DIR}/examples/${NAME}
+        ${PROJECT_SOURCE_DIR}/examples/templates/include
         ${PROJECT_SOURCE_DIR}/examples/utils
         ${PROJECT_SOURCE_DIR}/src/host
     )
@@ -55,8 +57,16 @@ function(shmem_add_collective_example NAME)
 endfunction()
 
 foreach(EXAMPLE
+    kv_shuffle
     allgather
+    allgather_matmul
+    allgather_matmul_with_gather_result
+    allgather_matmul_padding
+    dispatch_gmm_combine
     matmul_allreduce
+    matmul_reduce_scatter
+    matmul_reduce_scatter_padding
+    dynamic_tiling
     rdma_perftest
     rdma_demo
     rdma_handlewait_test/unuse_handlewait

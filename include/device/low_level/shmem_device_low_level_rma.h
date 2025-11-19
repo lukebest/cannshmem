@@ -34,7 +34,7 @@ SHMEM_DEVICE __gm__ void *shmem_ptr(__gm__ void *ptr, int pe)
     uint64_t offset = reinterpret_cast<uint64_t>(ptr) - reinterpret_cast<uint64_t>(device_state->heap_base);
 
     // Address translate
-    uint64_t remote_ptr = reinterpret_cast<uint64_t>(device_state->p2p_heap_base[pe]) + offset;
+    uint64_t remote_ptr = reinterpret_cast<uint64_t>(device_state->p2p_heap_device_base[pe]) + offset;
 
     return reinterpret_cast<__gm__ void *>(remote_ptr);
 }

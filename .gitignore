@@ -31,6 +31,8 @@
 *.out
 *.app
 
+*.bin
+
 /.idea/
 /.vscode/
 /cmake-build-*/
@@ -40,3 +42,7 @@
 
 sync_config.jsonc
 /tests/examples/matmul_allreduce/__pycache__
+*__pycache__*
+
+3rdparty/
+install/

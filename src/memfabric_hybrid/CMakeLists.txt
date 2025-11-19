@@ -6,29 +6,6 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 
-cmake_minimum_required(VERSION 3.12.0)
-project(MF_HYBRID VERSION 1.0)
-
-set(CMAKE_CXX_STANDARD 11)
-
-if (BUILD_COMPILER MATCHES gcc)
-    set(CMAKE_COMPILER gcc)
-else ()
-    set(CMAKE_COMPILER bisheng)
-endif()
-
-if (CMAKE_COMPILER MATCHES bisheng AND DEFINED ENV{ASCEND_HOME_PATH})
-    set(ASCEND_HOME_PATH $ENV{ASCEND_HOME_PATH})
-    set(CMAKE_C_COMPILER ${CMAKE_COMPILER})
-    set(CMAKE_CXX_COMPILER ${CMAKE_COMPILER})
-else ()
-    if (CMAKE_COMPILER MATCHES bisheng)
-        message(FATAL_ERROR "ASCEND_HOME_PATH not found! Please run set_env.sh first.")
-    endif()
-    set(CMAKE_C_COMPILER gcc)
-    set(CMAKE_CXX_COMPILER g++)
-endif ()
-
 option(ENABLE_TRACE_LOG "Enable trace log" OFF)
 option(ENABLE_ASAN "Enable ASAN" OFF)
 option(BUILD_TESTS "build test or not" OFF)
@@ -45,7 +22,7 @@ message(STATUS "BUILD_PYTHON = ${BUILD_PYTHON}")
 message(STATUS "CMAKE_COMPILER = ${CMAKE_COMPILER}")
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RELEASE)
@@ -76,15 +53,6 @@ if (${CMAKE_BUILD_TYPE} MATCHES "ASAN")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${SANITIZERS}")
     # 链接选项
     add_link_options(-fsanitize=${SANITIZERS})
-endif ()
-
-if (BUILD_TESTS STREQUAL "ON")
-    add_definitions(-DUT_ENABLED)
-    if (NOT CMAKE_COMPILER MATCHES bisheng)
-        add_compile_options(-fprofile-arcs -ftest-coverage)
-        add_link_options(-lgcov --coverage)
-    endif()
-    set(BUILD_OPEN_ABI "ON")
 endif ()
 
 if (NOT BUILD_OPEN_ABI STREQUAL "ON")
@@ -123,56 +91,24 @@ if (ENABLE_TRACE_L0G)
     add_definitions(-DLOG_TRACE_INFO_ENABLED)
 endif ()
 
+add_compile_options(
+    -Wno-unused-parameter
+    -Wno-unused-variable
+    -Wno-unused-const-variable
+    -Wno-c99-designator
+    -Wno-implicit-exception-spec-mismatch
+    -Wno-string-compare
+)
+
 set(BUILD_PATH ${PROJECT_BINARY_DIR}/)
-set(ENV{3RDPARTY_BIN_DIR} ${PROJECT_3RDPARTY_BIN_DIR})
-set(PROJECT_BUILD_PATH ${PROJECT_SOURCE_DIR}/build)
-set(PROJECT_3RDPARTY_SRC_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
-set(PROJECT_3RDPARTY_BIN_DIR ${PROJECT_SOURCE_DIR}/output/3rdparty)
-set(PROJECT_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/output)
-
-# set src base dir and output dir of smem
-set(PROJECT_SMEM_SRC_BASE ${PROJECT_SOURCE_DIR}/src/smem)
-set(PROJECT_SMEM_OUTPUT ${PROJECT_SOURCE_DIR}/output/smem)
-
-# set src base dir and output dir of hybm
-set(PROJECT_HYBM_SRC_BASE ${PROJECT_SOURCE_DIR}/src/hybm)
-set(PROJECT_HYBM_OUTPUT ${PROJECT_SOURCE_DIR}/output/hybm)
-
-# set src base dir and output dir of acc_links
-set(PROJECT_ACCLINKS_SRC_BASE ${PROJECT_SOURCE_DIR}/src/acc_links)
-set(PROJECT_ACCLINKS_OUTPUT ${PROJECT_SOURCE_DIR}/output/acc_links)
-
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
-message(STATUS "3rdparty src dir ${PROJECT_3RDPARTY_SRC_DIR}")
-message(STATUS "3rdparty bin dir ${PROJECT_3RDPARTY_BIN_DIR}")
-message(STATUS "target install dir ${TARGET_INSTALL_DIR}")
-
-# set install target top dir
-message(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
-if (${CMAKE_INSTALL_PREFIX} MATCHES "/usr/local")
-    set(TARGET_INSTALL_DIR ${PROJECT_OUTPUT_PATH}/)
-elseif (NOT EXISTS ${CMAKE_INSTALL_PREFIX})
-    set(TARGET_INSTALL_DIR ${PROJECT_OUTPUT_PATH}/)
-else ()
-    set(TARGET_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/)
-endif ()
-message(STATUS "install dir ${TARGET_INSTALL_DIR}")
+set(PROJECT_SMEM_SRC_BASE ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem)
+set(PROJECT_HYBM_SRC_BASE ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/hybm)
+set(PROJECT_ACCLINKS_SRC_BASE ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/acc_links)
 
 include_directories(
         ${PROJECT_SMEM_SRC_BASE}/include/host
-        ${PROJECT_SOURCE_DIR}/include/hybm
-        ${PROJECT_SOURCE_DIR}/src/utils
-)
-
-link_directories(
-    ${PROJECT_3RDPARTY_BIN_DIR}/openssl/lib/
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/hybm/include
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/utils
 )
 
 add_subdirectory(src)
-
-if (BUILD_TESTS STREQUAL "ON")
-    set(CMAKE_CXX_STANDARD 14)
-    message(STATUS "BUILD_TESTS = ON, add compile gov")
-    link_directories(${CMAKE_BINARY_DIR}/output)
-    add_subdirectory(test)
-endif ()

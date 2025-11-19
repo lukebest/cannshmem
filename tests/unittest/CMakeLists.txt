@@ -16,7 +16,9 @@ set(CMAKE_CXX_COMPILER g++)
 
 add_executable(shmem_unittest $<TARGET_OBJECTS:shmem_unittest_host>)
 target_link_directories(shmem_unittest PRIVATE
-    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/lib
+    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/acc_links
+    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/hybm
+    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/smem
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/lib
 )
-target_link_libraries(shmem_unittest PRIVATE shmem_unittest_device gtest gcov mf_smem shmem_unittest_include)
+target_link_libraries(shmem_unittest PRIVATE shmem_unittest_device gtest gcov smem_shared shmem_unittest_include)

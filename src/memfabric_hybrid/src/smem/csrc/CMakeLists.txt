@@ -35,28 +35,16 @@ target_compile_options(smem_objects PRIVATE -fPIC)
 
 add_library(smem_static STATIC $<TARGET_OBJECTS:smem_objects>)
 set_target_properties(smem_static PROPERTIES OUTPUT_NAME "mf_smem")
-target_link_directories(smem_static PUBLIC ${PROJECT_3RDPARTY_BIN_DIR}/acc_links/lib)
+target_link_directories(smem_static PUBLIC ${CMAKE_BINARY_DIR}/memfabric_hybrid/acc_links)
 target_link_libraries(smem_static PUBLIC pthread acc_tcp_net_static hybmm_static)
 
 add_library(smem_shared SHARED $<TARGET_OBJECTS:smem_objects>)
-set_target_properties(smem_shared PROPERTIES OUTPUT_NAME "mf_smem")
-target_link_directories(smem_shared PUBLIC ${PROJECT_3RDPARTY_BIN_DIR}/acc_links/lib)
+set_target_properties(smem_shared PROPERTIES OUTPUT_NAME "mf_smem"
+                      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/memfabric_hybrid/smem")
+target_link_directories(smem_shared PUBLIC ${CMAKE_BINARY_DIR}/memfabric_hybrid/acc_links)
 target_link_libraries(smem_shared PUBLIC pthread acc_tcp_net_static hybmm_shared)
+set_target_properties(smem_shared PROPERTIES LINK_LIBRARIES "")
 
 if(BUILD_PYTHON STREQUAL "ON")
     add_subdirectory(python_wrapper)
 endif()
-
-#install
-file(GLOB HEADER_FILES ../include/host/*.h)
-file(GLOB DEVICE_HEADER_FILES ../include/device/*.h)
-
-#install head files
-install(FILES ${HEADER_FILES} DESTINATION ${TARGET_INSTALL_DIR}/smem/include/smem/host)
-install(FILES ${DEVICE_HEADER_FILES} DESTINATION ${TARGET_INSTALL_DIR}/smem/include/smem/device/)
-
-# install library
-install(TARGETS smem_shared
-        LIBRARY DESTINATION ${TARGET_INSTALL_DIR}/smem/lib64
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-        )

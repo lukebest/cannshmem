@@ -18,21 +18,21 @@ enum IpType {
     IPNONE,
 };
 
-typedef struct {
+struct mf_sockaddr {
     union {
         sockaddr_in ipv4;
         sockaddr_in6 ipv6;
     } ip;
     IpType type {IPNONE};
-} mf_sockaddr;
+};
 
-typedef struct {
+struct mf_ip_addr {
     union {
         uint32_t addrv4;
         uint8_t addrv6[16];
     } addr;
     IpType type {IPNONE};
-} mf_ip_addr;
+};
 
 struct net_addr_t {
     union {

@@ -22,7 +22,7 @@ target_compile_options(shmem_fuzztest_host PRIVATE
 )
 target_include_directories(shmem_fuzztest_host PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
-    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host
+    ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/host
     ${PROJECT_SOURCE_DIR}/src/host
     ${PROJECT_SOURCE_DIR}/src/device
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/include

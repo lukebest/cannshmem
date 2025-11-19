@@ -5,6 +5,7 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
+
 file(GLOB_RECURSE TEST_INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*_test.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*_kernel.cpp")
 
 set(CMAKE_C_COMPILER bisheng)
@@ -15,8 +16,8 @@ target_link_options(shmem_unittest_include PRIVATE --cce-fatobj-link)
 target_compile_options(shmem_unittest_include PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
 target_include_directories(shmem_unittest_include PRIVATE
         ${PROJECT_SOURCE_DIR}/include/
-        ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host
-        ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/host
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/device
         ${PROJECT_SOURCE_DIR}/src/host
         ${PROJECT_SOURCE_DIR}/src/device
         ${PROJECT_SOURCE_DIR}/3rdparty/googletest/include

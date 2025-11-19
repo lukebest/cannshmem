@@ -16,7 +16,7 @@ target_link_options(shmem_unittest_device PRIVATE --cce-fatobj-link)
 target_compile_options(shmem_unittest_device PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
 target_include_directories(shmem_unittest_device PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
-    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device
+    ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/device
     ${PROJECT_SOURCE_DIR}/tests/unittest/include
     ${PROJECT_SOURCE_DIR}/tests/unittest/team/team/
     ${PROJECT_SOURCE_DIR}/tests/unittest/team/team_allgather/

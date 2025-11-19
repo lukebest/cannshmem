@@ -18,7 +18,7 @@
 #include "hybm_logger.h"
 #include "hybm_networks_common.h"
 #include "hybm_ex_info_transfer.h"
-#include "hybm_device_user_mem_seg.h"
+#include "hybm_device_mem_segment.h"
 
 namespace ock {
 namespace mf {

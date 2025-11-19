@@ -18,7 +18,6 @@ namespace mf {
 
 enum DlApiExtendLibraryType {
     DL_EXT_LIB_DEVICE_RDMA,
-    DL_EXT_LIB_HOST_RDMA,
 };
 
 class DlApi {

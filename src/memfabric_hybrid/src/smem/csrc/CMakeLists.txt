@@ -21,8 +21,6 @@ file(GLOB_RECURSE PLATFORM_SRC
         ${PROJECT_SMEM_SRC_BASE}/csrc/config_store/*.cpp
         ${PROJECT_SMEM_SRC_BASE}/csrc/net/*.cpp
         ${PROJECT_SMEM_SRC_BASE}/csrc/smem_shm/*.cpp
-        ${PROJECT_SMEM_SRC_BASE}/csrc/smem_bm/*.cpp
-        ${PROJECT_SMEM_SRC_BASE}/csrc/smem_trans/*.cpp
         ${PROJECT_SMEM_SRC_BASE}/csrc/smem.cpp
 )
 
@@ -42,10 +40,6 @@ add_library(smem_shared SHARED $<TARGET_OBJECTS:smem_objects>)
 set_target_properties(smem_shared PROPERTIES OUTPUT_NAME "mf_smem")
 target_link_directories(smem_shared PUBLIC ${PROJECT_3RDPARTY_BIN_DIR}/acc_links/lib)
 target_link_libraries(smem_shared PUBLIC pthread acc_tcp_net_static hybmm_shared)
-
-if(BUILD_PYTHON STREQUAL "ON")
-    add_subdirectory(python_wrapper)
-endif()
 
 #install
 file(GLOB HEADER_FILES ../include/host/*.h)

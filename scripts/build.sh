@@ -75,7 +75,6 @@ function fn_whl_build()
 function make_package()
 {
     rm -rf "${PROJECT_ROOT}/package"
-    mkdir -p "${PROJECT_ROOT}/package"
     if [ $( uname -a | grep -c -i "x86_64" ) -ne 0 ]; then
         ARCH="x86_64"
     elif [ $( uname -a | grep -c -i "aarch64" ) -ne 0 ]; then
@@ -84,9 +83,11 @@ function make_package()
         exit 1
     fi
 
+    mkdir -p "${PROJECT_ROOT}"/package/$ARCH/
     if [ "$PYEXPAND_TYPE" = "ON" ]; then
-         cp "${PROJECT_ROOT}"/src/python/dist/*.whl "${PROJECT_ROOT}"/package
-         echo "Python wheel is copy to ${PROJECT_ROOT}/package"
+         cp "${PROJECT_ROOT}"/src/python/dist/*.whl "${PROJECT_ROOT}"/package/$ARCH/
+         whl_name=`basename ${PROJECT_ROOT}/src/python/dist/*.whl`
+         echo "${whl_name} is copy to ${PROJECT_ROOT}/package"
     fi
     cp -r "${PROJECT_ROOT}"/install/$ARCH "${PROJECT_ROOT}"/package
     echo "SHMEM_${VERSION}_linux-${ARCH}.run is copy to ${PROJECT_ROOT}/package"
@@ -210,7 +211,7 @@ function fn_build_memfabric()
 function fn_build_under_memfabric()
 {
     cd $UNDER_DIR/memfabric_hybrid
-    bash script/build.sh $BUILD_TYPE OFF OFF $PYEXPAND_TYPE
+    bash script/build.sh $BUILD_TYPE OFF
     ls -l output/smem
     cd ${PROJECT_ROOT}
 
@@ -338,6 +339,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -package)
             PACKAGE=ON
+            PYEXPAND_TYPE=ON
             shift
             ;;
         *)

@@ -11,7 +11,6 @@
 #include "dl_acl_api.h"
 #include "dl_hal_api.h"
 #include "dl_hccp_api.h"
-#include "dl_hcom_api.h"
 
 namespace ock {
 namespace mf {
@@ -37,17 +36,12 @@ void DlApi::CleanupLibrary()
     DlHccpApi::CleanupLibrary();
     DlAclApi::CleanupLibrary();
     DlHalApi::CleanupLibrary();
-    DlHcomApi::CleanupLibrary();
 }
 
 Result DlApi::LoadExtendLibrary(DlApiExtendLibraryType libraryType)
 {
     if (libraryType == DL_EXT_LIB_DEVICE_RDMA) {
         return DlHccpApi::LoadLibrary();
-    }
-
-    if (libraryType == DL_EXT_LIB_HOST_RDMA) {
-        return DlHcomApi::LoadLibrary();
     }
 
     return BM_OK;

@@ -70,12 +70,6 @@ public:
     void Unmap() noexcept override;
 
     bool CheckAddressInEntity(const void *ptr, uint64_t length) const noexcept override;
-    int32_t CopyData(hybm_copy_params &params, hybm_data_copy_direction direction,
-                     void *stream, uint32_t flags) noexcept override;
-    int32_t CopyData2d(hybm_copy_2d_params &params, hybm_data_copy_direction direction,
-                       void *stream, uint32_t flags) noexcept override;
-    int32_t BatchCopyData(hybm_batch_copy_params &params,
-                          hybm_data_copy_direction direction, void *stream, uint32_t flags) noexcept override;
     bool SdmaReaches(uint32_t remoteRank) const noexcept override;
     hybm_data_op_type CanReachDataOperators(uint32_t remoteRank) const noexcept override;
 
@@ -92,9 +86,7 @@ private:
 
     Result InitSegment();
     Result InitHbmSegment();
-    Result InitDramSegment();
     Result InitTransManager();
-    Result InitDataOperator();
 
     void ReleaseResources();
     int32_t SetThreadAclDevice();
@@ -106,9 +98,6 @@ private:
     static thread_local bool isSetDevice_;
     hybm_options options_{};
     std::shared_ptr<MemSegment> segment_;
-    std::shared_ptr<DataOperator> devRdmaDataOperator_;
-    std::shared_ptr<DataOperator> hostRdmaDataOperator_;
-    std::shared_ptr<DataOperator> sdmaDataOperator_;
     transport::TransManagerPtr transportManager_;
     std::mutex importMutex_;
     std::unordered_map<uint32_t, EntityExportInfo> importedRanks_;

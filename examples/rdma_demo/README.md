@@ -1,4 +1,4 @@
-使用方式: 
+使用方式:
 1.在shmem/目录编译:
 ```bash
 bash scripts/build.sh
@@ -6,9 +6,9 @@ bash scripts/build.sh
 2.在shmem/目录运行:
 ```bash
 export PROJECT_ROOT=<shmem-root-directory>
-export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/3rdparty/memfabric_hybrid/output/smem/lib64:${PROJECT_ROOT}/3rdparty/memfabric_hybrid/output/hybm/lib64:$LD_LIBRARY_PATH
-./build/bin/rdma_demo 2 0 tcp://127.0.0.1:8765 2 0 0 # rank 0
-./build/bin/rdma_demo 2 1 tcp://127.0.0.1:8765 2 0 0 # rank 1
+export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/src/memfabric_hybrid/output/smem/lib64/:${PROJECT_ROOT}/src/memfabric_hybrid/output/hybm/lib64/:$LD_LIBRARY_PATH
+./build/bin/rdma_demo 2 0 tcp://127.0.0.1:8765 2 0 0 & # rank 0
+./build/bin/rdma_demo 2 1 tcp://127.0.0.1:8765 2 0 0 & # rank 1
 ```
 
 3.命令行参数说明

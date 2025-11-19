@@ -5,8 +5,8 @@ function(add_impl_share_lib NAME)
     target_compile_options(${NAME} PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220)
     target_include_directories(${NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host/
-        ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device/
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/host/
+        ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/device/
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/include
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
         ${PROJECT_SOURCE_DIR}/examples/dynamic_tiling
@@ -35,8 +35,8 @@ add_executable(dynamic_tiling main.cpp)
 
 target_include_directories(dynamic_tiling PRIVATE
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/host/
-    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/include/smem/device/
+    ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/host/
+    ${PROJECT_SOURCE_DIR}/src/memfabric_hybrid/src/smem/include/device/
     ${PROJECT_SOURCE_DIR}/3rdparty/catlass/include
     ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
     ${PROJECT_SOURCE_DIR}/examples/dynamic_tiling

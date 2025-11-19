@@ -80,10 +80,10 @@ function(shmem_add_share_lib NAME)
     )
 
     target_compile_options(${NAME}_kernel PRIVATE ${CMAKE_CCE_COMPILE_OPTIONS} --cce-aicore-arch=dav-c220-vec)
-    target_include_directories(${NAME}_kernel PRIVATE 
+    target_include_directories(${NAME}_kernel PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../install/memfabric_hybrid/include/smem/device/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/memfabric_hybrid/src/smem/include/device/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/catlass/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/catlass/examples/common
         ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/${NAME}
@@ -97,10 +97,10 @@ function(shmem_add_share_lib NAME)
     )
 
     target_compile_options(${NAME}_shared PRIVATE ${CMAKE_CPP_COMPILE_OPTIONS} -D_GLIBCXX_USE_CXX11_ABI=0)
-    target_include_directories(${NAME}_shared PRIVATE 
+    target_include_directories(${NAME}_shared PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../install/memfabric_hybrid/include/smem//host/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/memfabric_hybrid/src/smem/include/host/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/catlass/examples/common
         ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/${NAME}
     )

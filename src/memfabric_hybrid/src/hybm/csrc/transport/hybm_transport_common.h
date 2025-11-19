@@ -24,7 +24,6 @@
 namespace ock {
 namespace mf {
 namespace transport {
-constexpr uint32_t REG_MR_FLAG_DRAM = 0x1U;
 constexpr uint32_t REG_MR_FLAG_HBM = 0x2U;
 
 constexpr int32_t REG_MR_ACCESS_FLAG_LOCAL_WRITE = 0x1;
@@ -34,8 +33,6 @@ constexpr int32_t REG_MR_ACCESS_FLAG_BOTH_READ_WRITE = 0x7;
 
 enum TransportType {
     TT_HCCP = 0,
-    TT_HCOM,
-    TT_COMPOSE,
     TT_BUTT,
 };
 

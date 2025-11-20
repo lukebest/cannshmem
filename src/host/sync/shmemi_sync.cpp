@@ -61,8 +61,3 @@ void shmem_handle_wait(shmem_handle_t handle, aclrtStream stream)
 {
     shmemi_handle_wait_on_stream(handle, stream);
 }
-
-void shmemx_barrier_all_on_stream(aclrtStream stream)
-{
-    shmemi_barrier_on_stream(SHMEM_TEAM_WORLD, stream);
-}

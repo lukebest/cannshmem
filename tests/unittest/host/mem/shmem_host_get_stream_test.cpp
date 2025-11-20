@@ -1,5 +1,11 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <iostream>
 #include <string>
@@ -102,6 +108,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     size_t input_size = total_size;
 
     std::vector<uint8_t> input(total_size, 0);
+    std::vector<uint8_t> out(total_size, 0);
     for (int i = 0; i < stage_total; i++) {
         input[i] = (rank_id + stage_offset);
     }
@@ -114,20 +121,24 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     void *ptr = shmem_malloc(1024);
     host_putmem(ptr, dev_ptr, rank_id, input_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
-    sleep(sleep_time);
 
-    ASSERT_EQ(aclrtMemcpy(input.data(), input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
+    ASSERT_EQ(aclrtMemcpy(out.data(), total_size, ptr, total_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
     string p_name = "[Process " + to_string(rank_id) + "] ";
     std::cout << "After putmem:" << p_name;
     for (int i = 0; i < total_size; i++) {
-        std::cout << static_cast<int>(input[i]) << " ";
+        std::cout << static_cast<int>(out[i]) << " ";
+        if (i < stage_total) {
+            ASSERT_EQ(out[i], rank_id + stage_offset);
+        }
+        else {
+            ASSERT_EQ(out[i], 0);
+        }
     }
     std::cout << std::endl;
     size_t ele_size = 16;
     host_test_getmem_stream((uint8_t *)ptr, (uint8_t *)dev_ptr, rank_size, ele_size, stream);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
-    sleep(sleep_time);
 
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 

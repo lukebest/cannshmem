@@ -25,8 +25,6 @@ extern void test_mutil_task(std::function<void(int, int, uint64_t)> func, uint64
 extern void test_init(int rank_id, int n_ranks, uint64_t local_mem_size, aclrtStream *st);
 extern void test_finalize(aclrtStream stream, int device_id);
 
-extern void shmem_barrier_all();
-
 class HostPutMemTest {
 public:
     inline HostPutMemTest()
@@ -131,8 +129,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
         std::cout << static_cast<int>(out[i]) << " ";
         if (i < stage_total) {
             ASSERT_EQ(out[i], rank_id + stage_offset);
-        }
-        else {
+        } else {
             ASSERT_EQ(out[i], 0);
         }
     }

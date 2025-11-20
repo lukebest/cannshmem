@@ -14,10 +14,8 @@ add_subdirectory(device)
 
 add_executable(shmem_fuzztest $<TARGET_OBJECTS:shmem_fuzztest_host>)
 target_link_directories(shmem_fuzztest PRIVATE
-    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/acc_links
-    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/hybm
-    ${PROJECT_SOURCE_DIR}/build/memfabric_hybrid/smem
+    ${PROJECT_SOURCE_DIR}/install/memfabric_hybrid/lib
     ${PROJECT_SOURCE_DIR}/3rdparty/googletest/lib
     ${PROJECT_SOURCE_DIR}/3rdparty/secodefuzz/lib
 )
-target_link_libraries(shmem_fuzztest PRIVATE shmem_fuzztest_device smem_shared gtest gcov Secodefuzz)
+target_link_libraries(shmem_fuzztest PRIVATE shmem_fuzztest_device mf_smem gtest gcov Secodefuzz)

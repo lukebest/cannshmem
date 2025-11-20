@@ -16,8 +16,7 @@ include_directories(
 file(GLOB_RECURSE ACC_TCP_NET_SRCS *.cpp)
 add_library(acc_tcp_net_object OBJECT ${ACC_TCP_NET_SRCS})
 add_library(acc_tcp_net_static STATIC $<TARGET_OBJECTS:acc_tcp_net_object>)
-set_target_properties(acc_tcp_net_static PROPERTIES OUTPUT_NAME "acc_tcp_net"
-                      ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/memfabric_hybrid/acc_links")
+set_target_properties(acc_tcp_net_static PROPERTIES OUTPUT_NAME "acc_tcp_net")
 set_target_properties(acc_tcp_net_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 target_link_libraries(acc_tcp_net_static
         -Wl,--start-group
@@ -26,12 +25,18 @@ target_link_libraries(acc_tcp_net_static
         )
 
 add_library(acc_tcp_net_shared SHARED $<TARGET_OBJECTS:acc_tcp_net_object>)
-set_target_properties(acc_tcp_net_shared PROPERTIES OUTPUT_NAME "acc_tcp_net"
-                      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/memfabric_hybrid/acc_links")
+set_target_properties(acc_tcp_net_shared PROPERTIES OUTPUT_NAME "acc_tcp_net")
 set_target_properties(acc_tcp_net_shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 target_link_libraries(acc_tcp_net_shared
         -Wl,--start-group
         pthread dl rt
         -Wl,--end-group
         )
-set_target_properties(acc_tcp_net_shared PROPERTIES LINK_LIBRARIES "")
+
+file(GLOB HEADER_FILES ../include/*.h)
+install(FILES ${HEADER_FILES} DESTINATION ${TARGET_INSTALL_DIR}/acc_links/include)
+install(TARGETS acc_tcp_net_shared acc_tcp_net_static
+        LIBRARY DESTINATION ${TARGET_INSTALL_DIR}/acc_links/lib64
+        ARCHIVE DESTINATION ${TARGET_INSTALL_DIR}/acc_links/lib64
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        )

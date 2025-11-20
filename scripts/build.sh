@@ -44,6 +44,7 @@ cd ${PROJECT_ROOT}
 
 function fn_build()
 {
+    fn_build_under_memfabric
     [ -d build ] && rm -rf build
     mkdir -p build
 

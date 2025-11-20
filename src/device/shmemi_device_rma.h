@@ -29,4 +29,6 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
                                     int sig_op, ptrdiff_t lstride = 1, ptrdiff_t rstride = 1,
                                     aclrtStream acl_strm = nullptr, size_t block_size = 1);
 
+int32_t shmemi_getmem_on_stream(uint8_t *dst, uint8_t *src, size_t elem_size, int32_t pe, aclrtStream stream);
+
 #endif

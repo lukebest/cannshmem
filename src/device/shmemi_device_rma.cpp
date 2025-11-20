@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "acl/acl.h"
 #include "shmemi_device_rma.h"
 #include "kernel_operator.h"
 
@@ -45,6 +46,11 @@ SHMEM_GLOBAL void shmemi_putmem_signal_nbi(GM_ADDR lptr, GM_ADDR rptr, uint32_t 
 {
     __gm__ int32_t *sig_addr_int32 = reinterpret_cast<__gm__ int32_t *>(sig_addr);
     shmem_put_uint8_mem_signal_nbi(lptr, rptr, elem_size, sig_addr_int32, signal, sig_op, pe);
+}
+
+SHMEM_GLOBAL void k_shmem_getmem(GM_ADDR dst, GM_ADDR src, size_t elem_size, int32_t pe)
+{
+    shmem_getmem(dst, src, elem_size, pe);
 }
 
 // kernel function calling entrance
@@ -87,6 +93,12 @@ int32_t shmemi_prepare_and_post_rma(const char *api_name, shmemi_op_t desc, bool
         }
     }
     return 0;
+}
+
+int32_t shmemi_getmem_on_stream(uint8_t *dst, uint8_t *src, size_t elem_size, int32_t pe, aclrtStream stream)
+{
+    k_shmem_getmem<<<1, nullptr, stream>>>(dst, src, elem_size, pe);
+    return aclrtSynchronizeStream(stream);
 }
 
 #define SHMEMI_TYPENAME_P(NAME, TYPE)                                                \

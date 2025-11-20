@@ -12,7 +12,6 @@
 #include "dl_api.h"
 #include "dl_acl_api.h"
 #include "hybm_device_mem_segment.h"
-#include "hybm_dp_device_rdma.h"
 #include "hybm_ex_info_transfer.h"
 #include "hybm_entity_default.h"
 
@@ -657,7 +656,7 @@ hybm_data_op_type MemEntityDefault::CanReachDataOperators(uint32_t remoteRank) c
         supportDataOp |= HYBM_DOP_TYPE_MTE;
     }
 
-    if (transportManager_ != nullptr || (options_.bmDataOpType & HYBM_DOP_TYPE_DEVICE_RDMA) != 0) {
+    if ((options_.bmDataOpType & HYBM_DOP_TYPE_DEVICE_RDMA) != 0) {
         supportDataOp |= HYBM_DOP_TYPE_DEVICE_RDMA;
     }
 

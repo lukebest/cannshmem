@@ -14,12 +14,8 @@ readonly PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
 readonly BUILD_PATH="$PROJECT_ROOT/build"
 readonly COVERAGE_PATH="$BUILD_PATH/coverage"
 
-if ! lcov --version; then
-    echo "Please install lcov before run unit test."
-    exit 1
-else
-    echo "lcov installed"
-fi
+lcov --version > /dev/null 2>&1
+lcov_not_found=$?
 
 cd ${PROJECT_ROOT}
 rm -rf "$COVERAGE_PATH"
@@ -137,11 +133,15 @@ cd "$BUILD_PATH"
 ./bin/shmem_unittest "$RANK_SIZE" "$IPPORT" "$GNPU_NUM" "$FIRST_RANK" "$FIRST_NPU"  --gtest_output=xml:test_detail.xml --gtest_filter=${TEST_FILTER}
 
 # Collect coverage
-mkdir -p "$COVERAGE_PATH"
-cd "$COVERAGE_PATH"
-lcov -d "$BUILD_PATH" --c --output-file "$COVERAGE_PATH/coverage.info" -rc lcov_branch_coverage=1 --rc lcov_excl_br_line="LCOV_EXCL_BR_LINE|SHM_LOG_*|SHM_ASSERT*|SHMEM_CHECK_RET"
-lcov -e "$COVERAGE_PATH/coverage.info" "*/src/host/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
-lcov -r "$COVERAGE_PATH/coverage.info" "*src/host/common/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
-genhtml -o "$COVERAGE_PATH/result" "$COVERAGE_PATH/coverage.info" --show-details --legend --rc lcov_branch_coverage=1
+if [[ $lcov_not_found -ne 0 ]]; then
+    echo "lcov not found, code coverage generation will skipped."
+else
+    mkdir -p "$COVERAGE_PATH"
+    cd "$COVERAGE_PATH"
+    lcov -d "$BUILD_PATH" --c --output-file "$COVERAGE_PATH/coverage.info" -rc lcov_branch_coverage=1 --rc lcov_excl_br_line="LCOV_EXCL_BR_LINE|SHM_LOG_*|SHM_ASSERT*|SHMEM_CHECK_RET"
+    lcov -e "$COVERAGE_PATH/coverage.info" "*/src/host/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
+    lcov -r "$COVERAGE_PATH/coverage.info" "*src/host/common/*" -o "$COVERAGE_PATH/coverage.info" --rc lcov_branch_coverage=1
+    genhtml -o "$COVERAGE_PATH/result" "$COVERAGE_PATH/coverage.info" --show-details --legend --rc lcov_branch_coverage=1
+fi
 
 cd ${CURRENT_DIR}

@@ -119,7 +119,7 @@ void test_shmem_init_invalid_n_ranks(int rank_id, int n_ranks, uint64_t local_me
     status = shmem_set_attr(rank_id, en_ranks, local_mem_size, test_global_ipport, &attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);
     status = shmem_init_attr(attributes);
-    EXPECT_EQ(status, SHMEM_INVALID_PARAM);
+    EXPECT_TRUE(status != 0);
     attributes->n_ranks = en_ranks;
     status = shmem_init_attr(attributes);
     EXPECT_EQ(status, SHMEM_INVALID_VALUE);

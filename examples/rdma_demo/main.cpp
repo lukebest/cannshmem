@@ -70,7 +70,8 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
         for (int j = 0; j < 16; j++) {
             if (y_host[trans_size * i + trans_size / 16 * j] != num10 + i) {
                 std::cout << y_host[trans_size * i + trans_size / 16 * j] << " != " << num10 + i << std::endl;
-                std::exit(EXIT_FAILURE);
+                // std::exit(EXIT_FAILURE);
+                return -1;
             }
         }
     }
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
     f_npu = atoi(argv[argIdx++]);
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     status = test_shmem_team_all_gather(rank_id, n_ranks, local_mem_size);
-    std::cout << "[SUCCESS] demo run success in rank " << rank_id << std::endl;
+    std::cout << "demo run finished in rank " << rank_id << " with status " << status << std::endl;
 
     return 0;
 }

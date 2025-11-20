@@ -26,7 +26,6 @@ typedef void *hybm_mem_slice_t;
 #define HYBM_EXPORT_PARTIAL_SLICE 0x00
 #define HYBM_EXPORT_ALL_SLICE 0x01
 
-#define HYBM_IMPORT_WITH_ADDRESS        0x01U
 
 typedef enum {
     HYBM_TYPE_AI_CORE_INITIATE = 0,
@@ -80,48 +79,6 @@ typedef struct {
     hybm_role_type role;
     char nic[64];
 } hybm_options;
-
-typedef enum {
-    HYBM_LOCAL_HOST_TO_GLOBAL_HOST = 0,
-    HYBM_LOCAL_HOST_TO_GLOBAL_DEVICE = 1,
-
-    HYBM_LOCAL_DEVICE_TO_GLOBAL_HOST = 2,
-    HYBM_LOCAL_DEVICE_TO_GLOBAL_DEVICE = 3,
-
-    HYBM_GLOBAL_HOST_TO_GLOBAL_HOST = 4,
-    HYBM_GLOBAL_HOST_TO_GLOBAL_DEVICE = 5,
-    HYBM_GLOBAL_HOST_TO_LOCAL_HOST = 6,
-    HYBM_GLOBAL_HOST_TO_LOCAL_DEVICE = 7,
-
-    HYBM_GLOBAL_DEVICE_TO_GLOBAL_HOST = 8,
-    HYBM_GLOBAL_DEVICE_TO_GLOBAL_DEVICE = 9,
-    HYBM_GLOBAL_DEVICE_TO_LOCAL_HOST = 10,
-    HYBM_GLOBAL_DEVICE_TO_LOCAL_DEVICE = 11,
-
-    HYBM_DATA_COPY_DIRECTION_BUTT
-} hybm_data_copy_direction;
-
-typedef struct {
-    const void *src;
-    uint64_t spitch;
-    void *dest;
-    uint64_t dpitch;
-    uint64_t width;
-    uint64_t height;
-} hybm_copy_2d_params;
-
-typedef struct {
-    const void *src;
-    void *dest;
-    size_t dataSize;
-} hybm_copy_params;
-
-typedef struct {
-    const void** sources;
-    void** destinations;
-    const size_t* dataSizes;
-    uint32_t batchSize;
-} hybm_batch_copy_params;
 
 #ifndef __cplusplus
 }

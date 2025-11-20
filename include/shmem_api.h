@@ -16,6 +16,7 @@
 #include "device/shmemx_device_rma.h"
 #include "device/shmem_device_sync.h"
 #include "device/shmem_device_team.h"
+#include "device/shmem_device_atomic.h"
 #endif
 
 #include "host/shmem_host_def.h"

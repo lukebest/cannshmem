@@ -121,6 +121,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     void *ptr = shmem_malloc(1024);
     host_putmem(ptr, dev_ptr, rank_id, input_size);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
+    sleep(sleep_time);
 
     ASSERT_EQ(aclrtMemcpy(out.data(), total_size, ptr, total_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
@@ -139,7 +140,7 @@ static void host_test_put_get_mem_stream(int rank_id, int rank_size, uint64_t lo
     size_t ele_size = 16;
     host_test_getmem_stream((uint8_t *)ptr, (uint8_t *)dev_ptr, rank_size, ele_size, stream);
     ASSERT_EQ(aclrtSynchronizeStream(shm::g_state_host.default_stream), 0);
-
+    sleep(sleep_time);
     ASSERT_EQ(aclrtMemcpy(input.data(), input_size, dev_ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST), 0);
 
     std::cout << "After getmemstream:" << p_name;

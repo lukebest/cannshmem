@@ -58,12 +58,12 @@ inline int32_t device_team_update(int team_idx, shmemi_team_t *host_team_ptr)
 {
     // device_ptr Malloc
     void *team_ptr = nullptr;
-    SHMEM_CHECK_RET(aclrtMalloc(&team_ptr, sizeof(shmemi_team_t), ACL_MEM_MALLOC_NORMAL_ONLY));
+    SHMEM_CHECK_RET(aclrtMalloc(&team_ptr, sizeof(shmemi_team_t), ACL_MEM_MALLOC_NORMAL_ONLY), aclrtMalloc);
     auto ret = aclrtMemcpy((shmemi_team_t *)team_ptr, sizeof(shmemi_team_t), host_team_ptr, sizeof(shmemi_team_t),
                            ACL_MEMCPY_HOST_TO_DEVICE);
     if (ret != 0) {
         SHM_LOG_ERROR("memcpy device team info failed, ret: " << ret);
-        aclrtFree(team_ptr);
+        SHMEM_CHECK_RET(aclrtFree(team_ptr), aclrtFree);
         return SHMEM_INNER_ERROR;
     }
     g_state.team_pools[team_idx] = (shmemi_team_t *)team_ptr;
@@ -211,11 +211,11 @@ int32_t shmemi_team_finalize()
         g_state.sync_pool = 0;
     }
     if (g_state.core_sync_counter != 0) {
-        aclrtFree(reinterpret_cast<void *>(g_state.core_sync_counter));
+        SHMEM_CHECK_RET(aclrtFree(reinterpret_cast<void *>(g_state.core_sync_counter)), aclrtFree);
         g_state.core_sync_counter = 0;
     }
     if (g_state.core_sync_pool != 0) {
-        aclrtFree(reinterpret_cast<void *>(g_state.core_sync_pool));
+        SHMEM_CHECK_RET(aclrtFree(reinterpret_cast<void *>(g_state.core_sync_pool)), aclrtFree);
         g_state.core_sync_pool = 0;
     }
     if (g_shmem_team_pool != nullptr) {

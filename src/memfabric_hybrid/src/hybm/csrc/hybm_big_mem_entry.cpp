@@ -179,7 +179,12 @@ HYBM_API int32_t hybm_set_extra_context(hybm_entity_t e, const void *context, ui
     auto entity = MemEntityFactory::Instance().FindEngineByPtr(e);
     BM_ASSERT_RETURN(entity != nullptr, BM_INVALID_PARAM);
     BM_ASSERT_RETURN(context != nullptr, BM_INVALID_PARAM);
-    return entity->SetExtraContext(context, size);
+    auto ret = entity->SetExtraContext(context, size);
+    if (ret != BM_OK) {
+        BM_LOG_ERROR("SetExtraContext failed, ret: " << ret);
+        return ret;
+    }
+    return BM_OK;
 }
 
 HYBM_API void hybm_unmap(hybm_entity_t e, uint32_t flags)

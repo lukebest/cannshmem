@@ -137,7 +137,12 @@ Result SmemShmEntry::SetExtraContext(const void *context, uint32_t size)
         return SM_ERROR;
     }
 
-    return hybm_set_extra_context(entity_, context, size);
+    auto ret = hybm_set_extra_context(entity_, context, size);
+    if (ret != SM_OK) {
+        SM_LOG_AND_SET_LAST_ERROR("hybm_set_extra_context failed, ret: " << ret);
+        return ret;
+    }
+    return SM_OK;
 }
 
 void *SmemShmEntry::GetGva() const

@@ -22,10 +22,10 @@
 #include <unistd.h>
 #include "mf_out_logger.h"
 
-#define SM_LOG_DEBUG(ARGS) MF_OUT_LOG("[SMEM ", ock::mf::DEBUG_LEVEL, ARGS)
-#define SM_LOG_INFO(ARGS) MF_OUT_LOG("[SMEM ", ock::mf::INFO_LEVEL, ARGS)
-#define SM_LOG_WARN(ARGS) MF_OUT_LOG("[SMEM ", ock::mf::WARN_LEVEL, ARGS)
-#define SM_LOG_ERROR(ARGS) MF_OUT_LOG("[SMEM ", ock::mf::ERROR_LEVEL, ARGS)
+#define SM_LOG_DEBUG(ARGS) MF_OUT_LOG("[SHM_SHMEM ", ock::mf::DEBUG_LEVEL, ARGS)
+#define SM_LOG_INFO(ARGS) MF_OUT_LOG("[SHM_SHMEM ", ock::mf::INFO_LEVEL, ARGS)
+#define SM_LOG_WARN(ARGS) MF_OUT_LOG("[SHM_SHMEM ", ock::mf::WARN_LEVEL, ARGS)
+#define SM_LOG_ERROR(ARGS) MF_OUT_LOG("[SHM_SHMEM ", ock::mf::ERROR_LEVEL, ARGS)
 
 #define SM_CHECK_CONDITION_RET(condition, RET)   \
     do {                                         \

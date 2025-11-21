@@ -21,6 +21,7 @@ int32_t memory_manager_initialize(void *base, uint64_t size)
 {
     shm_memory_heap = std::make_shared<memory_heap>(base, size);
     if (shm_memory_heap == nullptr) {
+        SHM_LOG_ERROR("Failed to initialize shared memory heap");
         return SHMEM_INNER_ERROR;
     }
     return SHMEM_SUCCESS;

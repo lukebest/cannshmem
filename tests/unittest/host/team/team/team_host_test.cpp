@@ -32,7 +32,7 @@ static int32_t test_get_device_state(aclrtStream stream, uint8_t *gva, uint32_t 
     uint32_t block_dim = 1;
     void *ptr          = shmem_malloc(1024);
     int32_t device_id;
-    SHMEM_CHECK_RET(aclrtGetDevice(&device_id));
+    SHMEM_CHECK_RET(aclrtGetDevice(&device_id), aclrtGetDevice);
     get_device_state(block_dim, stream, (uint8_t *)ptr, team_id);
     EXPECT_EQ(aclrtSynchronizeStream(stream), 0);
     sleep(1);

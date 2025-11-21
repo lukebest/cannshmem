@@ -45,7 +45,7 @@ int32_t shmem_mte_set_ub_params(uint64_t offset, uint32_t ub_size, uint32_t even
     shm::g_state.mte_config.shmem_ub = offset;
     shm::g_state.mte_config.ub_size = ub_size;
     shm::g_state.mte_config.event_id = event_id;
-    SHMEM_CHECK_RET(shm::update_device_state());
+    SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
     return SHMEM_SUCCESS;
 }
 

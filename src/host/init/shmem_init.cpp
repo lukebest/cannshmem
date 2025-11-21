@@ -143,7 +143,7 @@ int32_t shmemi_state_init_attr(shmem_init_attr_t *attributes)
     g_state.heap_size = attributes->local_mem_size + SHMEM_EXTRA_SIZE;
 
     aclrtStream stream = nullptr;
-    SHMEM_CHECK_RET(aclrtCreateStream(&stream));
+    SHMEM_CHECK_RET(aclrtCreateStream(&stream), aclrtCreateStream);
     g_state_host.default_stream = stream;
     g_state_host.default_event_id = DEFAULT_TEVENT;
     g_state_host.default_block_num = DEFAULT_BLOCK_NUM;
@@ -156,6 +156,9 @@ void shmemi_reach_info_init(void *&gva)
     int32_t status = SHMEM_SUCCESS;
     for (int32_t i = 0; i < g_state.npes; i++) {
         status = smem_shm_topology_can_reach(g_smem_handle, i, &reach_info);
+        if (status != SHMEM_SUCCESS) {
+            SHM_LOG_ERROR("smem_shm_topology_can_reach failed");
+        }
         g_state.p2p_heap_host_base[i] = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(i));
         if (reach_info & SMEMS_DATA_OP_MTE) {
             g_state.topo_list[i] |= SHMEM_TRANSPORT_MTE;
@@ -176,7 +179,7 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     void *gva = nullptr;
     int32_t status = SHMEM_SUCCESS;
     int32_t device_id;
-    SHMEM_CHECK_RET(aclrtGetDevice(&device_id));
+    SHMEM_CHECK_RET(aclrtGetDevice(&device_id), aclrtGetDevice);
 
     status = smem_init(DEFAULT_FLAG);
     if (status != SHMEM_SUCCESS) {
@@ -238,7 +241,12 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
 int32_t shmemi_control_barrier_all()
 {
     SHM_ASSERT_RETURN(g_smem_handle != nullptr, SHMEM_INVALID_PARAM);
-    return smem_shm_control_barrier(g_smem_handle);
+    auto ret = smem_shm_control_barrier(g_smem_handle);
+    if (ret != SHMEM_SUCCESS) {
+        SHM_LOG_ERROR("Barrier failed");
+        return ret;
+    }
+    return SHMEM_SUCCESS;
 }
 
 int32_t update_device_state()
@@ -247,10 +255,15 @@ int32_t update_device_state()
         return SHMEM_NOT_INITED;
     }
 
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.p2p_heap_device_base, g_state.npes * sizeof(void *), g_state.p2p_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.sdma_heap_device_base, g_state.npes * sizeof(void *), g_state.sdma_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.roce_heap_device_base, g_state.npes * sizeof(void *), g_state.roce_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE));
-    return smem_shm_set_extra_context(g_smem_handle, (void *)&g_state, sizeof(shmemi_device_host_state_t));
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.p2p_heap_device_base, g_state.npes * sizeof(void *), g_state.p2p_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.sdma_heap_device_base, g_state.npes * sizeof(void *), g_state.sdma_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.roce_heap_device_base, g_state.npes * sizeof(void *), g_state.roce_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    auto ret = smem_shm_set_extra_context(g_smem_handle, (void *)&g_state, sizeof(shmemi_device_host_state_t));
+    if (ret != SHMEM_SUCCESS) {
+        SHM_LOG_ERROR("Failed to attach extra context to segment");
+        return ret;
+    }
+    return SHMEM_SUCCESS;
 }
 
 int32_t check_attr(shmem_init_attr_t *attributes)
@@ -574,14 +587,14 @@ int32_t shmem_set_ip_info(shmem_uniqueid_t *uid, sa_family_t &sockType, char *pt
     if (sockType == AF_INET) {
         innerUID->addr.addr.addr4.sin_family = AF_INET;
         if (inet_pton(AF_INET, pta_env_ip, &(innerUID->addr.addr.addr4.sin_addr)) <= 0) {
-            perror("inet_pton IPv4 failed");
+            SHM_LOG_ERROR("inet_pton IPv4 failed");
             return SHMEM_NOT_INITED;
         }
         innerUID->addr.type = ADDR_IPv4;
     } else if (sockType == AF_INET6) {
         innerUID->addr.addr.addr6.sin6_family = AF_INET6;
         if (inet_pton(AF_INET6, pta_env_ip, &(innerUID->addr.addr.addr6.sin6_addr)) <= 0) {
-            perror("inet_pton IPv6 failed");
+            SHM_LOG_ERROR("inet_pton IPv6 failed");
             return SHMEM_NOT_INITED;
         }
         innerUID->addr.type = ADDR_IPv6;
@@ -661,12 +674,18 @@ int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_unique
     std::string ipPort;
     if (innerUID->addr.type == ADDR_IPv6) {
         char ipStr[INET6_ADDRSTRLEN] = {0};
-        inet_ntop(AF_INET6, &(innerUID->addr.addr.addr6.sin6_addr), ipStr, sizeof(ipStr));
+        if (inet_ntop(AF_INET6, &(innerUID->addr.addr.addr6.sin6_addr), ipStr, sizeof(ipStr))) {
+            SHM_LOG_ERROR("inet_ntop failed for IPv6");
+            return SHMEM_INNER_ERROR;
+        }
         uint16_t port = ntohs(innerUID->addr.addr.addr6.sin6_port);
         ipPort = "tcp6://[" + std::string(ipStr) + "]:" + std::to_string(port);
     } else {
         char ipStr[INET_ADDRSTRLEN] = {0};
-        inet_ntop(AF_INET, &(innerUID->addr.addr.addr4.sin_addr), ipStr, sizeof(ipStr));
+        if (inet_ntop(AF_INET, &(innerUID->addr.addr.addr4.sin_addr), ipStr, sizeof(ipStr))) {
+            SHM_LOG_ERROR("inet_ntop failed for IPv4");
+            return SHMEM_INNER_ERROR;
+        }
         uint16_t port = ntohs(innerUID->addr.addr.addr4.sin_port);
         ipPort = "tcp://" + std::string(ipStr) + ":" + std::to_string(port);
     }
@@ -679,7 +698,12 @@ int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_unique
     attr->option_attr.sockFd = innerUID->inner_sockFd;
     SHM_LOG_INFO("extract ip port:" << ipPort);
 
-    return shmem_init_attr(attr);
+    int32_t status = shmem_init_attr(attr);
+    if (status != SHMEM_SUCCESS) {
+        SHM_LOG_ERROR("shmem_init_attr failed");
+        return status;
+    }
+    return SHMEM_SUCCESS;
 }
 
 int32_t shmem_init_status(void)
@@ -705,22 +729,22 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     int32_t ret;
 
     SHM_ASSERT_RETURN(attributes != nullptr, SHMEM_INVALID_PARAM);
-    SHMEM_CHECK_RET(shmem_set_log_level(shm::WARN_LEVEL));
-    SHMEM_CHECK_RET(shm::check_attr(attributes));
-    SHMEM_CHECK_RET(shm::version_compatible());
-    SHMEM_CHECK_RET(shm::shmemi_options_init());
+    SHMEM_CHECK_RET(shmem_set_log_level(shm::WARN_LEVEL), shmem_set_log_level);
+    SHMEM_CHECK_RET(shm::check_attr(attributes), check_attr);
+    SHMEM_CHECK_RET(shm::version_compatible(), version_compatible);
+    SHMEM_CHECK_RET(shm::shmemi_options_init(), shmemi_options_init);
 
-    SHMEM_CHECK_RET(shm::shmemi_state_init_attr(attributes));
-    SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes));
-    SHMEM_CHECK_RET(shm::update_device_state());
+    SHMEM_CHECK_RET(shm::shmemi_state_init_attr(attributes), shmemi_state_init_attr);
+    SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes), shmemi_heap_init);
+    SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
 
-    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, shm::g_state.heap_size));
-    SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes));
-    SHMEM_CHECK_RET(shm::update_device_state());
-    SHMEM_CHECK_RET(shm::shmemi_sync_init());
-    SHMEM_CHECK_RET(smem_shm_register_exit(shm::g_smem_handle, &shmem_rank_exit));
+    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, shm::g_state.heap_size), memory_manager_initialize);
+    SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes), shmemi_team_init);
+    SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
+    SHMEM_CHECK_RET(shm::shmemi_sync_init(), shmemi_sync_init);
+    SHMEM_CHECK_RET(smem_shm_register_exit(shm::g_smem_handle, &shmem_rank_exit), smem_shm_register_exit);
     shm::g_state.is_shmem_initialized = true;
-    SHMEM_CHECK_RET(shm::shmemi_control_barrier_all());
+    SHMEM_CHECK_RET(shm::shmemi_control_barrier_all(), shmemi_control_barrier_all);
     return SHMEM_SUCCESS;
 }
 
@@ -756,7 +780,10 @@ int32_t shmem_set_log_level(int level)
         }
     }
     shm::shm_out_logger::Instance().set_log_level(static_cast<shm::log_level>(level));
-    return smem_set_log_level(level);
+    if (smem_set_log_level(level) != SHMEM_SUCCESS) {
+        SHM_LOG_ERROR("Failed to set ock::mf::OutLogger level");
+    }
+    return SHMEM_SUCCESS;
 }
 
 int32_t shmem_set_conf_store_tls(bool enable, const char *tls_info, const uint32_t tls_info_len)

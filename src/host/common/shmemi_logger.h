@@ -121,7 +121,7 @@ private:
 #define SHM_OUT_LOG(LEVEL, ARGS)                                                       \
     do {                                                                               \
         std::ostringstream oss;                                                        \
-        oss << "[SHMEM " << SHM_LOG_FILENAME_SHORT << ":" << __LINE__ << "] " << ARGS; \
+        oss << "[SHM_SHMEM " << SHM_LOG_FILENAME_SHORT << ":" << __LINE__ << "] " << ARGS; \
         shm::shm_out_logger::Instance().log(LEVEL, oss);                               \
     } while (0)
 
@@ -172,13 +172,22 @@ private:
         }                                                                      \
     } while (0)
 
-#define SHMEM_CHECK_RET(x)                                       \
-    do {                                                         \
-        int32_t check_ret = x;                                   \
-        if (check_ret != 0) {                                    \
-            SHM_LOG_ERROR(" return shmem error: " << check_ret); \
-            return check_ret;                                    \
-        }                                                        \
+#define SHMEM_CHECK_RET(x, ...)                                                                                                                         \
+    do                                                                                                                                                  \
+    {                                                                                                                                                   \
+        int32_t check_ret = x;                                                                                                                          \
+        if (check_ret != 0)                                                                                                                             \
+        {                                                                                                                                               \
+            if (sizeof(#__VA_ARGS__) > 1)                                                                                                               \
+            {                                                                                                                                           \
+                SHM_LOG_ERROR(" return shmem error: " << check_ret << " - " << #__VA_ARGS__ << " failed. More error information can be found in plog"); \
+            }                                                                                                                                           \
+            else                                                                                                                                        \
+            {                                                                                                                                           \
+                SHM_LOG_ERROR(" return shmem error: " << check_ret);                                                                                    \
+            }                                                                                                                                           \
+            return check_ret;                                                                                                                           \
+        }                                                                                                                                               \
     } while (0)
 
 #endif  // SHMEM_SHM_OUT_LOGGER_H

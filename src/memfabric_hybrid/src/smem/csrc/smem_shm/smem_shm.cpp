@@ -93,10 +93,15 @@ SMEM_API int32_t smem_shm_set_extra_context(smem_shm_t handle, const void *conte
     SmemShmEntryPtr entry = nullptr;
     auto ret = SmemShmEntryManager::Instance().GetEntryByPtr(reinterpret_cast<uintptr_t>(handle), entry);
     if (ret != SM_OK || entry == nullptr) {
-        SM_LOG_AND_SET_LAST_ERROR("input handle is invalid, result: " << ret);
+        SM_LOG_AND_SET_LAST_ERROR("input handle is invalid, ret: " << ret);
         return SM_INVALID_PARAM;
     }
-    return entry->SetExtraContext(context, size);
+    ret = entry->SetExtraContext(context, size);
+    if (ret != SM_OK) {
+        SM_LOG_AND_SET_LAST_ERROR("SetExtraContext failed, ret: " << ret);
+        return ret;
+    }
+    return SM_OK;
 }
 
 SMEM_API uint32_t smem_shm_get_global_rank(smem_shm_t handle)
@@ -144,7 +149,11 @@ SMEM_API int32_t smem_shm_control_barrier(smem_shm_t handle)
     }
     auto group = entry->GetGroup();
     SM_VALIDATE_RETURN(group != nullptr, "smem shm not init group yet", SM_NOT_INITIALIZED);
-    return group->GroupBarrier();
+    ret = group->GroupBarrier();
+    if (ret != SM_OK) {
+        SM_LOG_AND_SET_LAST_ERROR("Group barrier timeout or store failure");
+    }
+    return SM_OK;
 }
 
 SMEM_API int32_t smem_shm_control_allgather(smem_shm_t handle, const char *sendBuf, uint32_t sendSize, char *recvBuf,

@@ -23,10 +23,10 @@
 #include "hybm_types.h"
 #include "hybm_define.h"
 
-#define BM_LOG_DEBUG(ARGS) MF_OUT_LOG("[BM ", ock::mf::DEBUG_LEVEL, ARGS)
-#define BM_LOG_INFO(ARGS) MF_OUT_LOG("[BM ", ock::mf::INFO_LEVEL, ARGS)
-#define BM_LOG_WARN(ARGS) MF_OUT_LOG("[BM ", ock::mf::WARN_LEVEL, ARGS)
-#define BM_LOG_ERROR(ARGS) MF_OUT_LOG("[BM ", ock::mf::ERROR_LEVEL, ARGS)
+#define BM_LOG_DEBUG(ARGS) MF_OUT_LOG("[SHM_BM ", ock::mf::DEBUG_LEVEL, ARGS)
+#define BM_LOG_INFO(ARGS) MF_OUT_LOG("[SHM_BM ", ock::mf::INFO_LEVEL, ARGS)
+#define BM_LOG_WARN(ARGS) MF_OUT_LOG("[SHM_BM ", ock::mf::WARN_LEVEL, ARGS)
+#define BM_LOG_ERROR(ARGS) MF_OUT_LOG("[SHM_BM ", ock::mf::ERROR_LEVEL, ARGS)
 
 #define BM_ASSERT_RETURN(ARGS, RET)              \
     do {                                         \

@@ -24,7 +24,7 @@ static int32_t test_get_device_ptr(aclrtStream stream, uint8_t *ptr, int rank_id
 
     uint32_t block_dim = 1;
     int32_t device_id;
-    SHMEM_CHECK_RET(aclrtGetDevice(&device_id));
+    SHMEM_CHECK_RET(aclrtGetDevice(&device_id), aclrtGetDevice);
 
     get_device_ptr(block_dim, stream, ptr);
     EXPECT_EQ(aclrtSynchronizeStream(stream), 0);

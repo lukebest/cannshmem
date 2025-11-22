@@ -16,7 +16,7 @@ extern "C" {
 
 #define SHMEM_MAX_RANKS 16384
 #define SHMEM_MAX_TEAMS 2048
-#define SHMEM_MAX_LOCAL_SIZE (4UL * 1024 * 1024 * 1024)
+#define SHMEM_MAX_LOCAL_SIZE (40UL * 1024 * 1024 * 1024)
 
 /* arch related */
 #define SCALAR_DATA_CACHELINE_SIZE 64
@@ -83,7 +83,7 @@ typedef struct {
     size_t heap_size;
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];
-    
+
     // Using shmemi_sync_bit instead of basic types to shmemi_store flag, avoiding concurrent write due to cacheline sharing.
     // Refer to shmemi_barrier.h for more details.
     // These members are 'shmemi_sync_bit *' types actully, but are defined as 'uint64_t' due to compiler restriction.

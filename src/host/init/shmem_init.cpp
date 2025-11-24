@@ -674,7 +674,7 @@ int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_unique
     std::string ipPort;
     if (innerUID->addr.type == ADDR_IPv6) {
         char ipStr[INET6_ADDRSTRLEN] = {0};
-        if (inet_ntop(AF_INET6, &(innerUID->addr.addr.addr6.sin6_addr), ipStr, sizeof(ipStr))) {
+        if (inet_ntop(AF_INET6, &(innerUID->addr.addr.addr6.sin6_addr), ipStr, sizeof(ipStr)) == nullptr) {
             SHM_LOG_ERROR("inet_ntop failed for IPv6");
             return SHMEM_INNER_ERROR;
         }
@@ -682,7 +682,7 @@ int32_t shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_unique
         ipPort = "tcp6://[" + std::string(ipStr) + "]:" + std::to_string(port);
     } else {
         char ipStr[INET_ADDRSTRLEN] = {0};
-        if (inet_ntop(AF_INET, &(innerUID->addr.addr.addr4.sin_addr), ipStr, sizeof(ipStr))) {
+        if (inet_ntop(AF_INET, &(innerUID->addr.addr.addr4.sin_addr), ipStr, sizeof(ipStr)) == nullptr) {
             SHM_LOG_ERROR("inet_ntop failed for IPv4");
             return SHMEM_INNER_ERROR;
         }

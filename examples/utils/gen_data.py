@@ -1,3 +1,12 @@
+#
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 import os
 import torch
 from utils import CommType, DataType, tensor_to_file
@@ -34,17 +43,17 @@ def gen_golden_data():
                         help='Directory to save the data files',
                         default="./out")
     args = parser.parse_args()
-    M, N, K = args.m, args.n, args.k
+    m, n, k = args.m, args.n, args.k
     data_dir = os.path.abspath(args.data_dir)
 
     os.makedirs(data_dir, exist_ok=True)
-    b_all_rank = gen_random_data([K, N], dtype=args.out_dtype.torch_type)
+    b_all_rank = gen_random_data([k, n], dtype=args.out_dtype.torch_type)
 
     l0c_dtype = torch.float32
     matrix_a_list = []
     matrix_c_list = []
     for i in range(args.rank_size):
-        a_gm = gen_random_data([M, K], dtype=args.out_dtype.torch_type)
+        a_gm = gen_random_data([m, k], dtype=args.out_dtype.torch_type)
         matrix_a_list.append(a_gm)
         b_gm = b_all_rank
         matrix_c = torch.matmul(a_gm.to(l0c_dtype), b_gm.to(l0c_dtype))
@@ -60,7 +69,8 @@ def gen_golden_data():
         tensor_to_file(b_gm, b_gm_path)
 
     golden = None
-    if args.comm_type in [CommType.ALLGATHER_MATMUL, CommType.ALLGATHER_MATMUL_PADDING, CommType.ALLGATHER_MATMUL_WITH_GATHER_RESULT]:
+    if (args.comm_type in
+        [CommType.ALLGATHER_MATMUL, CommType.ALLGATHER_MATMUL_PADDING, CommType.ALLGATHER_MATMUL_WITH_GATHER_RESULT]):
         golden = torch.cat(matrix_c_list, dim=0)
     else:
         golden = torch.zeros_like(matrix_c_list[0])

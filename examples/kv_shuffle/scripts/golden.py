@@ -12,16 +12,16 @@ import torch
 import numpy as np
 
 # Model Params
-group_size = 4
+GROUP_SZIE = 4
 MAX_SEQLEN = 1024
 MAX_BATCH = 10
 INIT_BATCH = 5
 
 # KVCache Params
-page_size = 128
-max_block_nums = MAX_SEQLEN * MAX_BATCH // page_size
-kv_head_num = 8
-head_dim = 128
+PAGE_SIZE = 128
+max_block_nums = MAX_SEQLEN * MAX_BATCH // PAGE_SIZE
+KV_HEAD_NUM = 8
+HEAD_DIM = 128
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -30,7 +30,7 @@ def get_pair_rank(sort_idx, local_rank):
     pair_rank = 0
     for idx, rank in enumerate(sort_idx):
         if rank == local_rank:
-            pair_idx = (group_size - 1) - idx # notice idx can't be group_size
+            pair_idx = (GROUP_SZIE - 1) - idx # notice idx can't be GROUP_SZIE
             pair_rank = sort_idx[pair_idx]
     return pair_rank.item()
 
@@ -63,13 +63,13 @@ def balance_kv(kv_lens):
 
     # Get rank to rank pair
     pair_list = []
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         pair_idx = get_pair_rank(sort_idx, i)
         pair_list.append([pair_idx])
 
     # Get rank to rank transfer_tokens
     transfer_tokens_list = []
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         transfer_tokens, transfer_batch_id = get_pair_transfer_tokens(kv_lens, kv_sum, kv_mean, pair_list, i)
         if (transfer_tokens > 0):
             pair_list[i].append(0) # 0 means send
@@ -85,11 +85,11 @@ def main():
     parser.add_argument('rank_size', type=int)
     args = parser.parse_args()
 
-    global group_size
-    group_size = args.rank_size
+    global GROUP_SZIE
+    GROUP_SZIE = args.rank_size
 
     torch.manual_seed(42)
-    kv_lens = torch.randint(0, MAX_SEQLEN, (group_size, INIT_BATCH))
+    kv_lens = torch.randint(0, MAX_SEQLEN, (GROUP_SZIE, INIT_BATCH))
     kv_sum = torch.sum(kv_lens, dim=-1) # (rank_size, 1)
 
     k_cache_list = []
@@ -97,17 +97,19 @@ def main():
     used_blocks_list = []
     batch_blocks_list = []
     # Prepare Inputs
-    for i in range(group_size):
-        k_cache = torch.zeros((max_block_nums, kv_head_num, page_size, head_dim), dtype=torch.int8)
-        v_cache = torch.zeros((max_block_nums, kv_head_num, page_size, head_dim), dtype=torch.int8)
+    for i in range(GROUP_SZIE):
+        k_cache = torch.zeros((max_block_nums, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM), dtype=torch.int8)
+        v_cache = torch.zeros((max_block_nums, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM), dtype=torch.int8)
         batch_list = kv_lens[i]
         used_id = 0
         batch_blocks = []
         for j in range(batch_list.shape[0]):
             seqlen = batch_list[j].item()
-            block_num = seqlen // page_size + 1
-            k_cache_real = torch.randint(low=-128, high=128, size=(block_num, kv_head_num, page_size, head_dim), dtype=torch.int8)
-            v_cache_real = torch.randint(low=-128, high=128, size=(block_num, kv_head_num, page_size, head_dim), dtype=torch.int8)
+            block_num = seqlen // PAGE_SIZE + 1
+            k_cache_real = torch.randint(low=-128, high=128, size=(block_num, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM),
+                                         dtype=torch.int8)
+            v_cache_real = torch.randint(low=-128, high=128, size=(block_num, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM),
+                                         dtype=torch.int8)
             k_cache[used_id:used_id + block_num] = k_cache_real
             v_cache[used_id:used_id + block_num] = v_cache_real
             batch_blocks.append((j, [_ for _ in range(used_id, used_id + block_num)]))
@@ -124,7 +126,7 @@ def main():
     golden_path = os.path.join(SCRIPT_PATH, "output")
     if not os.path.exists(golden_path):
         os.mkdir(golden_path)
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         k_path = os.path.join(SCRIPT_PATH, "output", f"k_cache_input_rank_{i}.bin")
         v_path = os.path.join(SCRIPT_PATH, "output", f"v_cache_input_rank_{i}.bin")
         k_cache_list[i].numpy().tofile(k_path)
@@ -134,7 +136,7 @@ def main():
     dst_block_table = []
     block_num_list = []
     # Params Prepare And Golden Calculate
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         local_rank = i
         shuffle_table = pair_list
         k_cache_list = k_cache_list
@@ -168,24 +170,24 @@ def main():
     np.array(pair_list).tofile(pair_list_path)
 
     # Record src_block_table
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         src_block_table_path = os.path.join(SCRIPT_PATH, "output", f"src_block_table_rank_{i}.bin")
         if src_block_table[i] is not None:
             np.array(src_block_table[i]).tofile(src_block_table_path)
 
     # Record dst_block_table
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         dst_block_table_path = os.path.join(SCRIPT_PATH, "output", f"dst_block_table_rank_{i}.bin")
         if dst_block_table[i] is not None:
             np.array(dst_block_table[i]).tofile(dst_block_table_path)
 
     # Record block_nums
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         block_nums_path = os.path.join(SCRIPT_PATH, "output", f"block_num_rank_{i}.bin")
         np.array(block_num_list[i]).tofile(block_nums_path)
 
     # Record Output KV Cache
-    for i in range(group_size):
+    for i in range(GROUP_SZIE):
         k_path = os.path.join(SCRIPT_PATH, "output", f"k_cache_golden_rank_{i}.bin")
         v_path = os.path.join(SCRIPT_PATH, "output", f"v_cache_golden_rank_{i}.bin")
         k_cache_list[i].numpy().tofile(k_path)

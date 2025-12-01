@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -45,6 +45,12 @@ const std::map<CocCommType, std::string> commTypeMap = {
     { ALLGATHER_MATMUL_WITH_GATHER_RESULT, "AllGatherMatmulWithGatherResult" },
     { ALLGATHER_MATMUL_PADDING, "AllGatherMatmulPadding" },
 };
+
+const uint32_t COMM_TILE_M = 64;
+const uint32_t COMM_INTERVAL = 3;
+const uint32_t COMM_NPU_SPLIT = 1;
+const uint32_t COMM_DATA_SPLIT = 16;
+const uint32_t COMM_BLOCK_M = 64;
 
 struct Options {
     CocCommType commType;
@@ -164,7 +170,8 @@ std::vector<std::vector<uint32_t>> InitTestShapes(const Options &options)
         }
 
         if (shape.size() != headers.size()) {
-            std::cerr << "The number of data columns in row " << rowIndex << " does not match the number of header columns: " << line << std::endl;
+            std::cerr << "The number of data columns in row " << rowIndex <<
+                " does not match the number of header columns: " << line << std::endl;
         } else {
             shapes.push_back(shape);
             ++added;
@@ -239,11 +246,11 @@ int main(int argc, char **argv)
         cocTiling.m0 = M0;
         cocTiling.n0 = N0;
         cocTiling.k0 = K0;
-        cocTiling.commTileM = 64;
-        cocTiling.commInterval = 3;
-        cocTiling.commNpuSplit = 1;
-        cocTiling.commDataSplit = 16;
-        cocTiling.commBlockM = 64;
+        cocTiling.commTileM = COMM_TILE_M;
+        cocTiling.commInterval = COMM_INTERVAL;
+        cocTiling.commNpuSplit = COMM_NPU_SPLIT;
+        cocTiling.commDataSplit = COMM_DATA_SPLIT;
+        cocTiling.commBlockM = COMM_BLOCK_M;
         cocTiling.rankSize = rankSize;
 
         size_t aSize = static_cast<size_t>(m) * k * sizeof(half);
@@ -345,9 +352,12 @@ int main(int argc, char **argv)
         void *symmPtr = shmem_malloc(SHMEM_BUFF_BYTES);
         uint8_t *gmSymmetric = (uint8_t *)symmPtr;
 
-        uint32_t warmUpTimes = std::getenv("WARM_UP_TIMES") == nullptr ? WARM_UP_TIMES : std::stoull(std::getenv("WARM_UP_TIMES"));
-        uint32_t perfTestCycleTimes = std::getenv("PERF_TEST_CYCLE_TIMES") == nullptr ? PERF_TEST_CYCLE_TIMES : std::stoull(std::getenv("PERF_TEST_CYCLE_TIMES"));
-        uint32_t searchparams = (std::getenv("SEARCH_PARAMS") == nullptr) ? 1U : std::stoul(std::getenv("SEARCH_PARAMS"));
+        uint32_t warmUpTimes = std::getenv("WARM_UP_TIMES") == nullptr ? WARM_UP_TIMES :
+                               std::stoull(std::getenv("WARM_UP_TIMES"));
+        uint32_t perfTestCycleTimes = std::getenv("PERF_TEST_CYCLE_TIMES") == nullptr ? PERF_TEST_CYCLE_TIMES :
+                                      std::stoull(std::getenv("PERF_TEST_CYCLE_TIMES"));
+        uint32_t searchparams = (std::getenv("SEARCH_PARAMS") == nullptr) ? 1U :
+                                 std::stoul(std::getenv("SEARCH_PARAMS"));
 
         std::vector<CocTilingParams> cocTilings;
         if (warmUpTimes == 0) {
@@ -370,12 +380,14 @@ int main(int argc, char **argv)
         auto kernelFunc = KernelDispatcher::GetKernelFunc(kernelType, dataType);
 
         for (size_t i = 0; i < warmUpTimes; i++) {
-            kernelFunc(stream, fftsAddr, aDevice, bDevice, cDevice, wADevice, wBDevice, gmSymmetric, cocTilings[0], transA, transB);
+            kernelFunc(stream, fftsAddr, aDevice, bDevice, cDevice,
+                       wADevice, wBDevice, gmSymmetric, cocTilings[0], transA, transB);
         }
 
         for (CocTilingParams tiling : cocTilings) {
             for (size_t i = 0; i < perfTestCycleTimes; i++) {
-                kernelFunc(stream, fftsAddr, aDevice, bDevice, cDevice, wADevice, wBDevice, gmSymmetric, tiling, transA, transB);
+                kernelFunc(stream, fftsAddr, aDevice, bDevice,
+                           cDevice, wADevice, wBDevice, gmSymmetric, tiling, transA, transB);
             }
         }
 
@@ -396,7 +408,8 @@ int main(int argc, char **argv)
                 if (rankId == 0) {
                     WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
                 }
-            } else if (commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING || commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
+            } else if (commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING
+                       || commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
                 if (rankId == 0) {
                     WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
                     if (commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {

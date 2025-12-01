@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ public:
     // Tile copy
     using CopyGmToUbC = typename TileCopy_::CopyGmToUbC;
     using CopyUbToGmD = typename TileCopy_::CopyUbToGmD;
-    using CopyUbToGmDequantScale = Epilogue::Tile::CopyUb2Gm<ArchTag, Gemm::GemmType<ElementPerTokenScale, LayoutPerTokenScale>>;
+    using CopyUbToGmDequantScale = Epilogue::Tile::CopyUb2Gm<ArchTag,
+                                                             Gemm::GemmType<ElementPerTokenScale, LayoutPerTokenScale>>;
 
     struct Params {
         __gm__ ElementPerTokenScale *ptrPerTokenScale{nullptr};
@@ -157,8 +158,9 @@ public:
 
         uint32_t tileLoops = blockM;
         uint32_t subblockIdx = get_block_idx() + get_subblockid() * get_block_num();
+        constexpr uint32_t DEFAULT_EPILOGUE_CORE_NUM = 40;
 
-        epilogueCoreNum = epilogueCoreNum == 0 ? 40 : epilogueCoreNum;
+        epilogueCoreNum = epilogueCoreNum == 0 ? DEFAULT_EPILOGUE_CORE_NUM : epilogueCoreNum;
 
         uint32_t subblockNum = get_block_num() * 2;
         uint32_t moveDataCoreNum = subblockNum - epilogueCoreNum;
@@ -172,7 +174,8 @@ public:
         uint32_t remainderData = blockM % epilogueCoreNum;
 
         uint32_t tasksForIdx  = epilogueCoreIdx < remainderData ? perCoreData + 1 : perCoreData;
-        uint32_t loopStartIdx = epilogueCoreIdx * perCoreData + (epilogueCoreIdx < remainderData? epilogueCoreIdx : remainderData);
+        uint32_t loopStartIdx = epilogueCoreIdx * perCoreData +
+            (epilogueCoreIdx < remainderData? epilogueCoreIdx : remainderData);
 
         uint32_t alignedPerCoreData = RoundUp<BYTE_PER_BLK / sizeof(ElementPerTokenScale)>(perCoreData + 1);
 
@@ -268,7 +271,8 @@ public:
             LayoutPerTokenScale layoutGmPerTokenScale2{tasksForIdx};
             AscendC::SetFlag<AscendC::HardEvent::S_MTE3>(EVENT_ID0);
             AscendC::WaitFlag<AscendC::HardEvent::S_MTE3>(EVENT_ID0);
-            copyUbToGmDequantScale(gmPerTokenScale2[loopStartIdx], ubPerTokenScaleOutput[0], layoutGmPerTokenScale2, layoutGmPerTokenScale2);
+            copyUbToGmDequantScale(gmPerTokenScale2[loopStartIdx], ubPerTokenScaleOutput[0],
+                                   layoutGmPerTokenScale2, layoutGmPerTokenScale2);
         }
     }
 

@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -7,30 +7,18 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef SELECT_HELPER_H
-#define SELECT_HELPER_H
+#ifndef PARAM_H
+#define PARAM_H
 
-#include "catlass/layout/layout.hpp"
-using namespace AscendC;
-using namespace Catlass;
+static constexpr int INDEX0 = 0;
+static constexpr int INDEX1 = 1;
+static constexpr int INDEX2 = 2;
+static constexpr int INDEX3 = 3;
+static constexpr int INDEX4 = 4;
+static constexpr int INDEX5 = 5;
+static constexpr int INDEX6 = 6;
+static constexpr int INDEX7 = 7;
+static constexpr int INDEX8 = 8;
+static constexpr int INDEX9 = 9;
 
-template <typename Layout, typename ElementType, typename = void>
-struct LayoutBInitializer {
-    CATLASS_DEVICE
-    static Layout create(uint32_t k, uint32_t n)
-    {
-        return Layout{k, n};
-    }
-};
-
-template <typename Layout, typename ElementType>
-struct LayoutBInitializer<Layout, ElementType,
-    std::enable_if_t<std::is_same_v<Layout, layout::zN>>
->
-{
-    CATLASS_DEVICE
-    static Layout create(uint32_t k, uint32_t n) {
-        return Layout::template MakeLayout<ElementType>(k, n);
-    }
-};
-#endif
+#endif // PARAM_H

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -123,15 +123,12 @@ extern "C" __global__ __aicore__ void ShmemKVShuffle(
 #endif
 }
 
-
-KVShuffleOps::KVShuffleOps(uint32_t block_dim, void* stream)
+KVShuffleOps::KVShuffleOps(uint32_t block_dim, void* stream) : count_(0), block_dim_(block_dim), stream_(stream)
 {
-    count_ = 0;
-    block_dim_ = block_dim;
-    stream_ = stream;
     fftsAddr_ = shmemx_get_ffts_config();
     sync_ptr_ = shmem_malloc(sizeof(int32_t) * shmem_n_pes() * block_dim * SYNC_FLAG_INTERVAL);
-    aclrtMemset(sync_ptr_, sizeof(int32_t) * shmem_n_pes() * block_dim * SYNC_FLAG_INTERVAL, 0, sizeof(int32_t) * shmem_n_pes() * block_dim * SYNC_FLAG_INTERVAL);
+    aclrtMemset(sync_ptr_, sizeof(int32_t) * shmem_n_pes() * block_dim * SYNC_FLAG_INTERVAL,
+                0, sizeof(int32_t) * shmem_n_pes() * block_dim * SYNC_FLAG_INTERVAL);
 }
 
 KVShuffleOps::~KVShuffleOps()

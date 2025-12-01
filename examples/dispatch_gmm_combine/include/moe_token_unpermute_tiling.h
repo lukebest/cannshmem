@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -38,8 +38,10 @@ MoeTokenUnpermuteTiling(int32_t m, int32_t n, int32_t topK, MoeTokenUnpermuteTil
     tilingData.tokens_core_length = static_cast<int64_t>(outTokens / coreNum);
     tilingData.tokens_core_remain = static_cast<int64_t>(outTokens % coreNum);
     tilingData.tokens_splited_length = static_cast<int64_t>(min(tilingData.tokens_core_length, 600));
-    tilingData.tokens_splited_num = static_cast<int64_t>(tilingData.tokens_core_length / tilingData.tokens_splited_length);
-    tilingData.tokens_splited_remain = static_cast<int64_t>(tilingData.tokens_core_length % tilingData.tokens_splited_length);
+    tilingData.tokens_splited_num = static_cast<int64_t>(
+                                    tilingData.tokens_core_length / tilingData.tokens_splited_length);
+    tilingData.tokens_splited_remain = static_cast<int64_t>(
+                                       tilingData.tokens_core_length % tilingData.tokens_splited_length);
     tilingData.buffer_num = 4;
 }
 

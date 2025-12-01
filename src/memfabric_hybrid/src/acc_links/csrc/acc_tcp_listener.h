@@ -22,7 +22,8 @@ using NewConnHandlerInner = std::function<int(const AccConnReq &reg, const AccTc
 
 class AccTcpListener : public AccReferable {
 public:
-    AccTcpListener(std::string ip, uint16_t port, bool reusePort, int32_t sockFd = -1, bool enableTls = false, SSL_CTX *sslCtx = nullptr)
+    AccTcpListener(std::string ip, uint16_t port, bool reusePort, int32_t sockFd = -1,
+                   bool enableTls = false, SSL_CTX *sslCtx = nullptr)
         : listenIp_(std::move(ip)),
           listenPort_(port),
           reusePort_(reusePort),

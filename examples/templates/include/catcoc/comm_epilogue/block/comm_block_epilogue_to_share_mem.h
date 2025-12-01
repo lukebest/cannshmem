@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -171,7 +171,8 @@ public:
     {
         // Remap the idx & actual shape of the gemm block
         GemmCoord remapOutputBlockCoordMNK = params.gemmRemapper.GetBlockCoord(globalLoopIdx);
-        MatrixCoord actualGemmBlockShape = params.gemmRemapper.GetActualBlockShape(remapOutputBlockCoordMNK).GetCoordMN();
+        MatrixCoord actualGemmBlockShape = params.gemmRemapper.GetActualBlockShape(remapOutputBlockCoordMNK)
+                                        .GetCoordMN();
 
         // Calculate the actual output offset of the communication block
         if (gemmBlockShape == 0) {

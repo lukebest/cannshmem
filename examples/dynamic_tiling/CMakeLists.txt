@@ -28,7 +28,11 @@ set(TILING_SOURCES
     tiling/allgather_tiling.cpp
 )
 add_library(tiling_lib SHARED ${TILING_SOURCES})
-target_include_directories(tiling_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tiling ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(tiling_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/tiling
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/examples/utils
+)
 target_compile_options(tiling_lib PRIVATE -O3)
 
 add_executable(dynamic_tiling main.cpp)

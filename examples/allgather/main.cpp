@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include "fp16_t.h"
 #include "bfloat16.h"
 #include "utils.h"
+#include "param.h"
 
 using fp16_t = op::fp16_t;
 using bfloat16 = op::bfloat16;
@@ -43,6 +44,10 @@ const char *data_type;
 constexpr int64_t SYNC_FLAG_INTERVAL = 16;
 constexpr int64_t UB_DMA_MAX_SIZE = 190 * 1024;
 constexpr int64_t GVA_BUFF_MAX_SIZE = 100 * 1024 * 1024;
+constexpr uint32_t MAGIC_MULTIPLIER = 1024;
+constexpr uint32_t DATA_SIZE_THRESHOLD = 2097152;
+constexpr uint32_t BLOCK_NUM_SMALL_DATA = 8;
+constexpr uint32_t BLOCK_NUM_LARGE_DATA = 16;
 
 template<class T>
 int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
@@ -91,17 +96,18 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
         uint32_t trans_size = test_cases[i];
 
         //  Small data kernel needs 8 AIV core, Big data kernel needs 16 AIV.
-        if (trans_size * sizeof(T) < 2097152) {
-            BLOCK_NUM = 8;
+        if (trans_size * sizeof(T) < DATA_SIZE_THRESHOLD) {
+            BLOCK_NUM = BLOCK_NUM_SMALL_DATA;
         } else {
-            BLOCK_NUM = 16;
+            BLOCK_NUM = BLOCK_NUM_LARGE_DATA;
         }
 
         void *input_ptr;
         aclrtMalloc(&input_ptr, trans_size * sizeof(T), ACL_MEM_MALLOC_HUGE_FIRST);
         uint8_t *input_host;
         aclrtMallocHost(reinterpret_cast<void**>(&input_host), trans_size * sizeof(T));
-        std::string inputFile = "../../examples/allgather/golden/allgather_" + std::to_string(trans_size) + "_" + std::to_string(n_ranks) + "/input_gm_" + std::to_string(rank_id) + ".bin";
+        std::string inputFile = "../../examples/allgather/golden/allgather_" + std::to_string(trans_size) + "_" +
+                                std::to_string(n_ranks) + "/input_gm_" + std::to_string(rank_id) + ".bin";
         ReadFile(inputFile, input_host, trans_size * sizeof(T));
         aclrtMemcpy(input_ptr, trans_size * sizeof(T), input_host, trans_size * sizeof(T), ACL_MEMCPY_HOST_TO_DEVICE);
 
@@ -115,7 +121,8 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
         // AllGather
         for (int zz = 0; zz < PERF_TIMES; zz++) {
             magic++;
-            allgather_demo<T>(BLOCK_NUM, stream, fftsAddr, (uint8_t *)input_ptr, (uint8_t *)output_ptr, (uint8_t *)ptr, trans_size, magic * 1024);
+            allgather_demo<T>(BLOCK_NUM, stream, fftsAddr, (uint8_t *)input_ptr,
+                              (uint8_t *)output_ptr, (uint8_t *)ptr, trans_size, magic * MAGIC_MULTIPLIER);
         }
         status = aclrtSynchronizeStream(stream);
 
@@ -127,11 +134,14 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
 
         T *golden_host;
         status = aclrtMallocHost(reinterpret_cast<void**>(&golden_host), output_size);
-        std::string goldenFile = "../../examples/allgather/golden/allgather_" + std::to_string(trans_size) + "_" + std::to_string(n_ranks) + "/golden.bin";
+        std::string goldenFile = "../../examples/allgather/golden/allgather_" +
+            std::to_string(trans_size) + "_" + std::to_string(n_ranks) + "/golden.bin";
         ReadFile(goldenFile, golden_host, n_ranks * trans_size * sizeof(T));
         for (int zz = 0; zz < n_ranks * trans_size; zz++) {
             if (static_cast<float>(output_host[zz]) != static_cast<float>(golden_host[zz])) {
-                std::cout << static_cast<float>(output_host[zz]) << " != " << static_cast<float>(golden_host[zz]) << ", trans_size is : " << trans_size << ", idx is: " << zz << ", rank_id is: "<< rank_id << std::endl;
+                std::cout << static_cast<float>(output_host[zz]) << " != " << static_cast<float>(golden_host[zz])
+                          << ", trans_size is : " << trans_size << ", idx is: " << zz
+                          << ", rank_id is: "<< rank_id << std::endl;
                 std::exit(EXIT_FAILURE);
             }
         }
@@ -164,13 +174,13 @@ int test_shmem_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size)
 int main(int argc, char *argv[])
 {
     int status = 0;
-    int n_ranks = atoi(argv[1]);
-    int rank_id = atoi(argv[2]);
-    ipport = argv[3];
-    g_npus = atoi(argv[4]);
-    f_rank = atoi(argv[5]);
-    f_npu = atoi(argv[6]);
-    data_type = argv[7];
+    int n_ranks = atoi(argv[INDEX1]);
+    int rank_id = atoi(argv[INDEX2]);
+    ipport = argv[INDEX3];
+    g_npus = atoi(argv[INDEX4]);
+    f_rank = atoi(argv[INDEX5]);
+    f_npu = atoi(argv[INDEX6]);
+    data_type = argv[INDEX7];
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     int32_t ret = shmem_set_conf_store_tls(false, nullptr, 0);
     std::cout << "init shmem tls result:" << ret << std::endl;

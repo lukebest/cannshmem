@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -93,9 +93,15 @@ void ShmemAllGatherMatmul(
 
     // Block level, define BlockMmad
     constexpr bool ENABLE_UNIT_FLAG = true;
+    constexpr int L1TILEM = 128;
+    constexpr int L1TILEN = 256;
+    constexpr int L1TILEK = 256;
+    constexpr int L0TILEM = 128;
+    constexpr int L0TILEN = 256;
+    constexpr int L0TILEK = 64;
     using MmadDispatchPolicy = Catlass::Gemm::MmadAtlasA2Pingpong<ENABLE_UNIT_FLAG>;
-    using L1TileShape = Catlass::GemmShape<128, 256, 256>;
-    using L0TileShape = Catlass::GemmShape<128, 256, 64>;
+    using L1TileShape = Catlass::GemmShape<L1TILEM, L1TILEN, L1TILEK>;
+    using L0TileShape = Catlass::GemmShape<L0TILEM, L0TILEN, L0TILEK>;
     using AType = Catlass::Gemm::GemmType<ElementA, LayoutA>;
     using BType = Catlass::Gemm::GemmType<ElementB, LayoutB>;
     using CType = Catlass::Gemm::GemmType<ElementC, LayoutC>;
@@ -103,7 +109,10 @@ void ShmemAllGatherMatmul(
         MmadDispatchPolicy, L1TileShape, L0TileShape, AType, BType, CType
     >;
 
-    using BlockMmadScheduler = typename Catcoc::DGemm::Block::GemmBlockSwizzleAllGatherMesh<7, 1>;
+    constexpr uint32_t SWIZZLE_GROUP_SIZE = 7;
+    constexpr uint32_t SWIZZLE_DIRECTION = 1;
+    using BlockMmadScheduler = typename Catcoc::DGemm::Block::GemmBlockSwizzleAllGatherMesh<SWIZZLE_GROUP_SIZE,
+                                                                                            SWIZZLE_DIRECTION>;
     using BlockEpilogueScheduler = Catcoc::CommEpilogue::Block::BlockCommSwizzle<0>;
 
     using RemoteSrcType = AType;
@@ -112,11 +121,17 @@ void ShmemAllGatherMatmul(
     using TileRemoteCopy = CommEpilogue::Tile::TileRemoteCopy<ArchTag, RemoteSrcType, RemoteDstType, CopyDirect::Put>;
     using TileScheduler = Catlass::Epilogue::Tile::EpilogueIdentityTileSwizzle;
 
-    using CommBlockShape = Catlass::MatrixShape<64, UINT_MAX / 2>;
-    using CommCoreSplit = Catlass::MatrixShape<20, 1>;
+    constexpr uint32_t COMM_BLOCK_ROWS = 64;
+    constexpr uint32_t COMM_BLOCK_COLUMNS_DIVISOR = 2;
+    constexpr uint32_t CORE_SPLIT_ROWS = 20;
+    constexpr uint32_t CORE_SPLIT_COLUMNS = 1;
+    using CommBlockShape = Catlass::MatrixShape<COMM_BLOCK_ROWS, UINT_MAX / COMM_BLOCK_COLUMNS_DIVISOR>;
+    using CommCoreSplit = Catlass::MatrixShape<CORE_SPLIT_ROWS, CORE_SPLIT_COLUMNS>;
 
     constexpr uint32_t UB_STAGES = 2;
-    using EpilogueAllGatherTileShape = Catlass::MatrixShape<32, 256>;
+    constexpr uint32_t ALLGATHER_TILE_ROWS = 32;
+    constexpr uint32_t ALLGATHER_TILE_COLUMNS = 256;
+    using EpilogueAllGatherTileShape = Catlass::MatrixShape<ALLGATHER_TILE_ROWS, ALLGATHER_TILE_COLUMNS>;
     using EpilogueAllGatherDispatch = CommEpilogue::EpilogueAtlasA2CommRemoteCopy<UB_STAGES,
         Catcoc::detail::CopyMode::Gather>;
     using BlockEpilogueAllGather = CommEpilogue::Block::CommBlockEpilogue<
@@ -230,7 +245,8 @@ int main(int argc, char **argv)
     uint32_t k = options.k;
     int32_t deviceId = options.deviceIdList[rankId];
 
-    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId << " input_ip: " << ipPort << std::endl;
+    std::cout << "[TEST] input rank_size: " << rankSize << " rank_id:" << rankId <<
+        " input_ip: " << ipPort << std::endl;
 
     aclrtStream stream = nullptr;
     ACL_CHECK(aclInit(nullptr));

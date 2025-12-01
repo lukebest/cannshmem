@@ -44,7 +44,8 @@ extern "C" __global__ __aicore__ void device_copy(GM_ADDR src, GM_ADDR dst, int 
     int64_t my_rank = shmem_my_pe();
     AscendC::TEventID copy_event_id = (AscendC::TEventID)device_state->mte_config.event_id;
     shmem_mte_put_mem_nbi(reinterpret_cast<__gm__ char *>(dst), reinterpret_cast<__gm__ char *>(src),
-                          reinterpret_cast<__ubuf__ char *>(copy_ub), copy_ub_size, message_length, my_rank, copy_event_id);
+                          reinterpret_cast<__ubuf__ char *>(copy_ub),
+                          copy_ub_size, message_length, my_rank, copy_event_id);
     shmem_quiet();
 }
 

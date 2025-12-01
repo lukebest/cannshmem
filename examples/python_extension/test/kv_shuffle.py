@@ -14,7 +14,7 @@ import torch_npu
 import torch_npu.profiler
 
 
-ranks = 8
+RANKS = 8
 
 # Model Params
 MAX_SEQLEN = 1024
@@ -22,17 +22,17 @@ MAX_BATCH = 10
 INIT_BATCH = 5
 
 # KVCache Params
-page_size = 128
-max_block_nums = MAX_SEQLEN * MAX_BATCH // page_size
-kv_head_num = 8
-head_dim = 128
+PAGE_SIZE = 128
+max_block_nums = MAX_SEQLEN * MAX_BATCH // PAGE_SIZE
+KV_HEAD_NUM = 8
+HEAD_DIM = 128
 
 
 def get_pair_rank(sort_idx, local_rank):
     pair_rank = 0
     for idx, rank in enumerate(sort_idx):
         if rank == local_rank:
-            pair_idx = (ranks - 1) - idx # notice idx can't be ranks
+            pair_idx = (RANKS - 1) - idx # notice idx can't be RANKS
             pair_rank = sort_idx[pair_idx]
     return pair_rank.item()
 
@@ -65,13 +65,13 @@ def balance_kv(kv_lens):
 
     # Get rank to rank pair
     pair_list = []
-    for i in range(ranks):
+    for i in range(RANKS):
         pair_idx = get_pair_rank(sort_idx, i)
         pair_list.append([pair_idx])
 
     # Get rank to rank transfer_tokens
     transfer_tokens_list = []
-    for i in range(ranks):
+    for i in range(RANKS):
         transfer_tokens, transfer_batch_id = get_pair_transfer_tokens(kv_lens, kv_sum, kv_mean, pair_list, i)
         if (transfer_tokens > 0):
             pair_list[i].append(0) # 0 means send
@@ -95,7 +95,7 @@ class CacheData:
 
 def gendata(rank):
     torch.manual_seed(42)
-    kv_lens = torch.randint(0, MAX_SEQLEN, (ranks, INIT_BATCH))
+    kv_lens = torch.randint(0, MAX_SEQLEN, (RANKS, INIT_BATCH))
     kv_sum = torch.sum(kv_lens, dim=-1) # (rank_size, 1)
 
     k_cache_list = []
@@ -103,17 +103,19 @@ def gendata(rank):
     used_blocks_list = []
     batch_blocks_list = []
     # Prepare Inputs
-    for i in range(ranks):
-        k_cache = torch.zeros((max_block_nums, kv_head_num, page_size, head_dim), dtype=torch.int8)
-        v_cache = torch.zeros((max_block_nums, kv_head_num, page_size, head_dim), dtype=torch.int8)
+    for i in range(RANKS):
+        k_cache = torch.zeros((max_block_nums, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM), dtype=torch.int8)
+        v_cache = torch.zeros((max_block_nums, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM), dtype=torch.int8)
         batch_list = kv_lens[i]
         used_id = 0
         batch_blocks = []
         for j in range(batch_list.shape[0]):
             seqlen = batch_list[j].item()
-            block_num = seqlen // page_size + 1
-            k_cache_real = torch.randint(low=-128, high=128, size=(block_num, kv_head_num, page_size, head_dim), dtype=torch.int8)
-            v_cache_real = torch.randint(low=-128, high=128, size=(block_num, kv_head_num, page_size, head_dim), dtype=torch.int8)
+            block_num = seqlen // PAGE_SIZE + 1
+            k_cache_real = torch.randint(low=-128, high=128, size=(block_num, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM),
+                                         dtype=torch.int8)
+            v_cache_real = torch.randint(low=-128, high=128, size=(block_num, KV_HEAD_NUM, PAGE_SIZE, HEAD_DIM),
+                                         dtype=torch.int8)
             k_cache[used_id:used_id + block_num] = k_cache_real
             v_cache[used_id:used_id + block_num] = v_cache_real
             batch_blocks.append((j, [_ for _ in range(used_id, used_id + block_num)]))
@@ -135,7 +137,7 @@ def gendata(rank):
     v_cache_list_g = [_v_cache.clone() for _v_cache in v_cache_list]
 
     # Params Prepare And Golden Calculate
-    for i in range(ranks):
+    for i in range(RANKS):
         local_rank = i
         shuffle_table = pair_list
         k_cache_list_g = k_cache_list_g
@@ -177,7 +179,8 @@ def gendata(rank):
             if rank == 0:
                 print(f"rank:{local_rank}, datasize{total_data_volume}!")
 
-    return CacheData(pair_list, k_cache_list, v_cache_list, src_block_table, dst_block_table, block_num_list, k_cache_list_g, v_cache_list_g)
+    return CacheData(pair_list, k_cache_list, v_cache_list, src_block_table,
+                     dst_block_table, block_num_list, k_cache_list_g, v_cache_list_g)
 
 
 def read_file(file_name):
@@ -197,29 +200,29 @@ def worker(rank):
     stream = torch_npu.npu.Stream(device=f'npu:{torch_npu.npu.current_device()}')
     local_mem_size = 1024 * 1024 * 1024
     ipports = "tcp://127.0.0.1:8662"
-    shmem_common.attr_init(rank, ranks, local_mem_size, ipports)
+    shmem_common.attr_init(rank, RANKS, local_mem_size, ipports)
     kv_shuffle = torch.classes.ShmemOps.KVShuffle()
-    MyCacheData = gendata(rank)
+    my_cache_data = gendata(rank)
     
     # global_shuffle_table
-    global_shuffle_table = torch.tensor(MyCacheData.pair_list, dtype=torch.int64)
+    global_shuffle_table = torch.tensor(my_cache_data.pair_list, dtype=torch.int64)
     global_shuffle_tensor = global_shuffle_table.npu()
     # k_cache
-    k_cache = MyCacheData.k_cache_list[rank]
+    k_cache = my_cache_data.k_cache_list[rank]
     shmem_k_cache_tensor = shmem_common.malloc_like(k_cache)
     # v_cache
-    v_cache = MyCacheData.v_cache_list[rank]
+    v_cache = my_cache_data.v_cache_list[rank]
     shmem_v_cache_tensor = shmem_common.malloc_like(v_cache)
-    int64_data = MyCacheData.block_num_list[rank]
+    int64_data = my_cache_data.block_num_list[rank]
     
     # 检查第一个值是否为 0
     if int64_data != 0:
         # src_block_table
-        src_block_table = torch.tensor(MyCacheData.src_block_table[rank], dtype=torch.int64)
+        src_block_table = torch.tensor(my_cache_data.src_block_table[rank], dtype=torch.int64)
         src_block_tensor = src_block_table.npu()
 
         # dst_block_table
-        dst_block_table = torch.tensor(MyCacheData.dst_block_table[rank], dtype=torch.int64)
+        dst_block_table = torch.tensor(my_cache_data.dst_block_table[rank], dtype=torch.int64)
         dst_block_tensor = dst_block_table.npu()
     else:
         src_block_tensor = torch.Tensor()
@@ -254,25 +257,26 @@ def worker(rank):
 
         with torch_npu.npu.stream(stream):
             for _ in range(10):
-                kv_shuffle.compute(global_shuffle_tensor, shmem_k_cache_tensor, shmem_v_cache_tensor, src_block_tensor, dst_block_tensor)
+                kv_shuffle.compute(global_shuffle_tensor, shmem_k_cache_tensor,
+                                   shmem_v_cache_tensor, src_block_tensor, dst_block_tensor)
             stream.synchronize()
             prof.step()
     
     print("rank: ", rank, " kv_shuffle end !!!!")
     npu_tensork = shmem_k_cache_tensor.cpu()
     npu_tensorv = shmem_v_cache_tensor.cpu()
-    print("K are equal:", torch.equal(npu_tensork, MyCacheData.k_cache_list_g[rank]))  # True
-    print("V are equal:", torch.equal(npu_tensorv, MyCacheData.v_cache_list_g[rank]))  # True
+    print("K are equal:", torch.equal(npu_tensork, my_cache_data.k_cache_list_g[rank]))  # True
+    print("V are equal:", torch.equal(npu_tensorv, my_cache_data.v_cache_list_g[rank]))  # True
 
-    print("K are equal may be False:", torch.equal(npu_tensork, MyCacheData.k_cache_list[rank]))  # may be False
-    print("V are equal may be False:", torch.equal(npu_tensorv, MyCacheData.v_cache_list[rank]))  # may be False
+    print("K are equal may be False:", torch.equal(npu_tensork, my_cache_data.k_cache_list[rank]))  # may be False
+    print("V are equal may be False:", torch.equal(npu_tensorv, my_cache_data.v_cache_list[rank]))  # may be False
 
     shmem_common.free(shmem_k_cache_tensor)
     shmem_common.free(shmem_v_cache_tensor)
 
 
 if __name__ == "__main__":
-    num_processes = ranks  # 定义要启动的进程数量
+    num_processes = RANKS  # 定义要启动的进程数量
     processes = []
 
     for rank in range(num_processes):

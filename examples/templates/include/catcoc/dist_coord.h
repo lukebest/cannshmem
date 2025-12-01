@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@
 #include "catlass/coord.hpp"
 
 namespace Catcoc {
+static constexpr uint32_t two_dim_coord_dimensions = 2;
+static constexpr uint32_t matrix_coord_dimensions = 3;
+static constexpr uint32_t gemm_coord_dimensions = 4;
 
-struct DistMatrixCoord : public Catlass::Coord<3, uint32_t> {
+struct DistMatrixCoord : public Catlass::Coord<matrix_coord_dimensions, uint32_t> {
     using Index = uint32_t;
-    using Base = Catlass::Coord<3, Index>;
+    using Base = Catlass::Coord<matrix_coord_dimensions, Index>;
     static constexpr uint32_t ROW_INDEX = 0;
     static constexpr uint32_t COLUMN_INDEX = 1;
     static constexpr int RANK_INDEX = 2;
@@ -40,7 +43,7 @@ struct DistMatrixCoord : public Catlass::Coord<3, uint32_t> {
     }
 
     CATLASS_HOST_DEVICE
-    DistMatrixCoord(Catlass::Coord<2, Index> matrixCoord, Index rank)
+    DistMatrixCoord(Catlass::Coord<two_dim_coord_dimensions, Index> matrixCoord, Index rank)
         : Base(Catlass::MakeCoord<Index>(matrixCoord[0], matrixCoord[1], rank))
     {
     }
@@ -88,9 +91,9 @@ struct DistMatrixCoord : public Catlass::Coord<3, uint32_t> {
     }
 };
 
-struct DistGemmCoord : public Catlass::Coord<4, uint32_t> {
+struct DistGemmCoord : public Catlass::Coord<gemm_coord_dimensions, uint32_t> {
     using Index = uint32_t;
-    using Base = Catlass::Coord<4, Index>;
+    using Base = Catlass::Coord<gemm_coord_dimensions, Index>;
     static constexpr int M_INDEX = 0;
     static constexpr int N_INDEX = 1;
     static constexpr int K_INDEX = 2;

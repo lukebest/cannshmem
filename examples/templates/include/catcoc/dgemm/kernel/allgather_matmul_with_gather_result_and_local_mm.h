@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -163,7 +163,8 @@ public:
             // Compute initial location in logical coordinates
             MatrixCoord blockOffsetA = blockOffset.GetCoordMK();
             MatrixCoord blockOffsetB = blockOffset.GetCoordKN();
-            MatrixCoord rankOffsetC = params.problemShape.GetCoordMN() * Catlass::MakeCoord<uint32_t>(params.rankIdx, 0);
+            MatrixCoord rankOffsetC = params.problemShape.GetCoordMN() *
+                                    Catlass::MakeCoord<uint32_t>(params.rankIdx, 0);
             MatrixCoord blockOffsetC = rankOffsetC + blockOffset.GetCoordMN();;
             int64_t offsetA = params.layoutA.GetOffset(blockOffsetA);
             int64_t offsetB = params.layoutB.GetOffset(blockOffsetB);
@@ -298,7 +299,8 @@ public:
                     allGather.InitBlockLoop();
                     for (uint32_t commLoopIdx = aicoreIdx; commLoopIdx < commCoreLoops; commLoopIdx += commAicoreNum) {
                         DistMatrixCoord commBlockCoord = commScheduler.GetBlockCoord(commLoopIdx);
-                        MatrixCoord blockOffsetInRank = commScheduler.GetBlockOffsetInRank(commBlockCoord.GetCoordInRank());
+                        MatrixCoord blockOffsetInRank = commScheduler
+                                                        .GetBlockOffsetInRank(commBlockCoord.GetCoordInRank());
                         MatrixCoord actualCommBlockShape = commScheduler.GetActualBlockShapeByOffset(blockOffsetInRank);
 
                         uint32_t remoteRankIdx = commBlockCoord.rank();
@@ -335,7 +337,8 @@ public:
                     copyGatherA.InitBlockLoop();
                     for (uint32_t loopIdx = copyAicoreIdx; loopIdx < copyCoreLoops; loopIdx += copyAicoreNum) {
                         auto blockOffset = copyGatherAScheduler.GetBlockOffset(loopIdx);
-                        auto actualBlockShape = copyGatherAScheduler.GetActualBlockShapeByOffset(blockOffset).GetCoordInRank();
+                        auto actualBlockShape = copyGatherAScheduler.GetActualBlockShapeByOffset(blockOffset)
+                                                .GetCoordInRank();
 
                         auto rowOffsetSrc = Catlass::MakeCoord<int>(copyStageId, blockOffset.rank(), blockOffset.row());
                         auto rowOffsetDst = Catlass::MakeCoord<int>(blockOffset.rank(), copyCommIdx, blockOffset.row());

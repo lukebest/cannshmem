@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This file is a part of the CANN Open Software.
  * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -195,7 +195,8 @@ __aicore__ inline void MoeV2ExpertTokenOut::CopyOutExpertTokensCumsum(bool isTai
         copyLength = end;
         SetWaitFlag<HardEvent::V_MTE3>(HardEvent::V_MTE3);
     }
-    DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(int32_t)), 0, 0, 0};
+    DataCopyExtParams copyParams{static_cast<uint16_t>(1),
+                                 static_cast<uint32_t>(copyLength * sizeof(int32_t)), 0, 0, 0};
     SetAtomicAdd<int32_t>();
 #ifndef __CCE_KT_TEST__
     DataCopyPad(expertTokensCountOrCumsumGm[this->firstExpertId], this->expertTokenIdxOutLocal, copyParams);
@@ -222,7 +223,8 @@ __aicore__ inline void MoeV2ExpertTokenOut::CopyOutExpertTokensCumsum(bool isTai
 __aicore__ inline void MoeV2ExpertTokenOut::CopyOutExpertTokensCount(bool isTail)
 {
     int64_t copyLength = isTail ? this->lastExpertId - this->firstExpertId + 1 : this->expertNumUbAlign;
-    DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(int32_t)), 0, 0, 0};
+    DataCopyExtParams copyParams{static_cast<uint16_t>(1),
+                                 static_cast<uint32_t>(copyLength * sizeof(int32_t)), 0, 0, 0};
 #ifdef __CCE_KT_TEST__
     // CPU孪生调试不进行输出拷贝
     return;

@@ -20,7 +20,7 @@ constexpr uint32_t SQCQ_QUERY_INFO_LENGTH      = 8;
 constexpr uint32_t RESOURCE_CONFIG_INFO_LENGTH = 7;
 constexpr uint32_t RESOURCEID_RESV_LENGTH      = 8;
 
-typedef enum tagDrvSqCqType {
+enum tagDrvSqCqType {
     DRV_NORMAL_TYPE = 0,
     DRV_CALLBACK_TYPE,
     DRV_LOGIC_TYPE,
@@ -28,9 +28,10 @@ typedef enum tagDrvSqCqType {
     DRV_CTRL_TYPE,
     DRV_GDB_TYPE,
     DRV_INVALID_TYPE
-} drvSqCqType_t;
+};
+using drvSqCqType_t = tagDrvSqCqType;
 
-typedef enum tagDrvSqCqPropType {
+enum tagDrvSqCqPropType {
     DRV_SQCQ_PROP_SQ_STATUS = 0x0,
     DRV_SQCQ_PROP_SQ_HEAD,
     DRV_SQCQ_PROP_SQ_TAIL,
@@ -41,7 +42,8 @@ typedef enum tagDrvSqCqPropType {
     DRV_SQCQ_PROP_SQ_DEPTH,
     DRV_SQCQ_PROP_SQ_PAUSE,
     DRV_SQCQ_PROP_MAX
-} drvSqCqPropType_t;
+};
+using drvSqCqPropType_t = tagDrvSqCqPropType;
 
 struct halTaskSendInfo {
     drvSqCqType_t type;
@@ -122,7 +124,7 @@ struct halSqCqQueryInfo {
     uint32_t value[SQCQ_QUERY_INFO_LENGTH];
 };
 
-typedef enum tagDrvIdType {
+enum tagDrvIdType {
     DRV_STREAM_ID = 0,
     DRV_EVENT_ID,
     DRV_MODEL_ID,
@@ -130,16 +132,18 @@ typedef enum tagDrvIdType {
     DRV_CMO_ID,
     DRV_CNT_NOTIFY_ID,    /* add start ascend910_95 */
     DRV_INVALID_ID,
-} drvIdType_t;
+};
+using drvIdType_t = tagDrvIdType;
 
-typedef enum tagDrvResourceConfigType {
+enum tagDrvResourceConfigType {
     DRV_STREAM_BIND_LOGIC_CQ = 0x0,
     DRV_STREAM_UNBIND_LOGIC_CQ,
     DRV_ID_RECORD,
     DRV_STREAM_ENABLE_EVENT,
     DRV_ID_RESET,
     DRV_RES_ID_CONFIG_MAX
-} drvResourceConfigType_t;
+};
+using drvResourceConfigType_t = tagDrvResourceConfigType;
 
 struct halResourceConfigInfo {
     drvResourceConfigType_t prop;

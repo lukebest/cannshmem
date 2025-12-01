@@ -66,10 +66,11 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     status = aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
     status = aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
 
+    const int block_size = 16;
     for (int i = 0; i < n_ranks; i++) {
-        for (int j = 0; j < 16; j++) {
-            if (y_host[trans_size * i + trans_size / 16 * j] != num10 + i) {
-                std::cout << y_host[trans_size * i + trans_size / 16 * j] << " != " << num10 + i << std::endl;
+        for (int j = 0; j < block_size; j++) {
+            if (y_host[trans_size * i + trans_size / block_size * j] != num10 + i) {
+                std::cout << y_host[trans_size * i + trans_size / block_size * j] << " != " << num10 + i << std::endl;
                 // std::exit(EXIT_FAILURE);
                 return -1;
             }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
 #include <torch_npu/csrc/core/npu/NPUFormat.h>
 #include <torch_npu/csrc/core/npu/NPUFunctions.h>
 #include <torch_npu/csrc/core/npu/NPUStream.h>
-#include "torch_npu/csrc/aten/common/from_blob.h"
 #include <vector>
 #include <string>
+#include "torch_npu/csrc/aten/common/from_blob.h"
 
 #include "shmem_api.h"
 #include "shmem_kernel.h"
@@ -97,17 +97,17 @@ private:
     std::string name_;
 };
 
+static constexpr uint32_t DEFAULT_BLOCK_DIM = 16;
 class KVShuffle : public torch::jit::CustomClassHolder {
 public:
     // 默认构造函数
-    KVShuffle() : name_("ShmemKVShuffle")
+    KVShuffle() : name_("ShmemKVShuffle"), count_(0), block_dim_(DEFAULT_BLOCK_DIM)
     {
-        count_ = 0;
-        block_dim_ = 16;
         fftsAddr_ = shmemx_get_ffts_config();
         int64_t SYNC_FLAG_INTERVAL = 16;
         sync_ptr_ = shmem_malloc(sizeof(int32_t) * shmem_n_pes() * block_dim_ * SYNC_FLAG_INTERVAL);
-        aclrtMemset(sync_ptr_, sizeof(int32_t) * shmem_n_pes() * block_dim_  * SYNC_FLAG_INTERVAL, 0, sizeof(int32_t) * shmem_n_pes() * block_dim_ * SYNC_FLAG_INTERVAL);
+        aclrtMemset(sync_ptr_, sizeof(int32_t) * shmem_n_pes() * block_dim_  * SYNC_FLAG_INTERVAL, 0,
+                    sizeof(int32_t) * shmem_n_pes() * block_dim_ * SYNC_FLAG_INTERVAL);
     }
 
     ~KVShuffle()
@@ -120,7 +120,8 @@ public:
         return name_;
     }
     
-    void compute(const at::Tensor &ShuffleTbale, const at::Tensor &KeyCache, const at::Tensor &ValueCache, const at::Tensor &SrcBlockTable, const at::Tensor &DstBlockTable)
+    void compute(const at::Tensor &ShuffleTbale, const at::Tensor &KeyCache, const at::Tensor &ValueCache,
+                 const at::Tensor &SrcBlockTable, const at::Tensor &DstBlockTable)
     {
         void *global_shuffle_table = const_cast<void *>(ShuffleTbale.storage().data());
 
@@ -144,10 +145,10 @@ public:
     }
 private:
     std::string name_;
-    void* sync_ptr_;
     int32_t count_;
     uint32_t block_dim_;
     uint64_t fftsAddr_;
+    void* sync_ptr_;
 };
 }  // namespace ShmemOps
 

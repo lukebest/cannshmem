@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ int shmem_initialize_unique_id(int rank, int world_size, int64_t mem_size, const
         return -1;
     }
     shmem_uniqueid_t uid;
-    memcpy(&uid, bytes.data(), sizeof(uid));
+    std::copy_n(bytes.data(), sizeof(uid), reinterpret_cast<char*>(&uid));
     shmem_init_attr_t *attr;
     auto ret = shmem_set_attr(rank, world_size, mem_size, nullptr, &attr);
     if (ret != 0) {
@@ -257,7 +257,8 @@ Returns:
 Finalize share memory module.
     )");
 
-    m.def("shmem_init_using_unique_id", &shm::shmem_initialize_unique_id, py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
+    m.def("shmem_init_using_unique_id", &shm::shmem_initialize_unique_id,
+          py::call_guard<py::gil_scoped_release>(), py::arg("mype"),
           py::arg("npes"), py::arg("mem_size"), py::arg("uid"), R"(
 Initialize share memory module using unique id. This function need run with PTA.
 

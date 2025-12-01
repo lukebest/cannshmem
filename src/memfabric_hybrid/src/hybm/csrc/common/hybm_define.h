@@ -506,7 +506,7 @@ struct send_wr_rsp {
 /**
  * @brief handle to HCCL communicator
  */
-typedef void *HcclComm;
+using HcclComm = void*;
 
 // macro for gcc optimization for prediction of if/else
 #ifndef LIKELY

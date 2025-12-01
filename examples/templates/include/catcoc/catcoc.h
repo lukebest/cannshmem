@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -117,6 +117,7 @@ private:
 }
 
 namespace Padding {
+static constexpr uint32_t STRIDE_ALIGNMENT_THRESHOLD = 65536;
 
 template <class Layout> size_t GetWorkspaceLen(Layout layout, size_t blockRows, size_t blockCols)
 {
@@ -130,7 +131,7 @@ bool IsNeedPadding(Catlass::layout::RowMajor layout, uint32_t align)
     if (align == 0) {
         return false;
     }
-    if (layout.stride(0) < 65536) {
+    if (layout.stride(0) < STRIDE_ALIGNMENT_THRESHOLD) {
         return layout.stride(0) % align != 0;
     } else {
         return true;
@@ -143,7 +144,7 @@ bool IsNeedPadding(Catlass::layout::ColumnMajor layout, uint32_t align)
     if (align == 0) {
         return false;
     }
-    if (layout.stride(1) < 65536) {
+    if (layout.stride(1) < STRIDE_ALIGNMENT_THRESHOLD) {
         return layout.stride(1) % align != 0;
     } else {
         return true;
@@ -155,12 +156,14 @@ template <class Type, bool PADDING> struct PaddingHelper {
     using Layout = typename Type::Layout;
     using Element = typename Type::Element;
 
-    using LayoutPadding = std::conditional_t<std::is_same_v<Layout, Catlass::layout::RowMajor>, Catlass::layout::PaddingRowMajor,
+    using LayoutPadding = std::conditional_t<std::is_same_v<Layout, Catlass::layout::RowMajor>,
+                                             Catlass::layout::PaddingRowMajor,
                                              Catlass::layout::PaddingColumnMajor>;
     using ActualType = std::conditional_t<PADDING, Catlass::Gemm::GemmType<Element, LayoutPadding>, Type>;
     static const uint32_t COMPUTE_LENGTH = 96 * 1024 / sizeof(Element);
     using GlobalPadding = std::conditional_t<
-        PADDING, Catlass::Gemm::Kernel::PaddingMatrixBlockND<ArchTag, Element, Layout, LayoutPadding, COMPUTE_LENGTH>, void>;
+        PADDING, Catlass::Gemm::Kernel::PaddingMatrixBlockND<ArchTag,
+        Element, Layout, LayoutPadding, COMPUTE_LENGTH>, void>;
     using LayoutW = std::conditional_t<PADDING, LayoutPadding, Layout>;
 
     CATLASS_DEVICE

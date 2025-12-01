@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -227,8 +227,8 @@ public:
         for (uint32_t commIdx = 0; commIdx < commLoops; ++commIdx) {
             uint32_t stageIdx = commIdx % WORKSPACE_STAGES;
             uint32_t actualBlockInComm = Min(blockPerComm, coreLoops - commIdx * blockPerComm);
-            auto actualCommShape =
-                DistMatrixCoord{actualBlockInComm * blockShapeMN.row() / params.rankSize, blockShapeMN.column(), params.rankSize};
+            auto actualCommShape = DistMatrixCoord{actualBlockInComm * blockShapeMN.row() / params.rankSize,
+                blockShapeMN.column(), params.rankSize};
             MatrixCoord loopsInRank = CeilDiv(MatrixCoord(actualCommShape.GetCoordInRank()), commBlockShape);
 
             commScheduler.UpdateProblem(actualCommShape, loopsInRank);

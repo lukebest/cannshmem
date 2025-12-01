@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -43,6 +43,9 @@ using namespace AscendC;
 inline __gm__ struct OpSystemRunCfg g_opSystemRunCfg{Catlass::L2_OFFSET};
 
 namespace Catlass::Gemm::Kernel {
+constexpr uint32_t EXPERT_OFFSET = 8;
+constexpr uint32_t FLAG_VALUE = 2;
+constexpr uint32_t LOOP_DENOMINATOR = 8;
 
 template<
     class BlockMmad_,
@@ -176,11 +179,16 @@ public:
             moeInitRoutingQuantV2TilingData(moeInitRoutingQuantV2TilingData_)
         {
             moeInitRoutingQuantV2TilingData.vbsComputeParamsOp = moeInitRoutingQuantV2TilingData_.vbsComputeParamsOp;
-            moeInitRoutingQuantV2TilingData.vmsMiddleComputeParamsOp = moeInitRoutingQuantV2TilingData_.vmsMiddleComputeParamsOp;
-            moeInitRoutingQuantV2TilingData.sortOutComputeParamsOp = moeInitRoutingQuantV2TilingData_.sortOutComputeParamsOp;
-            moeInitRoutingQuantV2TilingData.srcToDstComputeParamsOp = moeInitRoutingQuantV2TilingData_.srcToDstComputeParamsOp;
-            moeInitRoutingQuantV2TilingData.srcToDstCapacityComputeParamsOp = moeInitRoutingQuantV2TilingData_.srcToDstCapacityComputeParamsOp;
-            moeInitRoutingQuantV2TilingData.gatherOutComputeParamsOp = moeInitRoutingQuantV2TilingData_.gatherOutComputeParamsOp;
+            moeInitRoutingQuantV2TilingData.vmsMiddleComputeParamsOp = moeInitRoutingQuantV2TilingData_
+                                                                    .vmsMiddleComputeParamsOp;
+            moeInitRoutingQuantV2TilingData.sortOutComputeParamsOp = moeInitRoutingQuantV2TilingData_
+                                                                    .sortOutComputeParamsOp;
+            moeInitRoutingQuantV2TilingData.srcToDstComputeParamsOp = moeInitRoutingQuantV2TilingData_
+                                                                    .srcToDstComputeParamsOp;
+            moeInitRoutingQuantV2TilingData.srcToDstCapacityComputeParamsOp = moeInitRoutingQuantV2TilingData_
+                                                                    .srcToDstCapacityComputeParamsOp;
+            moeInitRoutingQuantV2TilingData.gatherOutComputeParamsOp = moeInitRoutingQuantV2TilingData_
+                                                                    .gatherOutComputeParamsOp;
         }
     };
 
@@ -220,7 +228,7 @@ public:
     void operator()<AscendC::AIC>(Params const &params)
     {
         GMM1(params);
-        AscendC::CrossCoreWaitFlag<0x2>(2);
+        AscendC::CrossCoreWaitFlag<0x2>(FLAG_VALUE);
         GMM2(params);
     }
 
@@ -230,7 +238,7 @@ public:
     {
         Dispatch(params);
         AscendC::SyncAll<true>();
-        AscendC::CrossCoreSetFlag<0x2, PIPE_MTE3>(2);
+        AscendC::CrossCoreSetFlag<0x2, PIPE_MTE3>(FLAG_VALUE);
         Combine(params);
     }
 
@@ -286,7 +294,8 @@ private:
         int pingpongId = 0;
         auto processCount = CeilDiv(elemNum, ubMoveNum);
         for (uint32_t processIndex = 0; processIndex < processCount; ++processIndex) {
-            uint32_t curProcessNum = (processIndex == processCount - 1) ? elemNum - ubMoveNum * (processCount - 1) : ubMoveNum;
+            uint32_t curProcessNum = (processIndex == processCount - 1) ? elemNum - ubMoveNum * (processCount - 1) :
+                                      ubMoveNum;
             AscendC::TEventID EVENT_ID = pingpongId == 0 ? EVENT_ID0 : EVENT_ID1;
             AscendC::LocalTensor<T> buf = pingpongId == 0 ? tmpBuffer1 : tmpBuffer2;
             auto processOffset = processIndex * ubMoveNum;
@@ -322,7 +331,8 @@ private:
             tmpBuffer1,
             tokenPerExpert[rankId * expertPerRank],
             {static_cast<uint16_t>(EP),
-             static_cast<uint16_t>(expertPerRank * sizeof(int32_t)), static_cast<uint16_t>(((EP - 1) * expertPerRank + 8) * sizeof(int32_t)), 0},
+             static_cast<uint16_t>(expertPerRank * sizeof(int32_t)),
+             static_cast<uint16_t>(((EP - 1) * expertPerRank + 8) * sizeof(int32_t)), 0},
             {});
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(EVENT_ID0);
@@ -344,7 +354,8 @@ private:
     }
 
     CATLASS_DEVICE
-    void GetCumsumForSendRecv(AscendC::GlobalTensor<int32_t> &tokenPerExpert, AscendC::GlobalTensor<int32_t> &resultSend,
+    void GetCumsumForSendRecv(AscendC::GlobalTensor<int32_t> &tokenPerExpert,
+                              AscendC::GlobalTensor<int32_t> &resultSend,
                               uint32_t expertPerRank, uint32_t rankId, uint32_t EP)
     {
         layout::RowMajor commMatLayout{EP, EP * expertPerRank};
@@ -504,6 +515,8 @@ private:
         int64_t gmGroupOffsetC = 0;
 
         uint32_t startCoreIdx = 0;
+        constexpr uint32_t OPERATION_IDENTIFIER = 3;
+        constexpr uint32_t OPERATION_IDENTIFIER_2 = 2;
 
         AscendC::PipeBarrier<PIPE_ALL>();
 
@@ -541,7 +554,7 @@ private:
             uint32_t startLoopIdx = ((coreIdx < startCoreIdx) ? (coreIdx + coreNum) : coreIdx) - startCoreIdx;
             if (params.expertPerRank > lastDequantExpertNum &&
                 groupIdx + 1 == params.expertPerRank - lastDequantExpertNum) {
-                AscendC::CrossCoreWaitFlag<0x2>(2);
+                AscendC::CrossCoreWaitFlag<0x2>(OPERATION_IDENTIFIER_2);
             }
 
             for (uint32_t loopIdx = startLoopIdx; loopIdx < coreLoops; loopIdx += coreNum) {
@@ -567,7 +580,7 @@ private:
                         gmB2[gmGroupOffsetB + gmOffsetB], layoutB2,
                         gmC2[gmGroupOffsetC + gmOffsetC], layoutC,
                         gmS2[gmOffsetS], layoutScale,
-                        actualBlockShape, syncLoopIdx, 3);
+                        actualBlockShape, syncLoopIdx, OPERATION_IDENTIFIER);
                 }
             }
             preCurrentmSum += currentM;
@@ -581,7 +594,7 @@ private:
         if constexpr(BlockMmad::DispatchPolicy::ASYNC) {
             blockMmad.SynchronizeBlock();
         }
-        blockMmad.Finalize(params.expertPerRank - 1, 3);
+        blockMmad.Finalize(params.expertPerRank - 1, OPERATION_IDENTIFIER);
     }
 
     CATLASS_DEVICE
@@ -649,9 +662,11 @@ private:
         uint32_t curGroupOffset = 0;
         int32_t prevSumBeforeRank = 0;
         int32_t groupIdxDeq = 0;
+        constexpr int32_t TOKEN_PER_EXPERT_OFFSET = 8;
         if (coreIdx < params.EP) {
             for (int32_t i = 0; i < params.rank * params.expertPerRank; i++) {
-                prevSumBeforeRank += tokenPerExpert(coreIdx * (params.EP * params.expertPerRank + 8) + i);
+                prevSumBeforeRank += tokenPerExpert(coreIdx * (params.EP * params.expertPerRank +
+                                                    TOKEN_PER_EXPERT_OFFSET) + i);
             }
             m_prevSumBeforeRank[coreIdx] = prevSumBeforeRank;
         }
@@ -659,16 +674,18 @@ private:
         uint32_t prevGroupSum1 = 0;
         uint32_t dequantSum = 0;
         int32_t syncLoopIdx = -1;
+        constexpr int32_t GROUP_INDEX_OFFSET = 2;
         BlockEpilogue1 blockEpilogue(resource);
         for (int32_t groupIdx = 0; groupIdx < params.expertPerRank; ++groupIdx) {
             // 第i个core从第i个rank的peermem读数据
-            groupIdxDeq = groupIdx - 2;
+            groupIdxDeq = groupIdx - GROUP_INDEX_OFFSET;
             for (int32_t dstEpIdx = coreIdx; dstEpIdx < params.EP; dstEpIdx += coreNum) {
                 uint32_t rowStart = (dstEpIdx == 0 ? 0 : cumsumMM((dstEpIdx - 1) * params.expertPerRank + groupIdx)) +
                                     prevGroupSum1;
                 if (rowStart < params.maxOutputSize) {
                     uint32_t rows = tokenPerExpert(
-                        dstEpIdx * (params.EP * params.expertPerRank + 8) + params.rank * params.expertPerRank + groupIdx);
+                        dstEpIdx * (params.EP * params.expertPerRank + 8) +
+                        params.rank * params.expertPerRank + groupIdx);
                     if (rowStart + rows > params.maxOutputSize) {
                         rows = params.maxOutputSize - rowStart;
                     }
@@ -687,7 +704,8 @@ private:
                     int64_t gmOffsetA = params.layoutA.GetOffset(offsetA);
                     int64_t gmOffsetPeer = params.layoutA.GetOffset(offsetPeer);
                     // 通信Data
-                    CopyGMToGM(gmA[gmOffsetA], gmRemoteA[gmOffsetPeer], rows * params.problemShape.k(), params.ubMoveNum);
+                    CopyGMToGM(gmA[gmOffsetA], gmRemoteA[gmOffsetPeer],
+                               rows * params.problemShape.k(), params.ubMoveNum);
                     // 通信scale
                     CopyGMToGM(gmPerTokenScale1[rowStart], gmRemotePerTokenScale[rowSrc], rows, rows);
                 }
@@ -695,7 +713,7 @@ private:
             if ((params.epilogueGranularity < params.expertPerRank && params.epilogueGranularity > 0) &&
                 groupIdx == params.expertPerRank - 1) {
                 syncLoopIdx++;
-                AscendC::CrossCoreWaitFlag<0x2>(syncLoopIdx / 8 + 1);
+                AscendC::CrossCoreWaitFlag<0x2>(syncLoopIdx / LOOP_DENOMINATOR + 1);
             }
             AscendC::SyncAll<true>();
             AscendC::CrossCoreSetFlag<0x2, PIPE_MTE3>(0);   // V通知C当前轮的通信已完成
@@ -725,14 +743,14 @@ private:
             dequantSum += cumsumMM((params.EP - 1) * params.expertPerRank + groupIdx);
         }
         syncLoopIdx++;
-        AscendC::CrossCoreWaitFlag<0x2>(syncLoopIdx / 8 + 1);
+        AscendC::CrossCoreWaitFlag<0x2>(syncLoopIdx / LOOP_DENOMINATOR + 1);
         AscendC::SyncAll<true>();
         uint32_t lastDequantExpertNum = params.expertPerRank;
         if (params.epilogueGranularity < params.expertPerRank) {
             lastDequantExpertNum = params.expertPerRank - params.epilogueGranularity;
         }
         if (lastDequantExpertNum < params.expertPerRank) {
-            AscendC::CrossCoreSetFlag<0x2, PIPE_MTE3>(2);
+            AscendC::CrossCoreSetFlag<0x2, PIPE_MTE3>(FLAG_VALUE);
         }
         if (prevGroupSum1 - dequantSum < params.maxOutputSize) {
             uint32_t rowStartThisCore = prevGroupSum1 - dequantSum;
@@ -779,7 +797,7 @@ private:
                 AscendC::GlobalTensor<ElementD2> gmRemotePeer;
                 gmRemotePeer.SetGlobalBuffer(reinterpret_cast<__gm__ ElementD2 * > (dstPeermemPtr));
                 uint32_t srcRowOffset =
-                        (dstEpIdx == 0 ? 0 : cumsumMM((dstEpIdx - 1) * params.expertPerRank + groupIdx)) + prevGroupSum2;
+                    (dstEpIdx == 0 ? 0 : cumsumMM((dstEpIdx - 1) * params.expertPerRank + groupIdx)) + prevGroupSum2;
                 if (srcRowOffset < params.maxOutputSize) {
                     uint32_t dataRows = tokenPerExpert(dstEpIdx * (params.EP * params.expertPerRank + 8) + groupIdx +
                                                        params.rank * params.expertPerRank);
@@ -883,7 +901,8 @@ private:
         PeermemInfo(const Params &params)
         {
             ptrPeerTokenPerExpert = params.symmetricPtr;
-            ptrA = ptrPeerTokenPerExpert + (params.EP * (params.EP * params.expertPerRank + 8)) * sizeof(int32_t);
+            ptrA = ptrPeerTokenPerExpert + (params.EP * (params.EP * params.expertPerRank +
+                   EXPERT_OFFSET)) * sizeof(int32_t);
             ptrPeerPerTokenScale =
                     ptrA + params.problemShape.m() * params.topK * params.problemShape.k() * sizeof(ElementA);
             ptrD = ptrPeerPerTokenScale + params.problemShape.m() * params.topK * sizeof(ElementPerTokenScale);

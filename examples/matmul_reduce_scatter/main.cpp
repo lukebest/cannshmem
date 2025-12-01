@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -82,9 +82,15 @@ void ShmemMatmulReduceScatter(
     LayoutD layoutD{m / rankSize, n};
 
     constexpr bool ENABLE_UNIT_FLAG = true;
+    constexpr int L1TILEM = 128;
+    constexpr int L1TILEN = 256;
+    constexpr int L1TILEK = 256;
+    constexpr int L0TILEM = 128;
+    constexpr int L0TILEN = 256;
+    constexpr int L0TILEK = 64;
     using MmadDispatchPolicy = Catlass::Gemm::MmadAtlasA2Pingpong<ENABLE_UNIT_FLAG>;
-    using L1TileShape = Catlass::GemmShape<128, 256, 256>;
-    using L0TileShape = Catlass::GemmShape<128, 256, 64>;
+    using L1TileShape = Catlass::GemmShape<L1TILEM, L1TILEN, L1TILEK>;
+    using L0TileShape = Catlass::GemmShape<L0TILEM, L0TILEN, L0TILEK>;
     using AType = Catlass::Gemm::GemmType<ElementA, LayoutA>;
     using BType = Catlass::Gemm::GemmType<ElementB, LayoutB>;
     using CType = Catlass::Gemm::GemmType<ElementC, LayoutC>;
@@ -93,7 +99,9 @@ void ShmemMatmulReduceScatter(
         MmadDispatchPolicy, L1TileShape, L0TileShape, AType, BType, CType
     >;
 
-    using BlockMmadScheduler = Catlass::Gemm::Block::GemmIdentityBlockSwizzle<7, 1>;
+    constexpr uint32_t SWIZZLE_GROUP_SIZE = 7;
+    constexpr uint32_t SWIZZLE_DIRECTION = 1;
+    using BlockMmadScheduler = Catlass::Gemm::Block::GemmIdentityBlockSwizzle<SWIZZLE_GROUP_SIZE, SWIZZLE_DIRECTION>;
     using BlockEpilogueScheduler = Catcoc::CommEpilogue::Block::BlockCommSwizzle<0, true>;
 
     using RemoteSrcType = CType;
@@ -102,11 +110,17 @@ void ShmemMatmulReduceScatter(
     using TileRemoteCopy = CommEpilogue::Tile::TileRemoteCopy<ArchTag, RemoteSrcType, RemoteDstType, CopyDirect::Get>;
     using TileScheduler = Catlass::Epilogue::Tile::EpilogueIdentityTileSwizzle;
 
-    using CommBlockShape = Catlass::MatrixShape<64, 256>;
-    using CommCoreSplit = Catlass::MatrixShape<20, 1>;
+    constexpr uint32_t COMM_BLOCK_ROWS = 64;
+    constexpr uint32_t COMM_BLOCK_COLUMNS = 256;
+    constexpr uint32_t CORE_SPLIT_ROWS = 20;
+    constexpr uint32_t CORE_SPLIT_COLUMNS = 1;
+    using CommBlockShape = Catlass::MatrixShape<COMM_BLOCK_ROWS, COMM_BLOCK_COLUMNS>;
+    using CommCoreSplit = Catlass::MatrixShape<CORE_SPLIT_ROWS, CORE_SPLIT_COLUMNS>;
 
     constexpr uint32_t UB_STAGES = 2;
-    using EpilogueReduceScatterTileShape = Catlass::MatrixShape<32, 256>;
+    constexpr uint32_t SCATTER_TILE_ROWS = 32;
+    constexpr uint32_t SCATTER_TILE_COLUMNS = 256;
+    using EpilogueReduceScatterTileShape = Catlass::MatrixShape<SCATTER_TILE_ROWS, SCATTER_TILE_COLUMNS>;
     using EpilogueReduceScatterDispatch = CommEpilogue::EpilogueAtlasA2CommRemoteCopy<UB_STAGES,
         Catcoc::detail::CopyMode::Scatter>;
     using BlockEpilogueReduceScatter = CommEpilogue::Block::CommBlockEpilogue<

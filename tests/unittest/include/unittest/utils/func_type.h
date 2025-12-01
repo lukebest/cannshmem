@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -58,13 +58,13 @@
     FUNC(float, float);                       \
     FUNC(int8, int8_t);                       \
     FUNC(int16, int16_t);                     \
-    FUNC(int32, int32_t);
+    FUNC(int32, int32_t)
 
 #define SHMEM_ATOMIC_ADD_FUNC_TYPE_KERNEL(FUNC) \
     FUNC(half, half);                           \
     FUNC(float, float);                         \
     FUNC(int8, int8_t);                         \
     FUNC(int16, int16_t);                       \
-    FUNC(int32, int32_t);
+    FUNC(int32, int32_t)
 
 #endif  // UT_FUNC_TYPE_H

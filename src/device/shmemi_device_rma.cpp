@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "acl/acl.h"
-#include "shmemi_device_rma.h"
 #include "kernel_operator.h"
+#include "shmemi_device_rma.h"
 
 using namespace std;
 

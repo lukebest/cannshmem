@@ -83,7 +83,13 @@ def get_precision_and_eb_threshold(op_type, dtype, rtol: float = 2**(-8)):
             eb_threshold = 2**(-7)
         if dtype in [torch.float32]:
             eb_threshold = 2**(-14)
-    logging.debug("op_type: %s, dtype: %s, precision_threshold: %s, eb_threshold: %s", op_type, dtype, precision_threshold, eb_threshold)
+    logging.debug(
+        "op_type: %s, dtype: %s, precision_threshold: %s, eb_threshold: %s",
+        op_type,
+        dtype,
+        precision_threshold,
+        eb_threshold
+    )
     return precision_threshold, eb_threshold
 
 
@@ -91,7 +97,8 @@ def precision_performance_analysis(op_type, golden_output_tensor_list, output_te
     for i, golden_output in enumerate(golden_output_tensor_list):
         actual_output = output_tensor_list[i].cpu()
         precision_threshold, eb_threshold = get_precision_and_eb_threshold(op_type, actual_output.dtype, rtol)
-        precision, eb = cal_precision_eb_percent(op_type, actual_output, golden_output, precision_threshold, eb_threshold)
+        precision, eb = cal_precision_eb_percent(op_type, actual_output, golden_output,
+                                                 precision_threshold, eb_threshold)
     if precision == 100 and eb <= 100:
         return True 
     else:
@@ -102,7 +109,8 @@ def precision_performance_analysis(op_type, golden_output_tensor_list, output_te
 def cal_precision_eb_percent(op_type, actual_output, golden_output, precision_threshold, eb_threshold):
     actual_output = actual_output if actual_output.dtype != torch.bool else actual_output.long()
     golden_output = golden_output if golden_output.dtype != torch.bool else golden_output.long()
-    if op_type in [OpTypes.COMPUTE_FLOAT, OpTypes.COMPUTE_FLOAT_HIGH_PRECISION, OpTypes.VECTOR_FUSION] and actual_output.dtype in [torch.float16, torch.bfloat16]:
+    if (op_type in [OpTypes.COMPUTE_FLOAT, OpTypes.COMPUTE_FLOAT_HIGH_PRECISION, OpTypes.VECTOR_FUSION] and
+        actual_output.dtype in [torch.float16, torch.bfloat16]):
         actual_output = actual_output.to(torch.float32)
         golden_output = golden_output.to(torch.float32)
     #对于输出中出现的NAN以及INF全部替换成0

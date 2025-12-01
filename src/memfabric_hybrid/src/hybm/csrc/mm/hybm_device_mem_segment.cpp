@@ -501,9 +501,9 @@ void MemSegmentDevice::GetDeviceInfo(uint32_t &sdId, uint32_t &serverId, uint32_
 
 void MemSegmentDevice::GetRankIdByAddr(const void *addr, uint64_t size, uint32_t &rankId) const noexcept
 {
-    auto end = (const uint8_t *)addr + size;
+    auto end = static_cast<const uint8_t *>(addr) + size;
     if (addr >= globalVirtualAddress_ && end < globalVirtualAddress_ + totalVirtualSize_) {
-        auto offset = (const uint8_t *)addr - (const uint8_t *)globalVirtualAddress_;
+        auto offset = static_cast<const uint8_t *>(addr) - static_cast<const uint8_t *>(globalVirtualAddress_);
         rankId = offset / options_.size;
         return;
     }

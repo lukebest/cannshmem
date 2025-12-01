@@ -39,6 +39,7 @@ function(shmem_add_collective_example NAME)
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/include
         ${PROJECT_SOURCE_DIR}/3rdparty/catlass/examples/common
         ${PROJECT_SOURCE_DIR}/examples/${NAME}
+        ${PROJECT_SOURCE_DIR}/examples/utils
     )
     target_link_options(${NAME}_kernel PRIVATE --cce-fatobj-link)
     

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include "fp16_t.h"
 #include "bfloat16.h"
 #include "utils.h"
+#include "param.h"
 
 using fp16_t = op::fp16_t;
 using bfloat16 = op::bfloat16;
@@ -84,12 +85,14 @@ int test_shmem_kv_shuffle(int rank_id, int n_ranks, uint64_t local_mem_size)
 
     // global_shuffle_table input
     uint8_t *global_shuffle_table_host;
-    aclrtMallocHost(reinterpret_cast<void **>(&global_shuffle_table_host), n_ranks * 2 * sizeof(int64_t));
+    constexpr uint32_t PAIR_PER_RANK = 2;
+    aclrtMallocHost(reinterpret_cast<void **>(&global_shuffle_table_host), n_ranks * PAIR_PER_RANK * sizeof(int64_t));
     inputFile = "../../examples/kv_shuffle/scripts/output/pair_list.bin";
-    ReadFile(inputFile, global_shuffle_table_host, n_ranks * 2 * sizeof(int64_t));
+    ReadFile(inputFile, global_shuffle_table_host, n_ranks * PAIR_PER_RANK * sizeof(int64_t));
     void *global_shuffle_table_ptr;
-    aclrtMalloc(&global_shuffle_table_ptr, n_ranks * 2 * sizeof(int64_t), ACL_MEM_MALLOC_HUGE_FIRST);
-    aclrtMemcpy(global_shuffle_table_ptr, n_ranks * 2 * sizeof(int64_t), global_shuffle_table_host, n_ranks * 2 * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
+    aclrtMalloc(&global_shuffle_table_ptr, n_ranks * PAIR_PER_RANK * sizeof(int64_t), ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMemcpy(global_shuffle_table_ptr, n_ranks * PAIR_PER_RANK * sizeof(int64_t),
+                global_shuffle_table_host, n_ranks * PAIR_PER_RANK * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
 
     // global_block_num input
     uint8_t *global_block_num_host;
@@ -98,7 +101,8 @@ int test_shmem_kv_shuffle(int rank_id, int n_ranks, uint64_t local_mem_size)
     ReadFile(inputFile, global_block_num_host, sizeof(int64_t));
     void *global_block_num_ptr;
     aclrtMalloc(&global_block_num_ptr, sizeof(int64_t), ACL_MEM_MALLOC_HUGE_FIRST);
-    aclrtMemcpy(global_block_num_ptr, sizeof(int64_t), global_block_num_host, sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
+    aclrtMemcpy(global_block_num_ptr, sizeof(int64_t), global_block_num_host,
+                sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
 
     const int64_t block_nums = *reinterpret_cast<int64_t *>(global_block_num_host);
 
@@ -111,7 +115,8 @@ int test_shmem_kv_shuffle(int rank_id, int n_ranks, uint64_t local_mem_size)
 
         aclrtMalloc(&src_block_table_ptr, block_nums * sizeof(int64_t), ACL_MEM_MALLOC_HUGE_FIRST);
         ReadFile(inputFile, src_block_table_host, block_nums * sizeof(int64_t));
-        aclrtMemcpy(src_block_table_ptr, block_nums * sizeof(int64_t), src_block_table_host, block_nums * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
+        aclrtMemcpy(src_block_table_ptr, block_nums * sizeof(int64_t),
+                    src_block_table_host, block_nums * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
     } else {
         std::cout << "Rank " << rank_id << " block_nums = 0, Skip src_block_table input" << std::endl;
     }
@@ -125,7 +130,8 @@ int test_shmem_kv_shuffle(int rank_id, int n_ranks, uint64_t local_mem_size)
 
         aclrtMalloc(&dst_block_table_ptr, block_nums * sizeof(int64_t), ACL_MEM_MALLOC_HUGE_FIRST);
         ReadFile(inputFile, dst_block_table_host, block_nums * sizeof(int64_t));
-        aclrtMemcpy(dst_block_table_ptr, block_nums * sizeof(int64_t), dst_block_table_host, block_nums * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
+        aclrtMemcpy(dst_block_table_ptr, block_nums * sizeof(int64_t),
+                    dst_block_table_host, block_nums * sizeof(int64_t), ACL_MEMCPY_HOST_TO_DEVICE);
     } else {
         std::cout << "Rank " << rank_id << " block_nums = 0, Skip dst_block_table input" << std::endl;
     }
@@ -186,13 +192,12 @@ int test_shmem_kv_shuffle(int rank_id, int n_ranks, uint64_t local_mem_size)
     return 0;
 }
 
-
 int main(int argc, char *argv[])
 {
     int status = 0;
-    int n_ranks = atoi(argv[1]);
-    int rank_id = atoi(argv[2]);
-    ipport = argv[3];
+    int n_ranks = atoi(argv[INDEX1]);
+    int rank_id = atoi(argv[INDEX2]);
+    ipport = argv[INDEX3];
     uint64_t local_mem_size = 1024UL * 1024UL * 1024;
     int32_t ret = shmem_set_conf_store_tls(false, nullptr, 0);
 

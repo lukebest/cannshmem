@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -21,15 +21,12 @@ constexpr uint64_t MESSAGE_SIZE = 64;
         int64_t rank_size = smem_shm_get_global_rank_size();                                            \
         GM_ADDR dst_addr;                                                                               \
                                                                                                         \
-        for (int64_t peer = 0; peer < rank_size; peer++)                                                \
-        {                                                                                               \
-            if (peer == rank)                                                                           \
-            {                                                                                           \
+        for (int64_t peer = 0; peer < rank_size; peer++) {                                              \
+            if (peer == rank) {                                                                         \
                 continue;                                                                               \
             }                                                                                           \
             dst_addr = gva + rank * MESSAGE_SIZE;                                                       \
-            if (AscendC::GetSubBlockIdx() == 0)                                                         \
-            {                                                                                           \
+            if (AscendC::GetSubBlockIdx() == 0) {                                                       \
                 shmem_##NAME##_atomic_add((__gm__ TYPE *)dst_addr, rank + 1, peer);                     \
             }                                                                                           \
         }                                                                                               \

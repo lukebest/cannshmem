@@ -760,6 +760,17 @@ std::vector<lite_mr_info> DynamicRanksQpManager::GenerateRemoteLiteMrs(uint32_t 
     return remoteMrs;
 }
 
+bool DynamicRanksQpManager::HasNewMemoryRegion(const MemoryRegionMap &currentMemoryMap,
+                                               const MemoryRegionMap &lastMemoryMap) noexcept
+{
+    for (const auto &mit : currentMemoryMap) {
+        if (lastMemoryMap.find(mit.first) == lastMemoryMap.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void DynamicRanksQpManager::GenDiffInfoChangeRanks(const std::unordered_map<uint32_t, ConnectRankInfo> &last,
                                                    std::unordered_map<uint32_t, mf_sockaddr> &addedRanks,
                                                    std::unordered_set<uint32_t> &addMrRanks) noexcept
@@ -768,13 +779,8 @@ void DynamicRanksQpManager::GenDiffInfoChangeRanks(const std::unordered_map<uint
         auto pos = last.find(it->first);
         if (pos == last.end()) {
             addedRanks.emplace(it->first, it->second.network);
-        } else {
-            for (auto mit = it->second.memoryMap.begin(); mit != it->second.memoryMap.end(); ++mit) {
-                if (pos->second.memoryMap.find(mit->first) == pos->second.memoryMap.end()) {
-                    addMrRanks.emplace(it->first);
-                    break;
-                }
-            }
+        } else if (HasNewMemoryRegion(it->second.memoryMap, pos->second.memoryMap)) {
+            addMrRanks.emplace(it->first);
         }
     }
 }

@@ -57,6 +57,7 @@ private:
 
     std::vector<lite_mr_info> GenerateLocalLiteMrs() noexcept;
     std::vector<lite_mr_info> GenerateRemoteLiteMrs(uint32_t rankId) noexcept;
+    bool HasNewMemoryRegion(const MemoryRegionMap &currentMemoryMap, const MemoryRegionMap &lastMemoryMap) noexcept;
     void GenDiffInfoChangeRanks(const std::unordered_map<uint32_t, ConnectRankInfo> &last,
                                 std::unordered_map<uint32_t, mf_sockaddr> &addedRanks,
                                 std::unordered_set<uint32_t> &addMrRanks) noexcept;

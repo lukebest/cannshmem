@@ -1,3 +1,12 @@
+#
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 import argparse
 import torch
 
@@ -54,5 +63,8 @@ args = parser.parse_args()
 for i in range(args.rank_size):
     print(f"================{i} rank ================")
     a = read_binary_file(f"./out/output_{i}.bin", dtype=torch.float16)
-    b = read_binary_file(f"./utils/test_data/unpermuted_token_{i}_{args.dataType}_1_{args.m}_{args.k}_{args.n}_{args.expert_per_rank}_{args.EP}_1.bin", dtype=torch.float16)
+    b = read_binary_file(
+        f"./utils/test_data/unpermuted_token_{i}_{args.dataType}_1_{args.m}_{args.k}_{args.n}_"
+        f"{args.expert_per_rank}_{args.EP}_1.bin",
+        dtype=torch.float16)
     output_error_item(a, b)

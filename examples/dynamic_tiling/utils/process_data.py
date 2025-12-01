@@ -1,3 +1,12 @@
+#
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 import os
 import subprocess
 import time
@@ -75,8 +84,8 @@ def average_perf_data_numpy(perf_data_list):
     return arr.mean(axis=0).tolist()
 
 
-def find_max_csv_filename(preName, folder_path):
-    csv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.csv') and f.startswith(preName)]
+def find_max_csv_filename(pre_name, folder_path):
+    csv_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.csv') and f.startswith(pre_name)]
     
     if not csv_files:
         return None
@@ -85,9 +94,9 @@ def find_max_csv_filename(preName, folder_path):
     return max_csv
 
 
-def get_tiling_file(preName, path):
+def get_tiling_file(pre_name, path):
     path = path + "/"
-    f = find_max_csv_filename(preName, path)
+    f = find_max_csv_filename(pre_name, path)
     file_path = path + f
     return file_path
 

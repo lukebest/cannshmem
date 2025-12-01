@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -32,16 +32,21 @@ struct CopyL0CToGm<Catlass::Arch::AtlasA2,
     static constexpr auto reluEn = ReluEnable_;
 
     CATLASS_DEVICE
-    void operator()(AscendC::GlobalTensor<ElementDst> const &dst, AscendC::LocalTensor<ElementSrc> const &src, AscendC::LocalTensor<uint64_t> cbufWorkspace,
-        LayoutDst const &dstLayout, LayoutSrc const &srcLayout, uint8_t unitFlag = 0)
+    void operator()(AscendC::GlobalTensor<ElementDst> const &dst, AscendC::LocalTensor<ElementSrc> const &src,
+                    AscendC::LocalTensor<uint64_t> cbufWorkspace,
+                    LayoutDst const &dstLayout, LayoutSrc const &srcLayout, uint8_t unitFlag = 0)
     {
         AscendC::FixpipeParamsV220 intriParams;
+        constexpr uint32_t DST_LAYOUT_N_INDEX = 1;
+        constexpr uint32_t DST_LAYOUT_M_INDEX = 0;
+        constexpr uint32_t LAYOUT_STRIDE_3_INDEX = 3;
+        constexpr uint32_t LAYOUT_STRIDE_0_INDEX = 0;
 
         // Fixpipe layout information
-        intriParams.nSize = dstLayout.shape(1);
-        intriParams.mSize = dstLayout.shape(0);
-        intriParams.srcStride = srcLayout.stride(3) / srcLayout.stride(0);
-        intriParams.dstStride = dstLayout.stride(0);
+        intriParams.nSize = dstLayout.shape(DST_LAYOUT_N_INDEX);
+        intriParams.mSize = dstLayout.shape(DST_LAYOUT_M_INDEX);
+        intriParams.srcStride = srcLayout.stride(LAYOUT_STRIDE_3_INDEX) / srcLayout.stride(LAYOUT_STRIDE_0_INDEX);
+        intriParams.dstStride = dstLayout.stride(LAYOUT_STRIDE_0_INDEX);
 
         // Fixpipe auxiliary arguments
         intriParams.quantPre = quantPre;

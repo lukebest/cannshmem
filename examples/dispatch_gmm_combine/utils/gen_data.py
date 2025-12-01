@@ -1,3 +1,12 @@
+#
+# Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+# This file is a part of the CANN Open Software.
+# Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 import os
 import shutil
 from copy import deepcopy
@@ -168,6 +177,10 @@ class QuantInfo:
         self.n = n
         self.k = k
 
+        self.dequant_scale_list = []
+        self.dequant_offset_list = []
+        self.dequant_scale_origin_list = []
+
     def get_quant_args_shape(self, shape_info):
         m = shape_info[0]
         n = shape_info[1]
@@ -201,7 +214,7 @@ class QuantInfo:
         broadcast_quant_scale = self.broadcast_quant_args(self.quant_scale, shape_info)
         return broadcast_quant_scale
 
-    def get_output_dequant_tensor(self, input_info, l0c_dtype, coc_dtype_desc, TYPE=0):
+    def get_output_dequant_tensor(self, input_info, l0c_dtype, coc_dtype_desc, type=0):
         # W8A8, output dequant
         shape_info = [input_info[0], input_info[2]]
         is_per_token = 0
@@ -213,7 +226,7 @@ class QuantInfo:
         dequant_args_shape = self.get_quant_args_shape(shape_info)
         self.dequant_args_shape = dequant_args_shape
         self.dequant_scale_origin = generate_random_tensor(size=dequant_args_shape, dtype=torch.float32) / 127
-        if TYPE:
+        if type:
             self.dequant_scale_origin = torch.ones(size=dequant_args_shape, dtype=torch.float32)
 
         if coc_dtype_desc is CoCDataTypeDesc.INT8INT8_INT32_BF16 and self.dequant_granularity in [
@@ -234,14 +247,14 @@ class QuantInfo:
             self.dequant_granularity = QuantGranularity.PER_TOKEN
         return broadcast_offset, broadcast_scale
 
-    def get_moe_dequant_tensor(self, input_info, l0c_dtype, coc_dtype_desc, TYPE=0):
+    def get_moe_dequant_tensor(self, input_info, l0c_dtype, coc_dtype_desc, type=0):
         shape_info = deepcopy(input_info)
         shape_info[-1] = shape_info[-1] * self.expert_per_rank
-        self.dequant_scale_list = []
-        self.dequant_offset_list = []
-        self.dequant_scale_origin_list = []
+        self.dequant_scale_list.clear()
+        self.dequant_offset_list.clear()
+        self.dequant_scale_origin_list.clear()
         for _ in range(self.rank_size):
-            self.get_output_dequant_tensor(shape_info, l0c_dtype, coc_dtype_desc, TYPE)
+            self.get_output_dequant_tensor(shape_info, l0c_dtype, coc_dtype_desc, type)
             self.dequant_scale_list.append(self.dequant_scale)
             self.dequant_scale_origin_list.append(self.dequant_scale_origin)
             self.dequant_scale = None
@@ -249,11 +262,11 @@ class QuantInfo:
             if self.has_dequant_offset == 1:
                 self.dequant_offset_list.append(self.dequant_offset)
 
-    def get_moe_broadcast_tensor(self, TP, matrix_a_block_list, l0c_dtype):
+    def get_moe_broadcast_tensor(self, tp, matrix_a_block_list, l0c_dtype):
         broadcast_scale_list = []
         broadcast_offset_list = []
         for i in range(self.rank_size):
-            ep_idx = i // TP
+            ep_idx = i // tp
             if self.dequant_scale_list[ep_idx].shape != torch.Size([1, self.expert_per_rank * self.n]):
                 dequant_scale = self.dequant_scale_origin_list[ep_idx].expand(1, self.n * self.expert_per_rank)
             else:
@@ -267,7 +280,7 @@ class QuantInfo:
         if self.dequant_offset_list:
             print("!" * 30, self.dequant_offset_list)
             for i in range(self.rank_size):
-                ep_idx = i // TP
+                ep_idx = i // tp
                 if self.dequant_offset_list[ep_idx].shape != torch.Size([1, self.expert_per_rank * self.n]):
                     dequant_offset = self.dequant_offset_list[ep_idx].expand(1, self.n * self.expert_per_rank)
                 else:
@@ -313,8 +326,9 @@ def read_binary_file(file_path, dtype=torch.float32):
 
 class MoeTestDate:
     def __init__(self, comm_type, rank_size, batch_size, m, k, n, trans_a, trans_b, expert_per_rank,
-                 coc_dtype_desc: CoCDataTypeDesc, quant_info: QuantInfo, EP, TP, weight_nz, pValue, mode, maxOutputSize,
-                 top_k, active_num, capacity, drop_pad_mode, expert_tokens_before_capacity_flag, expert_tokens_count_or_cumsum_flag,
+                 coc_dtype_desc: CoCDataTypeDesc, quant_info: QuantInfo, ep, tp, weight_nz,
+                 p_value, mode, max_output_size, top_k, active_num, capacity, drop_pad_mode,
+                 expert_tokens_before_capacity_flag, expert_tokens_count_or_cumsum_flag,
                  quant_mode):
         self.k2 = n // 2
         self.n2 = k
@@ -330,13 +344,14 @@ class MoeTestDate:
         for _ in range(rank_size):
             self.matrix_a_list.append(generate_random_tensor(size=(m, k), dtype=torch.float16))
             self.matrix_b1_list.append(generate_random_tensor(size=(expert_per_rank, k, n), dtype=weight_dtype))
-            self.matrix_b2_list.append(generate_random_tensor(size=(expert_per_rank, self.k2, self.n2), dtype=weight_dtype))
-        self.expert_num = expert_per_rank * EP
+            self.matrix_b2_list.append(generate_random_tensor(size=(expert_per_rank, self.k2, self.n2),
+                                       dtype=weight_dtype))
+        self.expert_num = expert_per_rank * ep
         self.expert_per_rank = expert_per_rank
         self.sequence_length = m
         self.input_info = [m * top_k, k, n]
         self.batch_size = batch_size
-        self.maxOutputSize = maxOutputSize
+        self.max_output_size = max_output_size
         self.trans_b = trans_b
         self.m = m
         self.k = k
@@ -344,15 +359,15 @@ class MoeTestDate:
         self.top_k = top_k
         self.rank_size = rank_size
         self.coc_dtype_desc = coc_dtype_desc
-        self.TP = TP
-        self.EP = EP
+        self.tp = tp
+        self.ep = ep
         self.l0c_dtype = l0c_dtype
         self.output_dtype = output_dtype
         self.weight_nz = weight_nz
-        self.pValue = pValue
+        self.p_value = p_value
         self.quant_info = quant_info
 
-        self.endfix = f"{coc_dtype_desc.value}_{batch_size}_{m}_{k}_{n}_{expert_per_rank}_{EP}_{TP}.bin"
+        self.endfix = f"{coc_dtype_desc.value}_{batch_size}_{m}_{k}_{n}_{expert_per_rank}_{ep}_{tp}.bin"
         if comm_type in [CommType.ALLTOALLVC_ALLGATHER_MATMUL_HIDDEN]:
             init_routing_matrix_a = []
             num_local_tokens_per_expert = []
@@ -363,9 +378,11 @@ class MoeTestDate:
                 self.write_to_bin(expert_idx, f"expert_idx_{i}")
 
                 print(self.matrix_a_list[i].to('npu'))
-                matrix_a, expanded_row_idx, expert_tokens_count_or_cumsum, pertoken_scale = torch_npu.npu_moe_init_routing_v2(
+                (matrix_a, expanded_row_idx,
+                 expert_tokens_count_or_cumsum, pertoken_scale) = torch_npu.npu_moe_init_routing_v2(
                     self.matrix_a_list[i].to('npu'), expert_idx.to('npu'), scale=None, offset=None,
-                    active_num=m * top_k, expert_capacity=m * top_k, expert_num=self.expert_num, drop_pad_mode=drop_pad_mode, 
+                    active_num=m * top_k, expert_capacity=m * top_k, expert_num=self.expert_num,
+                    drop_pad_mode=drop_pad_mode, 
                     expert_tokens_num_type=1, expert_tokens_num_flag=True,
                     active_expert_range=[0, self.expert_num], quant_mode=quant_mode, row_idx_type=0)
                 matrix_a = matrix_a.cpu().numpy()
@@ -381,15 +398,18 @@ class MoeTestDate:
                 num_local_tokens_per_expert.append(expert_tokens_count_or_cumsum)
                 self.pertoken_scale_list.append(torch.from_numpy(pertoken_scale).unsqueeze(0).unsqueeze(2))
                 print(f"self.pertoken_scale_list[{i}] shape is {self.pertoken_scale_list[i].shape}")
-            self.input_splits, self.output_splits, self.num_local_tokens_per_expert, self.num_global_tokens_per_local_expert = \
-                self.get_moe_input_output_splits(expert_per_rank, EP, mode, maxOutputSize, num_local_tokens_per_expert)
+            (self.input_splits, self.output_splits,
+             self.num_local_tokens_per_expert,
+             self.num_global_tokens_per_local_expert) = self.get_moe_input_output_splits(expert_per_rank, ep, mode,
+                                                        max_output_size, num_local_tokens_per_expert)
 
             for i in range(rank_size):
                 self.write_to_bin(torch.from_numpy(self.num_local_tokens_per_expert[i]), f"tokenPerExpert_{i}")
-            self.matrix_a_i_list, self.matrix_a_block_list = self.alltoall_nopermute(init_routing_matrix_a, k, activation_dtype, EP)
-            if self.maxOutputSize > 0:
-                for i in range(EP):
-                    self.matrix_a_i_list[i] = self.matrix_a_i_list[i][:, :maxOutputSize, :]
+            self.matrix_a_i_list, self.matrix_a_block_list = self.alltoall_nopermute(init_routing_matrix_a,
+                                                                                     k, activation_dtype, ep)
+            if self.max_output_size > 0:
+                for i in range(ep):
+                    self.matrix_a_i_list[i] = self.matrix_a_i_list[i][:, :max_output_size, :]
 
             self.dispatch_gmm_swiglu()
             self.combine(l0c_dtype_low)
@@ -443,81 +463,86 @@ class MoeTestDate:
         print(tensor.shape, tensor.dtype, file_path)
         tensor.view(untyped_dict.get(tensor.dtype)).numpy().tofile(file_path)
 
-    def get_moe_input_output_splits(self, expert_per_rank, EP, mode, maxOutputSize, num_local_tokens_per_expert):        
+    def get_moe_input_output_splits(self, expert_per_rank, ep, mode, max_output_size, num_local_tokens_per_expert):        
         all_gather_res = num_local_tokens_per_expert[0].tolist()
-        for i in range(1, EP):
+        for i in range(1, ep):
             all_gather_res = all_gather_res + num_local_tokens_per_expert[i].tolist()
-        input_splits = [None] * EP
-        for i in range(EP):
-            input_splits[i] = numpy.sum(numpy.array(num_local_tokens_per_expert[i]).reshape(EP, expert_per_rank), axis=1)
-        self.global_tokens_per_expert_matrix = numpy.array(num_local_tokens_per_expert).reshape(EP * EP * expert_per_rank)
-        output_splits = [None] * EP
-        num_global_tokens_per_expert = numpy.array(all_gather_res).reshape(EP, self.expert_num)
-        num_global_tokens_per_local_expert = [None] * EP
-        for i in range(EP):
+        input_splits = [None] * ep
+        for i in range(ep):
+            input_splits[i] = numpy.sum(numpy.array(num_local_tokens_per_expert[i]).reshape(ep, expert_per_rank),
+                                        axis=1)
+        self.global_tokens_per_expert_matrix = numpy.array(num_local_tokens_per_expert).reshape(
+                                               ep * ep * expert_per_rank)
+        output_splits = [None] * ep
+        num_global_tokens_per_expert = numpy.array(all_gather_res).reshape(ep, self.expert_num)
+        num_global_tokens_per_local_expert = [None] * ep
+        for i in range(ep):
             num_global_tokens_per_local_expert[i] = num_global_tokens_per_expert[:,
                                                     i * expert_per_rank:(i + 1) * expert_per_rank]
             output_splits[i] = numpy.sum(num_global_tokens_per_local_expert[i], axis=-1)
             self.write_to_bin(
-                torch.tensor(num_local_tokens_per_expert[i]).reshape(1, EP * expert_per_rank).to(dtype=torch.int32),
+                torch.tensor(num_local_tokens_per_expert[i]).reshape(1, ep * expert_per_rank).to(dtype=torch.int32),
                 f"num_local_tokens_per_expert_{i}")
 
         self.write_to_bin(
-            torch.from_numpy(numpy.array(num_local_tokens_per_expert)).reshape(EP, EP * expert_per_rank).to(
+            torch.from_numpy(numpy.array(num_local_tokens_per_expert)).reshape(ep, ep * expert_per_rank).to(
                 dtype=torch.int32), "global_tokens_per_expert_matrix")
         return input_splits, output_splits, num_local_tokens_per_expert, num_global_tokens_per_local_expert
 
-    def alltoall_permute(self, matrix_a, k, element_type, EP):
-        m_matrix_a = [sum(self.input_splits[i]) for i in range(EP)]
-        matrix_a_i_list = [torch.zeros(size=(self.batch_size, m_matrix_a[i], k), dtype=element_type) for i in range(EP)]
-        matrix_a_block_list = [[] for _ in range(EP)]
-        for src_ep in range(EP):
+    def alltoall_permute(self, matrix_a, k, element_type, ep):
+        m_matrix_a = [sum(self.input_splits[i]) for i in range(ep)]
+        matrix_a_i_list = [torch.zeros(size=(self.batch_size, m_matrix_a[i], k), dtype=element_type) for i in range(ep)]
+        matrix_a_block_list = [[] for _ in range(ep)]
+        for src_ep in range(ep):
             src_offset = 0
 
             for local_expert_idx in range(self.expert_per_rank):
                 src_offset_old = src_offset
                 expert_idx = local_expert_idx + src_ep * self.expert_per_rank
-                for dst_ep in range(EP):
+                for dst_ep in range(ep):
                     dst_expert_offset = 0
                     dst_expert_len = self.num_local_tokens_per_expert[dst_ep][expert_idx]
                     for i in range(expert_idx):
                         dst_expert_offset += self.num_local_tokens_per_expert[dst_ep][i]
-                    matrix_a_i_list[dst_ep][:, dst_expert_offset:dst_expert_offset + dst_expert_len, :] = matrix_a[src_ep][:, src_offset:src_offset + dst_expert_len, :]
+                    matrix_a_i_list[dst_ep][:, dst_expert_offset:dst_expert_offset + dst_expert_len, :] = (
+                        matrix_a[src_ep][:, src_offset:src_offset + dst_expert_len, :])
                     src_offset += dst_expert_len
 
         return matrix_a_i_list
 
-    def alltoall_nopermute(self, matrix_a, k, element_type, EP):
-        m_matrix_a = [sum(self.output_splits[i]) for i in range(EP)]
-        matrix_a_i_list = [torch.zeros(size=(self.batch_size, m_matrix_a[i], k), dtype=element_type) for i in range(EP)]
-        matrix_a_block_list = [[] for _ in range(EP)]
-        for src_ep in range(EP):
+    def alltoall_nopermute(self, matrix_a, k, element_type, ep):
+        m_matrix_a = [sum(self.output_splits[i]) for i in range(ep)]
+        matrix_a_i_list = [torch.zeros(size=(self.batch_size, m_matrix_a[i], k), dtype=element_type) for i in range(ep)]
+        matrix_a_block_list = [[] for _ in range(ep)]
+        for src_ep in range(ep):
             src_offset = 0
             sum_tokens = 0
             for local_expert_idx in range(self.expert_per_rank):
                 src_offset_old = src_offset
                 expert_idx = local_expert_idx + src_ep * self.expert_per_rank
-                for dst_ep in range(EP):
+                for dst_ep in range(ep):
                     dst_expert_offset = 0
                     dst_expert_len = self.num_local_tokens_per_expert[dst_ep][expert_idx]
                     for i in range(expert_idx):
                         dst_expert_offset += self.num_local_tokens_per_expert[dst_ep][i]
-                    matrix_a_i_list[src_ep][:, src_offset:src_offset + dst_expert_len, :] = matrix_a[dst_ep][:, dst_expert_offset:dst_expert_offset + dst_expert_len, :]
+                    matrix_a_i_list[src_ep][:, src_offset:src_offset + dst_expert_len, :] = (
+                        matrix_a[dst_ep][:, dst_expert_offset:dst_expert_offset + dst_expert_len, :])
                     src_offset += dst_expert_len
-                    if self.maxOutputSize > 0:
+                    if self.max_output_size > 0:
                         if (sum_tokens + self.global_tokens_per_expert_matrix[
-                            dst_ep * self.expert_num + expert_idx]) >= self.maxOutputSize:
+                            dst_ep * self.expert_num + expert_idx]) >= self.max_output_size:
                             self.global_tokens_per_expert_matrix[
-                                dst_ep * self.expert_num + expert_idx] = self.maxOutputSize - sum_tokens
-                            sum_tokens = self.maxOutputSize
+                                dst_ep * self.expert_num + expert_idx] = self.max_output_size - sum_tokens
+                            sum_tokens = self.max_output_size
                         else:
                             sum_tokens += self.global_tokens_per_expert_matrix[dst_ep * self.expert_num + expert_idx]
-                if self.maxOutputSize > 0:
-                    if src_offset >= self.maxOutputSize and src_offset_old <= self.maxOutputSize:
-                        src_offset = self.maxOutputSize
+                if self.max_output_size > 0:
+                    if src_offset >= self.max_output_size and src_offset_old <= self.max_output_size:
+                        src_offset = self.max_output_size
                 matrix_a_block_list[src_ep].append(src_offset - src_offset_old)
         return matrix_a_i_list, matrix_a_block_list
 
+    @staticmethod
     def convert_nd_to_nz(self, coc_dtype_desc, input_tensor):
         split_tensors = torch.unbind(input_tensor, dim=0)
         split_tensors = [t.unsqueeze(0) for t in split_tensors]
@@ -531,12 +556,14 @@ class MoeTestDate:
         output_tensor = torch.cat(processed_tensors, dim=0)
         return output_tensor
 
+    @staticmethod
     def swiglu(self, x: torch.Tensor) -> torch.Tensor:
         x0, gate = x.chunk(2, dim=-1)
         swish = x0 * torch.sigmoid(x0)
         y = swish * gate
         return y
 
+    @staticmethod
     def quant(self, x: torch.Tensor):
         x_row_max = torch.max(torch.abs(x), dim=-1).values
         quant_result = x * 127. / x_row_max[:, None]
@@ -544,6 +571,7 @@ class MoeTestDate:
         scale = (x_row_max / 127.).to(torch.float32)
         return y, scale
 
+    @staticmethod
     def unpermute(self, permuted_tokens, origin_sorted_indices, probs):
         orgin_dtype = permuted_tokens.dtype
         permuted_tokens = permuted_tokens.to(torch.float).cpu()
@@ -578,7 +606,7 @@ class MoeTestDate:
     def dispatch_gmm_swiglu(self):
         if self.coc_dtype_desc in [CoCDataTypeDesc.FP16FP16_FP32_FP16, CoCDataTypeDesc.BF16BF16_FP32_BF16]:
             for i in range(self.rank_size):
-                ep_idx = i // self.TP
+                ep_idx = i // self.tp
                 a_blocks = torch.split(self.matrix_a_i_list[ep_idx], self.matrix_a_block_list[ep_idx], dim=1)
                 b_blocks = torch.unbind(self.matrix_b1_list[i], dim=0)
                 result_blocks = []
@@ -601,7 +629,8 @@ class MoeTestDate:
             self.quant_info.get_moe_dequant_tensor(self.input_info, self.l0c_dtype, self.coc_dtype_desc, 0)
             dequant_scale_list = self.quant_info.dequant_scale_list
             dequant_offset_list = self.quant_info.dequant_offset_list
-            broadcast_scale_list, broadcast_offset_list = self.quant_info.get_moe_broadcast_tensor(self.TP, self.matrix_a_block_list, self.l0c_dtype)
+            broadcast_scale_list, broadcast_offset_list = self.quant_info.get_moe_broadcast_tensor(self.tp,
+                                                          self.matrix_a_block_list, self.l0c_dtype)
             for i in range(self.rank_size):
                 if dequant_offset_list:
                     self.write_to_bin(dequant_offset_list[i], f"matrix_dequant_offset1_{i}")
@@ -610,16 +639,16 @@ class MoeTestDate:
             if self.quant_info.dequant_granularity is QuantGranularity.PER_TOKEN:
                 quant_scale_list = self.pertoken_scale_list
                 print("@" * 20, quant_scale_list[0].shape)
-                quant_scale_alltoall, _ = self.alltoall_nopermute(quant_scale_list, 1, torch.float32, self.EP)
+                quant_scale_alltoall, _ = self.alltoall_nopermute(quant_scale_list, 1, torch.float32, self.ep)
                 for i in range(self.rank_size):
-                    ep_idx = i // self.TP
+                    ep_idx = i // self.tp
                     quant_scale = quant_scale_list[ep_idx].squeeze(0)
                     quant_scale_alltoall[ep_idx] = quant_scale_alltoall[ep_idx].squeeze(0)
-                    if self.maxOutputSize > 0:
-                        quant_scale_alltoall[ep_idx] = quant_scale_alltoall[ep_idx][:self.maxOutputSize, :]
+                    if self.max_output_size > 0:
+                        quant_scale_alltoall[ep_idx] = quant_scale_alltoall[ep_idx][:self.max_output_size, :]
 
             for i in range(self.rank_size):
-                ep_idx = i // self.TP
+                ep_idx = i // self.tp
                 a_blocks = torch.split(self.matrix_a_i_list[ep_idx], self.matrix_a_block_list[ep_idx], dim=1)
                 b_blocks = torch.unbind(self.matrix_b1_list[i], dim=0)
                 result_blocks = []
@@ -630,7 +659,8 @@ class MoeTestDate:
                     result_blocks.append(product)
                 matrix_c = torch.cat(result_blocks, dim=1).to(self.l0c_dtype)
 
-                matrix_c = ((matrix_c + broadcast_offset_list[i]).to(torch.float32) * broadcast_scale_list[i]).to(torch.float16)
+                matrix_c = ((matrix_c + broadcast_offset_list[i]).to(torch.float32) * broadcast_scale_list[i]).to(
+                    torch.float16)
                 self.write_to_bin(matrix_c.to(torch.float16), f"matrix_c_{i}")
 
                 if self.quant_info.dequant_granularity is QuantGranularity.PER_TOKEN:
@@ -656,7 +686,7 @@ class MoeTestDate:
 
         all_matrix_b2_list_per_expert = []
         for i in range(self.rank_size):
-            ep_idx = i // self.TP
+            ep_idx = i // self.tp
             b_blocks = torch.unbind(self.matrix_b2_list[ep_idx], dim=0)
             all_matrix_b2_list_per_expert += b_blocks
 
@@ -682,7 +712,8 @@ class MoeTestDate:
                 else:
                     dequant_offset = torch.zeros_like(dequant_scale_list[i], dtype=self.l0c_dtype)
                     split_offset = torch.split(dequant_offset, input_info[2], dim=1)
-                print(f"dequant_scale_list[i] shape is {dequant_scale_list[i].shape} type is {dequant_scale_list[i].dtype}")
+                print(f"dequant_scale_list[i] shape is {dequant_scale_list[i].shape} "
+                      f"type is {dequant_scale_list[i].dtype}")
                 self.write_to_bin(dequant_scale_list[i], f"matrix_dequant_scale2_{i}")
                 split_scale = torch.split(dequant_scale_origin_list[i], input_info[2], dim=1)
 
@@ -690,7 +721,8 @@ class MoeTestDate:
                 scale_list_per_tensor.extend(split_scale)
             matrix_c_list = []
 
-            activation_dtype, weight_dtype, self.l0c_dtype, self.output_dtype, l0c_dtype_low = supported_coc_data_type_dict[self.coc_dtype_desc]
+            activation_dtype, weight_dtype, self.l0c_dtype, self.output_dtype, l0c_dtype_low = (
+                supported_coc_data_type_dict[self.coc_dtype_desc])
 
             permuted_token_list = []
 
@@ -698,14 +730,15 @@ class MoeTestDate:
                 permuted_token_list.append(self.permuted_token_list[i].unsqueeze(0))
                 print(f"permuted_token_list.shape shape is {permuted_token_list[i].shape}")
 
-            matrix_a_i_list = self.alltoall_permute(permuted_token_list, self.k2, activation_dtype, self.EP)
+            matrix_a_i_list = self.alltoall_permute(permuted_token_list, self.k2, activation_dtype, self.ep)
 
             for i in range(self.rank_size):
-                ep_idx = i // self.TP
+                ep_idx = i // self.tp
                 global_actual_token = self.global_tokens_per_expert_matrix[
-                                      i * self.EP * self.expert_per_rank:(i + 1) * self.EP * self.expert_per_rank].tolist()
+                    i * self.ep * self.expert_per_rank:(i + 1) * self.ep * self.expert_per_rank].tolist()
                 print(f"matrix_a_i_list[{ep_idx}] shape is {matrix_a_i_list[ep_idx].shape}")
-                a_blocks = torch.split(matrix_a_i_list[ep_idx], self.num_local_tokens_per_expert[ep_idx].tolist(), dim=1)
+                a_blocks = torch.split(matrix_a_i_list[ep_idx],
+                                       self.num_local_tokens_per_expert[ep_idx].tolist(), dim=1)
                 result_blocks = []
                 for j, _ in enumerate(a_blocks):
                     a_block = a_blocks[j].unsqueeze(1)
@@ -714,7 +747,8 @@ class MoeTestDate:
                     broadcast_scale = scale_list_per_tensor[j]
                     product = torch.matmul(a_block.to(torch.float32), b_block.to(torch.float32)).squeeze(1).to(
                         self.l0c_dtype)
-                    matrix_c_out = ((product + broadcast_offset).to(torch.float32) * (broadcast_scale)).to(torch.float32)
+                    matrix_c_out = ((product + broadcast_offset).to(torch.float32) * (broadcast_scale)).to(
+                        torch.float32)
                     result_blocks.append(matrix_c_out)
                 matrix_c = torch.cat(result_blocks, dim=1)
                 tmp_offset = 0
@@ -731,17 +765,19 @@ class MoeTestDate:
                 for i in range(self.rank_size):
                     per_token_scale2_list.append(self.per_token_scale2_list[i].unsqueeze(0).unsqueeze(2))
 
-                quant_scale_list = self.alltoall_permute(per_token_scale2_list, 1, torch.float32, self.EP)
+                quant_scale_list = self.alltoall_permute(per_token_scale2_list, 1, torch.float32, self.ep)
                 for i in range(self.rank_size):
-                    ep_idx = i // self.TP
+                    ep_idx = i // self.tp
                     broadcast_quant_scale = quant_scale_list[ep_idx]
                     matrix_c_list[ep_idx] = (matrix_c_list[ep_idx] * broadcast_quant_scale).to(torch.float32)
 
             for i in range(self.rank_size):
-                ep_idx = i // self.TP
+                ep_idx = i // self.tp
                 permuted_tokens = matrix_c_list[i].to(self.output_dtype)
                 self.write_to_bin(permuted_tokens, f"ptrC2_{ep_idx}")
-                self.write_to_bin(torch_npu.npu_moe_token_unpermute(permuted_tokens.squeeze(0).to('npu'), origin_sorted_indecies[ep_idx].to('npu'), probs.to('npu')).cpu(), f"unpermuted_token_{ep_idx}")
+                self.write_to_bin(torch_npu.npu_moe_token_unpermute(permuted_tokens.squeeze(0).to('npu'),
+                                  origin_sorted_indecies[ep_idx].to('npu'),
+                                  probs.to('npu')).cpu(), f"unpermuted_token_{ep_idx}")
 
 
 def validate_args(data_type):
@@ -759,9 +795,9 @@ def main():
     data_type = int(config['global']['dataType'])
     rank_size = int(config['global']['rankSize'])
     batch = int(config['mmInfo']['batchSize'])
-    M = int(config['mmInfo']['m'])
-    K = int(config['mmInfo']['k'])
-    N = int(config['mmInfo']['n'])
+    m = int(config['mmInfo']['m'])
+    k = int(config['mmInfo']['k'])
+    n = int(config['mmInfo']['n'])
     trans_a = int(config['mmInfo']['transA'])
     trans_b = int(config['mmInfo']['transB'])
     bias = int(config['mmInfo']['withBias'])
@@ -773,13 +809,13 @@ def main():
     dequant_granularity = int(config['quantInfo']['dequantGranularity'])
     dequant_group_size = int(config['quantInfo']['dequantGroupSize'])
     has_dequant_offset = int(config['quantInfo']['hasDequantOffset'])
-    pValue = int(config['tiling']['pValue'])
+    p_value = int(config['tiling']['pValue'])
 
     local_expert_nums = int(config['moeInfo']['local_expert_nums'])
-    EP = int(config['moeInfo']['EP'])
-    TP = int(config['moeInfo']['TP'])
+    ep = int(config['moeInfo']['EP'])
+    tp = int(config['moeInfo']['TP'])
     mode = int(config['moeInfo']['mode'])
-    maxOutputSize = int(config['moeInfo']['maxOutputSize'])
+    max_output_size = int(config['moeInfo']['maxOutputSize'])
     top_k = int(config['initRoutingInfo']['topK'])
     active_num = int(config['initRoutingInfo']['activeNum'])
     capacity = int(config['initRoutingInfo']['expertCapacity'])
@@ -799,13 +835,15 @@ def main():
 
     validate_args(data_type)
 
-    quant_info = QuantInfo(rank_size, local_expert_nums, M, N, K, QuantGranularity(quant_granularity), quant_group_size,
-                           has_quant_offset, QuantGranularity(dequant_granularity), dequant_group_size, has_dequant_offset)
+    quant_info = QuantInfo(rank_size, local_expert_nums, m, n, k, QuantGranularity(quant_granularity),
+                           quant_group_size, has_quant_offset, QuantGranularity(dequant_granularity),
+                           dequant_group_size, has_dequant_offset)
 
 
-    MoeTestDate(CommType(comm_type), rank_size, batch, M, K, N, trans_a, trans_b, local_expert_nums,
-                CoCDataTypeDesc(data_type), quant_info, EP, TP, weight_nz, pValue, mode, maxOutputSize, top_k, active_num,
-                capacity, drop_pad_mode, expert_tokens_before_capacity_flag, expert_tokens_count_or_cumsum_flag, quant_mode)
+    MoeTestDate(CommType(comm_type), rank_size, batch, m, k, n, trans_a, trans_b, local_expert_nums,
+                CoCDataTypeDesc(data_type), quant_info, ep, tp, weight_nz, p_value, mode, max_output_size,
+                top_k, active_num, capacity, drop_pad_mode, expert_tokens_before_capacity_flag,
+                expert_tokens_count_or_cumsum_flag, quant_mode)
 
 if __name__ == '__main__':
     main()

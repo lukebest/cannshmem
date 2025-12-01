@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,10 +10,10 @@
 #ifndef TILING_H
 #define TILING_H
 
-#include "info.h"
-#include "launch_map.h"
 #include <sstream>
 #include <vector>
+#include "info.h"
+#include "launch_map.h"
 
 std::vector<uint32_t> vCommInterval = {1, 2, 4, 6, 8, 12, 14};
 std::vector<uint32_t> vCommTileM = {4, 8, 16, 32, 64};
@@ -43,15 +43,16 @@ int32_t CeilDev(int32_t num, int32_t div)
 
 bool IsNeedPadding(uint32_t rows, uint32_t cols, uint32_t trans)
 {
+    const uint32_t THRESHOLD = 65536;
     if (trans) {
-        if (rows < 65536) {
+        if (rows < THRESHOLD) {
             return rows % alignByElement != 0;
         } else {
             return true;
         }
     }
 
-    if (cols < 65536) {
+    if (cols < THRESHOLD) {
         return cols % alignByElement != 0;
     } else {
         return true;
@@ -121,21 +122,28 @@ void GetTilings(std::vector<CocTilingParams> &tilings, CocTilingParams &t, CocCo
     std::vector<uint32_t> curParams(allParams.size(), 0);
     std::vector<std::vector<uint32_t>> allTilings;
     GetParamFromSearchSpace(curParams, allTilings, 0);
+    constexpr uint32_t COMM_TILE_M_MULTIPLIER = 2;
+    constexpr uint32_t N0_IF_M0_IS_128 = 256;
+    constexpr uint32_t N0_IF_M0_IS_NOT_128 = 128;
+    constexpr uint32_t DEFAULT_M0 = 128;
+    constexpr uint32_t DEFAULT_K0 = 256;
     for (const auto &tiling : allTilings) {
         uint32_t idx = 0;
         t.commInterval = tiling[idx++];
-        t.commTileM    = tiling[idx++] * 2;
+        t.commTileM    = tiling[idx++] * COMM_TILE_M_MULTIPLIER;
         t.commBlockM   = t.commTileM;
         t.m0           = tiling[idx++];
-        t.k0           = 256;
-        t.n0           = (t.m0 == 128) ? 256 : 128;
+        t.k0           = DEFAULT_K0;
+        t.n0           = (t.m0 == DEFAULT_M0) ? N0_IF_M0_IS_128 : N0_IF_M0_IS_NOT_128;
         t.commNpuSplit = tiling[idx++];
         t.commDataSplit = tiling[idx++];
 
-        if ((commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING || commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT)
+        if ((commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING ||
+            commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT)
             && !CheckCommIntervalAllGather(t, rankSize))
             continue;
-        if ((commType == MATMUL_REDUCE_SCATTER || commType == MATMUL_REDUCE_SCATTER_PADDING) && !CheckCommIntervalReduceScatter(t, rankSize))
+        if ((commType == MATMUL_REDUCE_SCATTER || commType == MATMUL_REDUCE_SCATTER_PADDING)
+            && !CheckCommIntervalReduceScatter(t, rankSize))
             continue;
         if (commType == MATMUL_ALLREDUCE && !CheckCommIntervalAllReduce(t, rankSize))
             continue;
@@ -150,7 +158,8 @@ bool CreateTilingFile(const std::string filename)
         std::cerr << "Open file failed." << std::endl;
         return false;
     }
-    outFile << "Op,M,K,N,Transpose A,Transpose B,M0,commInterval,commTileM,commBlockM,commNpuSplit,commDataSplit,Time(us)\n";
+    outFile << "Op,M,K,N,Transpose A,Transpose B,M0,commInterval, "
+            << "commTileM,commBlockM,commNpuSplit,commDataSplit,Time(us)\n";
     outFile.close();
     return true;
 }

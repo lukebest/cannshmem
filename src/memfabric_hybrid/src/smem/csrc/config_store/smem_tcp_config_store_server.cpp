@@ -296,7 +296,7 @@ Result AccStoreServer::AddHandler(const ock::acc::AccTcpRequestContext &context,
     auto &key = request.keys[0];
     auto &value = request.values[0];
     SM_VALIDATE_RETURN(key.length() <= MAX_KEY_LEN_SERVER, "key length too large, length: "
-                     << key.length(), StoreErrorCode::INVALID_KEY);
+                       << key.length(), StoreErrorCode::INVALID_KEY);
 
     std::string valueStr{value.begin(), value.end()};
     SM_LOG_DEBUG("ADD REQUEST(" << context.SeqNo() << ") for key(" << key << ") value(" << valueStr << ") start.");

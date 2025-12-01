@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -81,7 +81,8 @@ SHMEM_HOST_API int shmem_get_uniqueid(shmem_uniqueid_t *uid);
  * @param attr              [out] a ptr to shmem_init_attr_t
  * @return Returns 0 on success or an error code on failure
  */
-SHMEM_HOST_API int shmem_set_attr_uniqueid_args(int rank_id, int nranks, const shmem_uniqueid_t *uid, shmem_init_attr_t *attr);
+SHMEM_HOST_API int shmem_set_attr_uniqueid_args(int rank_id, int nranks,
+                                                const shmem_uniqueid_t *uid, shmem_init_attr_t *attr);
 
 /**
  * @brief Initialize the resources required for SHMEM task based on attributes.

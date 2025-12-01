@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -84,7 +84,8 @@ typedef struct {
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];
 
-    // Using shmemi_sync_bit instead of basic types to shmemi_store flag, avoiding concurrent write due to cacheline sharing.
+    // Using shmemi_sync_bit instead of basic types to shmemi_store flag,
+    // avoiding concurrent write due to cacheline sharing.
     // Refer to shmemi_barrier.h for more details.
     // These members are 'shmemi_sync_bit *' types actully, but are defined as 'uint64_t' due to compiler restriction.
     uint64_t sync_pool;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -35,14 +35,14 @@ void *shmem_ptr(void *ptr, int32_t pe)
         return symm_ptr;
     }
     SHM_LOG_ERROR("shmem_ptr Failed. PE: " << shmem_my_pe()
-                                           << " g_state.p2p_heap_host_base contains nullptr, Please Check Init Status!!");
+                  << " g_state.p2p_heap_host_base contains nullptr, Please Check Init Status!!");
     return nullptr;
 }
 
 // Set Memcpy Interfaces necessary UB Buffer.
 int32_t shmem_mte_set_ub_params(uint64_t offset, uint32_t ub_size, uint32_t event_id)
 {
-    shm::g_state.mte_config.shmem_ub = offset;
+    shm::g_state.mte_config.shmem_ub = static_cast<int64_t>(offset);
     shm::g_state.mte_config.ub_size = ub_size;
     shm::g_state.mte_config.event_id = event_id;
     SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);

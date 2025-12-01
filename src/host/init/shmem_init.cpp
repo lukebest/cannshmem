@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@
 using namespace std;
 
 namespace shm {
-#define MIN_PORT 1024
-#define MAX_PORT 65536
-#define MAX_ATTEMPTS 1000
-#define MAX_IFCONFIG_LENGTH 23
-#define MAX_IP 48
+constexpr uint64_t MIN_PORT = 1024;
+constexpr uint64_t MAX_PORT = 65536;
+constexpr uint64_t MAX_ATTEMPTS = 1000;
+constexpr uint64_t MAX_IFCONFIG_LENGTH = 23;
+constexpr uint64_t MAX_IP = 48;
 constexpr int DEFAULT_MY_PE = -1;
 constexpr int DEFAULT_N_PES = -1;
 
@@ -39,7 +39,7 @@ constexpr int DEFAULT_ID = 0;
 constexpr int DEFAULT_TIMEOUT = 120;
 constexpr int DEFAULT_TEVENT = 0;
 constexpr int DEFAULT_BLOCK_NUM = 1;
-constexpr int DEFAULT_IFNAME_LNEGTH = 1;
+constexpr int DEFAULT_IFNAME_LNEGTH = 4;
 
 // initializer
 #define SHMEM_DEVICE_HOST_STATE_INITIALIZER                                            \
@@ -218,12 +218,12 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(
         aclrtMallocHost(((void **)&g_state.roce_heap_host_base), g_state.npes * sizeof(void *)));
 
-    SHMEM_CHECK_RET(
-        aclrtMalloc(((void **)&g_state.p2p_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
-    SHMEM_CHECK_RET(
-        aclrtMalloc(((void **)&g_state.sdma_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
-    SHMEM_CHECK_RET(
-        aclrtMalloc(((void **)&g_state.roce_heap_device_base), g_state.npes * sizeof(void *), ACL_MEM_MALLOC_HUGE_FIRST));
+    SHMEM_CHECK_RET(aclrtMalloc(((void **)&g_state.p2p_heap_device_base), g_state.npes * sizeof(void *),
+        ACL_MEM_MALLOC_HUGE_FIRST));
+    SHMEM_CHECK_RET(aclrtMalloc(((void **)&g_state.sdma_heap_device_base), g_state.npes * sizeof(void *),
+        ACL_MEM_MALLOC_HUGE_FIRST));
+    SHMEM_CHECK_RET(aclrtMalloc(((void **)&g_state.roce_heap_device_base), g_state.npes * sizeof(void *),
+        ACL_MEM_MALLOC_HUGE_FIRST));
 
     g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
     shmemi_reach_info_init(gva);
@@ -255,9 +255,12 @@ int32_t update_device_state()
         return SHMEM_NOT_INITED;
     }
 
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.p2p_heap_device_base, g_state.npes * sizeof(void *), g_state.p2p_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.sdma_heap_device_base, g_state.npes * sizeof(void *), g_state.sdma_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
-    SHMEM_CHECK_RET(aclrtMemcpy(g_state.roce_heap_device_base, g_state.npes * sizeof(void *), g_state.roce_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.p2p_heap_device_base, g_state.npes * sizeof(void *),
+        g_state.p2p_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.sdma_heap_device_base, g_state.npes * sizeof(void *),
+        g_state.sdma_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
+    SHMEM_CHECK_RET(aclrtMemcpy(g_state.roce_heap_device_base, g_state.npes * sizeof(void *),
+        g_state.roce_heap_host_base, g_state.npes * sizeof(void *), ACL_MEMCPY_HOST_TO_DEVICE), aclrtMemcpy);
     auto ret = smem_shm_set_extra_context(g_smem_handle, (void *)&g_state, sizeof(shmemi_device_host_state_t));
     if (ret != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("Failed to attach extra context to segment");
@@ -356,13 +359,14 @@ int32_t shmem_get_uid_magic(shmem_uniqueid_inner_t *innerUId)
 int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId, char *ip_str)
 {
     static std::random_device rd;
-    const int min_port = MIN_PORT;
-    const int max_port = MAX_PORT;
-    const int max_attempts = MAX_ATTEMPTS;
+    const int min_port = shm::MIN_PORT;
+    const int max_port = shm::MAX_PORT;
+    const int max_attempts = shm::MAX_ATTEMPTS;
     const int offset_bit = 32;
     uint64_t seed = 1;
     seed |= static_cast<uint64_t>(getpid()) << offset_bit;
-    seed |= static_cast<uint64_t>(std::chrono::system_clock::now().time_since_epoch().count() & 0xFFFFFFFF);
+    seed |= static_cast<uint64_t>(static_cast<uint32_t>(std::chrono::system_clock::now().time_since_epoch().count())
+                                  & 0xFFFFFFFF);
     static std::mt19937_64 gen(seed);
     std::uniform_int_distribution<> dis(min_port, max_port);
 
@@ -390,7 +394,7 @@ int32_t shmem_get_port_magic(shmem_uniqueid_inner_t *innerUId, char *ip_str)
 
 int32_t shmem_using_env_port(shmem_uniqueid_inner_t *innerUId, char *ip_str, uint16_t envPort)
 {
-    if (envPort < MIN_PORT) {   // envPort > MAX_PORT always false
+    if (envPort < shm::MIN_PORT) {   // envPort > MAX_PORT always false
         SHM_LOG_ERROR("env port is invalid. " << envPort);
         return SHMEM_INVALID_PARAM;
     }
@@ -420,10 +424,10 @@ int32_t ParseInterfaceWithType(const char *ipInfo, char *IP, sa_family_t &sockTy
     const char *sep = strchr(ipInfo, delim[0]);
     if (sep != nullptr) {
         size_t leftLen = sep - ipInfo;
-        if (leftLen >= MAX_IFCONFIG_LENGTH - 1 || leftLen == 0) {
+        if (leftLen >= shm::MAX_IFCONFIG_LENGTH - 1 || leftLen == 0) {
             return SHMEM_INVALID_VALUE;
         }
-        strncpy(IP, ipInfo, leftLen);
+        std::copy_n(ipInfo, leftLen, IP);
         IP[leftLen] = '\0';
         sockType = (strcmp(sep + 1, "inet6") != 0) ? AF_INET : AF_INET6;
         flag = true;
@@ -436,14 +440,14 @@ int32_t shmem_auto_get_ip(struct sockaddr *ifaAddr, char *local, sa_family_t &so
     sockType = ifaAddr->sa_family;
     if (sockType == AF_INET) {
         auto localIp = reinterpret_cast<struct sockaddr_in *>(ifaAddr)->sin_addr;
-        if (inet_ntop(sockType, &localIp, local, MAX_IP) == nullptr) {
+        if (inet_ntop(sockType, &localIp, local, shm::MAX_IP) == nullptr) {
             SHM_LOG_ERROR("convert local ipv4 to string failed. ");
             return SHMEM_INVALID_PARAM;
         }
         return SHMEM_SUCCESS;
     } else if (sockType == AF_INET6) {
         auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifaAddr)->sin6_addr;
-        if (inet_ntop(sockType, &localIp, local, MAX_IP) == nullptr) {
+        if (inet_ntop(sockType, &localIp, local, shm::MAX_IP) == nullptr) {
             SHM_LOG_ERROR("convert local ipv6 to string failed. ");
             return SHMEM_INVALID_PARAM;
         }
@@ -487,17 +491,17 @@ bool shmem_check_ifa(struct ifaddrs *ifa, sa_family_t sockType, bool flag, char 
     return true;
 }
 
-int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ipInfo)
+int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const string ipInfo)
 {
     struct ifaddrs *ifaddr;
-    char ifaName[MAX_IFCONFIG_LENGTH];
+    char ifaName[shm::MAX_IFCONFIG_LENGTH];
     sockType = AF_INET;
     bool flag = false;
-    if (ipInfo == nullptr) {
-        strncpy(ifaName, "eth", shm::DEFAULT_IFNAME_LNEGTH);
+    if (!ipInfo.empty()) {
+        std::copy_n("eth", shm::DEFAULT_IFNAME_LNEGTH, ifaName);
         ifaName[shm::DEFAULT_IFNAME_LNEGTH - 1] = '\0';
         SHM_LOG_INFO("use default if to find IP:" << ifaName);
-    } else if (ParseInterfaceWithType(ipInfo, ifaName, sockType, flag) != SHMEM_SUCCESS) {
+    } else if (ParseInterfaceWithType(ipInfo.c_str(), ifaName, sockType, flag) != SHMEM_SUCCESS) {
         SHM_LOG_ERROR("IP size set in SHMEM_CONF_STORE_MASTER_IF format has wrong length");
         return SHMEM_INVALID_PARAM;
     }
@@ -506,13 +510,14 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
         return SHMEM_INVALID_PARAM;
     }
     int32_t result = SHMEM_INVALID_PARAM;
+    const int IP_STR_BUFFER_SIZE = 64;
     for (auto ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
         if (!shmem_check_ifa(ifa, sockType, flag, ifaName, strlen(ifaName))) {
             continue;
         }
         if (sockType == AF_INET && flag) {
             auto localIp = reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr)->sin_addr;
-            if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+            if (inet_ntop(sockType, &localIp, local, IP_STR_BUFFER_SIZE) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv4 to string failed. ");
                 continue;
             }
@@ -520,7 +525,7 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
             break;
         } else if (sockType == AF_INET6 && flag) {
             auto localIp = reinterpret_cast<struct sockaddr_in6 *>(ifa->ifa_addr)->sin6_addr;
-            if (inet_ntop(sockType, &localIp, local, 64) == nullptr) {
+            if (inet_ntop(sockType, &localIp, local, IP_STR_BUFFER_SIZE) == nullptr) {
                 SHM_LOG_ERROR("convert local ipv6 to string failed. ");
                 continue;
             }
@@ -539,9 +544,9 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const char *ip
     return result;
 }
 
-int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, const char *ipPort)
+int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, const string ipPort)
 {
-    if (ipPort != nullptr) {
+    if (!ipPort.empty()) {
         SHM_LOG_DEBUG("get env SHMEM_UID_SESSION_ID value:" << ipPort);
         std::string ipPortStr = ipPort;
 
@@ -555,7 +560,13 @@ int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, c
             std::string ipStr = ipPortStr.substr(1, found - 1);
             std::string portStr = ipPortStr.substr(found + 2);
 
-            std::snprintf(ip, MAX_IP, "%s", ipStr.c_str());
+            std::string result = ipStr;
+            if (result.length() >= shm::MAX_IP) {
+                SHM_LOG_ERROR("IP address is too long");
+                return SHMEM_INVALID_PARAM;
+            }
+            std::copy(result.begin(), result.end(), ip);
+            ip[result.length()] = '\0';
 
             port = std::stoi(portStr);
         } else {
@@ -568,7 +579,13 @@ int32_t shmem_get_ip_from_env(char *ip, uint16_t &port, sa_family_t &sockType, c
             std::string ipStr = ipPortStr.substr(0, found);
             std::string portStr = ipPortStr.substr(found + 1);
 
-            std::snprintf(ip, MAX_IP, "%s", ipStr.c_str());
+            std::string result = ipStr;
+            if (result.length() >= shm::MAX_IP) {
+                SHM_LOG_ERROR("IP address is too long");
+                return SHMEM_INVALID_PARAM;
+            }
+            std::copy(result.begin(), result.end(), ip);
+            ip[result.length()] = '\0';
 
             port = std::stoi(portStr);
         }
@@ -628,13 +645,13 @@ int32_t shmem_get_uniqueid(shmem_uniqueid_t *uid)
         SHM_LOG_ERROR("failed to set log level");
         return SHMEM_INNER_ERROR;
     }
-    char pta_env_ip[MAX_IP];
-    uint16_t pta_env_port;
+    char pta_env_ip[shm::MAX_IP];
+    uint16_t pta_env_port{};
     sa_family_t sockType;
-    const char *ipPort = std::getenv("SHMEM_UID_SESSION_ID");
-    const char *ipInfo = std::getenv("SHMEM_UID_SOCK_IFNAM");
+    const string ipPort = std::getenv("SHMEM_UID_SESSION_ID");
+    const string ipInfo = std::getenv("SHMEM_UID_SOCK_IFNAM");
     bool is_from_ifa = false;
-    if (ipPort != nullptr) {
+    if (!ipPort.empty()) {
         if (shmem_get_ip_from_env(pta_env_ip, pta_env_port, sockType, ipPort) != SHMEM_SUCCESS) {
             SHM_LOG_ERROR("cant get pta master addr.");
             return SHMEM_INVALID_PARAM;
@@ -738,7 +755,8 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes), shmemi_heap_init);
     SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
 
-    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, shm::g_state.heap_size), memory_manager_initialize);
+    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, shm::g_state.heap_size),
+                    memory_manager_initialize);
     SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes), shmemi_team_init);
     SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
     SHMEM_CHECK_RET(shm::shmemi_sync_init(), shmemi_sync_init);

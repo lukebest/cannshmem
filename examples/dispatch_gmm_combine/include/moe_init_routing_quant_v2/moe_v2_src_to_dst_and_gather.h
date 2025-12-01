@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -528,13 +528,16 @@ __aicore__ inline void MoeV2SrcToDstAndGather<T, TilingData>::Init(GM_ADDR x, GM
     int8_t *)expandedX, this->expertNum * this->expertCapacity * this->cols);
 
     expandedExpertIdxGm.SetGlobalBuffer(
-      (__gm__ int32_t *)workspace + this->blockIdx * this->srcToDstTilingData->perCoreRows, Align(this->coreRows, sizeof(int32_t)));
+      (__gm__ int32_t *)workspace + this->blockIdx * this->srcToDstTilingData->perCoreRows,
+      Align(this->coreRows, sizeof(int32_t)));
     expandDstToSrcRowGm.SetGlobalBuffer(
-      (__gm__ int32_t *)workspace + length + this->blockIdx * this->srcToDstTilingData->perCoreRows, Align(this->coreRows, sizeof(int32_t)));
+      (__gm__ int32_t *)workspace + length + this->blockIdx * this->srcToDstTilingData->perCoreRows,
+      Align(this->coreRows, sizeof(int32_t)));
     expertIdxValueGm.SetGlobalBuffer((__gm__ int32_t *)workspace + length * 2, this->coreNum * 2);
     if (this->colLoops > 1) {
         quantSrcGm.SetGlobalBuffer(
-          (__gm__ float *) workspace + length * 2 + this->coreNum * 2 + this->blockIdx * this->cols, this->cols * sizeof(float));
+          (__gm__ float *) workspace + length * 2 + this->coreNum * 2 + this->blockIdx * this->cols,
+          this->cols * sizeof(float));
     }
 
     pipe->InitBuffer(copyInQueue, 1, AlignBytes(this->perLoopRows, sizeof(int32_t)) * 2);

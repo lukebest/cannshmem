@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -371,11 +371,13 @@ __aicore__ inline void MoeV2SortMultiCore::Init(GM_ADDR expertIdx, GM_ADDR exper
     }
     if (this->expertTokensCountOrCumsumFlag > EXERPT_TOKENS_NONE) {
         expertTokensCountOrCumsumGm.SetGlobalBuffer(
-                (__gm__ int32_t *)expertTokensCountOrCumsum + this->blockIdx * this->perCoreExpert, this->currentCoreExpert);
+                (__gm__ int32_t *)expertTokensCountOrCumsum + this->blockIdx * this->perCoreExpert,
+                this->currentCoreExpert);
     }
     if (this->expertTokensBeforeCapacityFlag == EXERPT_TOKENS_BEFORE_CAPACITY) {
         expertTokensBeforeCapacityGm.SetGlobalBuffer(
-                (__gm__ int32_t *)expertTokensBeforeCapacity + this->blockIdx * this->perCoreExpert, this->currentCoreExpert);
+                (__gm__ int32_t *)expertTokensBeforeCapacity + this->blockIdx * this->perCoreExpert,
+                this->currentCoreExpert);
     }
     // key and value
     int64_t kvFactor = 2;

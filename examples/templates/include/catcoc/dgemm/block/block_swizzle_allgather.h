@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include "param.h"
 #include "catlass/catlass.hpp"
 #include "catlass/detail/alignment.hpp"
 #include "catlass/gemm_coord.hpp"
@@ -47,21 +48,21 @@ struct GemmBlockSwizzleAllGatherMesh {
     GemmBlockSwizzleAllGatherMesh(DistGemmCoord const &problemShape_, MatrixCoord const &tileShapeMN_)
         : problemShape(problemShape_)
     {
-        tileShape = Catlass::MakeCoord<uint32_t>(tileShapeMN_[0], tileShapeMN_[1], problemShape_[2], 1);
+        tileShape = Catlass::MakeCoord<uint32_t>(tileShapeMN_[INDEX0], tileShapeMN_[INDEX1], problemShape_[INDEX2], 1);
         loops = CeilDiv(problemShape, tileShape);
     }
 
     CATLASS_DEVICE
     uint32_t GetCoreLoops() const
     {
-        return loops[0] * loops[1] * loops[2] * loops[3];
+        return loops[INDEX0] * loops[INDEX1] * loops[INDEX2] * loops[INDEX3];
     }
 
     CATLASS_DEVICE
     DistGemmCoord GetBlockCoord(uint32_t loopIdx) const
     {
-        uint32_t rows = loops[0] * loops[3];
-        uint32_t cols = loops[1];
+        uint32_t rows = loops[INDEX0] * loops[INDEX3];
+        uint32_t cols = loops[INDEX1];
         uint32_t rowIdx{};
         uint32_t colIdx{};
         if constexpr (SWIZZLE_DIRECTION == 0) {

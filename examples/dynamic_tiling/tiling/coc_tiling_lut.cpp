@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -10,6 +10,7 @@
 #include "coc_tiling_lut.h"
 #include <iostream>
 #include <limits>
+#include "param.h"
 
 static int GetValueFromMap(int64_t m, int64_t k, int64_t n,
                            const std::map<int, std::vector<std::vector<int>>> &condMap,
@@ -20,7 +21,7 @@ static int GetValueFromMap(int64_t m, int64_t k, int64_t n,
             auto in = [&](int64_t v, int lo, int hi) {
                 return (lo == -1 || v >= lo) && (hi == -1 || v <= hi);
             };
-            if (in(m, c[0], c[1]) && in(k, c[2], c[3]) && in(n, c[4], c[5]))
+            if (in(m, c[INDEX0], c[INDEX1]) && in(k, c[INDEX2], c[INDEX3]) && in(n, c[INDEX4], c[INDEX5]))
                 return candidate;
         }
     }
@@ -69,15 +70,20 @@ bool ApplyLookupTable(const COCMatMulInfo &info,
         std::cerr << "[LUT] no table for (" << type << ',' << rankSize << ")\n";
         return false;
     }
+    constexpr uint32_t COMM_TILE_M_MULTIPLIER = 2;
+    constexpr uint32_t N0_IF_M0_IS_256 = 128;
+    constexpr uint32_t N0_IF_M0_IS_NOT_256 = 256;
+    constexpr uint32_t DEFAULT_M0 = 256;
+    constexpr uint32_t DEFAULT_K0 = 256;
     const LUTGroup &g = *(it->second); // 解引用指针
-    auto pick = [&](auto &mp, int def) { return GetValueFromMap(info.m, info.k, info.n, mp, def); };
+    auto pick = [&info](auto &mp, int def) { return GetValueFromMap(info.m, info.k, info.n, mp, def); };
     t.m0 = pick(g.m0Map, g.m0Default);
     t.commInterval = pick(g.commIntervalMap, g.commIntervalDefault);
-    t.commTileM = pick(g.commTileMMap, g.commTileMDefault) * 2;
+    t.commTileM = pick(g.commTileMMap, g.commTileMDefault) * COMM_TILE_M_MULTIPLIER;
     t.commNpuSplit = pick(g.commNpuSplitMap, g.commNpuSplitDefault);
     t.commDataSplit = pick(g.commDataSplitMap, g.commDataSplitDefault);
     t.commBlockM = t.commTileM;
-    t.n0 = (t.m0 == 256) ? 128 : 256;
-    t.k0 = 256;
+    t.n0 = (t.m0 == DEFAULT_M0) ? N0_IF_M0_IS_256 : N0_IF_M0_IS_NOT_256;
+    t.k0 = DEFAULT_K0;
     return true;
 }

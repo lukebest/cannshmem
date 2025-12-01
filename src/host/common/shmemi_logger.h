@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -79,8 +79,9 @@ public:
         time_t time_stamp = tv.tv_sec;
         struct tm local_time {};
         if (strftime(str_time, sizeof str_time, "%Y-%m-%d %H:%M:%S.", localtime_r(&time_stamp, &local_time)) != 0) {
-            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec << " " << log_level_desc(level) << " "
-                      << syscall(SYS_gettid) << " pid[" << getpid() << "] " << oss.str() << std::endl;
+            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec
+                      << " " << log_level_desc(level) << " " << syscall(SYS_gettid)
+                      << " pid[" << getpid() << "] " << oss.str() << std::endl;
         } else {
             std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid)
                       << " pid[" << getpid() << "] " << oss.str() << std::endl;
@@ -172,22 +173,18 @@ private:
         }                                                                      \
     } while (0)
 
-#define SHMEM_CHECK_RET(x, ...)                                                                                                                         \
-    do                                                                                                                                                  \
-    {                                                                                                                                                   \
-        int32_t check_ret = x;                                                                                                                          \
-        if (check_ret != 0)                                                                                                                             \
-        {                                                                                                                                               \
-            if (sizeof(#__VA_ARGS__) > 1)                                                                                                               \
-            {                                                                                                                                           \
-                SHM_LOG_ERROR(" return shmem error: " << check_ret << " - " << #__VA_ARGS__ << " failed. More error information can be found in plog"); \
-            }                                                                                                                                           \
-            else                                                                                                                                        \
-            {                                                                                                                                           \
-                SHM_LOG_ERROR(" return shmem error: " << check_ret);                                                                                    \
-            }                                                                                                                                           \
-            return check_ret;                                                                                                                           \
-        }                                                                                                                                               \
+#define SHMEM_CHECK_RET(x, ...)                                                                 \
+    do {                                                                                        \
+        int32_t check_ret = x;                                                                  \
+        if (check_ret != 0) {                                                                   \
+            if (sizeof(#__VA_ARGS__) > 1) {                                                     \
+                SHM_LOG_ERROR(" return shmem error: " << check_ret << " - "                     \
+                    << #__VA_ARGS__ << " failed. More error information can be found in plog"); \
+            } else {                                                                            \
+                SHM_LOG_ERROR(" return shmem error: " << check_ret);                            \
+            }                                                                                   \
+            return check_ret;                                                                   \
+        }                                                                                       \
     } while (0)
 
 #endif  // SHMEM_SHM_OUT_LOGGER_H

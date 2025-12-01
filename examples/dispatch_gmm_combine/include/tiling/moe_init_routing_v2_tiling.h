@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -275,8 +275,9 @@ void InnerMoeInitRoutingV2TilingBase::Tiling4VBSOneCoreCompute(InnerMoeV2VBSComp
 void InnerMoeInitRoutingV2TilingBase::Tiling4VBSMultiCoreCompute(InnerMoeV2VBSComputeTilingData *tilingData)
 {
     // Tiling4VBSMultiCoreCompute
+    const int64_t GROUP_SIZE = 4;
     int64_t needCoreNum = CeilDiv(totalLength, sortLoopMaxElement);  // 向上取整
-    needCoreNum = static_cast<int64_t>(std::pow(4, CeilLog4(needCoreNum)));
+    needCoreNum = static_cast<int64_t>(std::pow(GROUP_SIZE, CeilLog4(needCoreNum)));
     needCoreNum = min(needCoreNum, aivNum);                     // 不能超过物理核数
     if (needCoreNum > 0) {
         int64_t perCoreElements = totalLength / needCoreNum;  // 每个核处理的元素数

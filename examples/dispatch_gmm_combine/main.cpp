@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -162,7 +162,10 @@ public:
         LayoutB layoutB1 = LayoutBInitializer<LayoutB, BType_>::create(k, n);
         LayoutB layoutB2 = LayoutBInitializer<LayoutB, BType_>::create(k2, n2);
         using LayoutC = layout::RowMajor;
-        using L1TileShape = GemmShape<128, 256, 512>;   // M, N, K
+        constexpr int L1TILEM = 128;
+        constexpr int L1TILEN = 256;
+        constexpr int L1TILEK = 512;
+        using L1TileShape = GemmShape<L1TILEM, L1TILEN, L1TILEK>;   // M, N, K
 
         constexpr
         uint32_t workspaceStages = 2;
@@ -186,7 +189,10 @@ public:
             enableUnitFlag, enableShuffleK
         >;
 
-        using L0TileShape = GemmShape<128, 256, 128>;
+        constexpr int L0TILEM = 128;
+        constexpr int L0TILEN = 256;
+        constexpr int L0TILEK = 128;
+        using L0TileShape = GemmShape<L0TILEM, L0TILEN, L0TILEK>;
         using AType = Gemm::GemmType<int8_t, layout::RowMajor>;
         using BType = Gemm::GemmType<int8_t, LayoutB>;
         using CType = Gemm::GemmType<float16_t, layout::RowMajor>;
@@ -216,7 +222,9 @@ public:
         using BlockEpilogue2 = Epilogue::Block::BlockEpilogue<EpilogueDispatchPolicy2, CType, PerTokenScaleType,
                 D2Type, TileCopy2>;
 
-        using BlockScheduler = typename Gemm::Block::GemmIdentityBlockSwizzle<9, 1>;
+        constexpr uint32_t SWIZZLE_GROUP_SIZE = 9;
+        constexpr uint32_t SWIZZLE_DIRECTION = 1;
+        using BlockScheduler = typename Gemm::Block::GemmIdentityBlockSwizzle<SWIZZLE_GROUP_SIZE, SWIZZLE_DIRECTION>;
         using ElementGroupList = int64_t;
         using MatmulKernel = Gemm::Kernel::DispatchGmmCombineKernel<BlockMmad,
                 BlockScheduler, ElementGroupList, BlockEpilogue1, BlockEpilogue2>;
@@ -265,7 +273,8 @@ void DispatchGMM(
 
     DispatchGMMClass<int8_t, int8_t, float16_t, false, true> op;
     op.Run(fftsAddr, problemShape, a, b1, b2, c, scale1, scale2, symmetricPtr, expertIdx, moeInitRoutingQuantV2Scale,
-        moeInitRoutingQuantV2Offset, expertTokensBeforeCapacity, probs, ptrWorkspace, cocTiling, moeInitRoutingQuantV2TilingData);
+        moeInitRoutingQuantV2Offset, expertTokensBeforeCapacity, probs,
+        ptrWorkspace, cocTiling, moeInitRoutingQuantV2TilingData);
 }
 
 void InitData(uint8_t **hostPtr, uint8_t **devicePtr, size_t aSize, std::string path = "")
@@ -437,8 +446,10 @@ int main(int argc, char **argv)
         uint64_t fftsAddr = shmemx_get_ffts_config();
         ACL_CHECK(aclrtMemcpy(b1Device, b1Size, b1Host, b1Size, ACL_MEMCPY_HOST_TO_DEVICE));
         ACL_CHECK(aclrtMemcpy(b2Device, b2Size, b2Host, b2Size, ACL_MEMCPY_HOST_TO_DEVICE));
-        DispatchGMM<<<BLOCK_NUM, nullptr, stream>>>(fftsAddr, problemShape, aDevice, b1Device, b2Device, cDevice, scale1Device, scale2Device, symmetricPtr,
-                expertIdx, moeInitRoutingQuantV2Scale, moeInitRoutingQuantV2Offset, expertTokensBeforeCapacity, probsDevice,
+        DispatchGMM<<<BLOCK_NUM, nullptr, stream>>>(fftsAddr, problemShape, aDevice, b1Device, b2Device,
+                cDevice, scale1Device, scale2Device, symmetricPtr,
+                expertIdx, moeInitRoutingQuantV2Scale, moeInitRoutingQuantV2Offset,
+                expertTokensBeforeCapacity, probsDevice,
                 ptrWorkspace, cocTiling, 0, moeInitRoutingQuantV2TilingBase.quantTilingData);
     }
     ACL_CHECK(aclrtSynchronizeStream(stream));

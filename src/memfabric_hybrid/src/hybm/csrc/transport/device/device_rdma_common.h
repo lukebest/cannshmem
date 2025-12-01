@@ -23,11 +23,12 @@ namespace mf {
 namespace transport {
 namespace device {
 
-#define container_of(ptr, type, member)                                              \
-    ({                                                                               \
-        const typeof(((const type *)0)->member) *__mptr = (ptr);                     \
-        (const type *)(const void *)((const char *)__mptr - offsetof(type, member)); \
-    })
+template <typename ContainerType, typename MemberType>
+constexpr const ContainerType* container_of(const MemberType* member_ptr, MemberType ContainerType::* member_ptr_to_member)
+{
+    return reinterpret_cast<const ContainerType*>(reinterpret_cast<const char*>(member_ptr) -
+        reinterpret_cast<std::size_t>(&(reinterpret_cast<ContainerType*>(0)->*member_ptr_to_member)));
+}
 
 // 注册内存结果结构体
 struct RegMemResult {
@@ -65,7 +66,7 @@ struct ConnectRankInfo {
 
     ConnectRankInfo(hybm_role_type r, mf_sockaddr nw, const TransportMemoryKey &mk) : role{r}, network{std::move(nw)}
     {
-        auto &deviceKey = container_of(&mk, RegMemKeyUnion, commonKey)->deviceKey;
+        auto &deviceKey = container_of(&mk, &RegMemKeyUnion::commonKey)->deviceKey;
         memoryMap.emplace(deviceKey.address, deviceKey);
     }
 
@@ -74,7 +75,7 @@ struct ConnectRankInfo {
           network{std::move(nw)}
     {
         for (auto &mk : mks) {
-            auto &deviceKey = container_of(&mk, RegMemKeyUnion, commonKey)->deviceKey;
+            auto &deviceKey = container_of(&mk, &RegMemKeyUnion::commonKey)->deviceKey;
             memoryMap.emplace(deviceKey.address, deviceKey);
         }
     }

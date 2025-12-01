@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -189,7 +189,8 @@ struct BlockCommSwizzle {
 
         auto layoutRowLogicShape = Catlass::MakeCoord<uint32_t>(loops.rank(), loops.row());
         auto layoutRowExpandRank = layout::AffineRankN<2, uint32_t>::Packed(layoutRowLogicShape);
-        uint32_t rowCoordPostRank = layoutRowExpandRank(Catlass::MakeCoord<uint32_t>(blockCoord.rank(), blockCoord.row()));
+        uint32_t rowCoordPostRank = layoutRowExpandRank(
+            Catlass::MakeCoord<uint32_t>(blockCoord.rank(), blockCoord.row()));
         return MatrixCoord{rowCoordPostRank, blockCoord.column()} * blockShape.GetCoordInRank();
     }
 

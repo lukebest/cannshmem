@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ using namespace Catcoc;
 constexpr size_t NPU_MALLOC_SPACE = 1024UL * 1024 * 1024;
 
 constexpr uint32_t BLOCK_NUM = 20;
+constexpr int TILE_M = 128;
+constexpr int TILE_N = 256;
+constexpr int TILE_K = 256;
 
 using LayoutA = Catlass::layout::RowMajor;
 using LayoutB = Catlass::layout::RowMajor;
@@ -261,8 +264,9 @@ int main(int argc, char **argv)
     bool isNeedPaddingB = Catcoc::Padding::IsNeedPadding(layoutB, alignByElement);
 
     using L1TileShape =
-        std::conditional_t<std::is_same_v<LayoutA, Catlass::layout::ColumnMajor> && std::is_same_v<LayoutB, Catlass::layout::ColumnMajor>,
-                           Catlass::GemmShape<256, 128, 256>, Catlass::GemmShape<128, 256, 256>>;
+        std::conditional_t<std::is_same_v<LayoutA, Catlass::layout::ColumnMajor> &&
+                           std::is_same_v<LayoutB, Catlass::layout::ColumnMajor>,
+                           Catlass::GemmShape<TILE_N, TILE_M, TILE_K>, Catlass::GemmShape<TILE_M, TILE_N, TILE_K>>;
 
     size_t aSize = static_cast<size_t>(m) * k * sizeof(__fp16);
     size_t bSize = static_cast<size_t>(k) * n * sizeof(__fp16);

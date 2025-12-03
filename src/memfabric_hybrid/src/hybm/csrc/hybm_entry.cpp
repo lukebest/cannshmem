@@ -75,21 +75,21 @@ static bool DriverVersionCheck(const std::string &ver)
     int32_t baseVal = GetValueFromVersion(ver, "V");
     int32_t readVal = GetValueFromVersion(readVer, "V");
     if (baseVal == -1 || readVal == -1 || baseVal != readVal) {
-        BM_LOG_INFO("check driver version failed, Version not equal, limit:" << ver << " read:" << readVer);
+        BM_LOG_INFO("check driver version failed, V Version not equal");
         return false;
     }
 
     baseVal = GetValueFromVersion(ver, "R");
     readVal = GetValueFromVersion(readVer, "R");
     if (baseVal == -1 || readVal == -1 || baseVal != readVal) {
-        BM_LOG_INFO("check driver version failed, Release not equal, limit:" << ver << " read:" << readVer);
+        BM_LOG_INFO("check driver version failed, R Release not equal");
         return false;
     }
 
     baseVal = GetValueFromVersion(ver, "C");
     readVal = GetValueFromVersion(readVer, "C");
     if (baseVal == -1 || readVal == -1 || readVal < baseVal) {
-        BM_LOG_INFO("check driver version failed, Customer is too low, limit:" << ver << " read:" << readVer);
+        BM_LOG_INFO("check driver version failed, C Customer is too low");
         return false;
     }
     if (readVal > baseVal) {
@@ -99,7 +99,7 @@ static bool DriverVersionCheck(const std::string &ver)
     baseVal = GetValueFromVersion(ver, "B");
     readVal = GetValueFromVersion(readVer, "B");
     if (baseVal == -1 || readVal == -1 || readVal < baseVal) {
-        BM_LOG_INFO("check driver version failed, Build is too low, input:" << ver << " read:" << readVer);
+        BM_LOG_INFO("check driver version failed, B Build is too low:");
         return false;
     }
     return true;

@@ -46,7 +46,6 @@ SmemShmEntry::SmemShmEntry(uint32_t id) : id_{id}, entity_{nullptr}, gva_{nullpt
 SmemShmEntry::~SmemShmEntry()
 {
     if (globalGroup_ != nullptr) {
-        globalGroup_->GroupSnClean();
         globalGroup_ = nullptr;
     }
 

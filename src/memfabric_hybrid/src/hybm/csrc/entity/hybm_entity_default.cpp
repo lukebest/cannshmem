@@ -83,7 +83,7 @@ int32_t MemEntityDefault::ReserveMemorySpace(void **reservedMem) noexcept
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -94,7 +94,7 @@ int32_t MemEntityDefault::UnReserveMemorySpace() noexcept
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -105,7 +105,7 @@ int32_t MemEntityDefault::AllocLocalMemory(uint64_t size, uint32_t flags, hybm_m
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -171,7 +171,7 @@ int32_t MemEntityDefault::RegisterLocalMemory(const void *ptr, uint64_t size, ui
 int32_t MemEntityDefault::FreeLocalMemory(hybm_mem_slice_t slice, uint32_t flags) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_INVALID_PARAM;
     }
 
@@ -192,7 +192,7 @@ int32_t MemEntityDefault::FreeLocalMemory(hybm_mem_slice_t slice, uint32_t flags
 int32_t MemEntityDefault::ExportExchangeInfo(ExchangeInfoWriter &desc, uint32_t flags) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -228,7 +228,7 @@ int32_t MemEntityDefault::ExportExchangeInfo(ExchangeInfoWriter &desc, uint32_t 
 int32_t MemEntityDefault::ExportExchangeInfo(hybm_mem_slice_t slice, ExchangeInfoWriter &desc, uint32_t flags) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
     if (slice == nullptr) {
@@ -242,7 +242,7 @@ int32_t MemEntityDefault::ImportExchangeInfo(const ExchangeInfoReader desc[], ui
                                              uint32_t flags) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -301,7 +301,7 @@ int32_t MemEntityDefault::GetExportSliceInfoSize(size_t &size) noexcept
 int32_t MemEntityDefault::SetExtraContext(const void *context, uint32_t size) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -326,7 +326,7 @@ int32_t MemEntityDefault::SetExtraContext(const void *context, uint32_t size) no
 void MemEntityDefault::Unmap() noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return;
     }
 
@@ -336,7 +336,7 @@ void MemEntityDefault::Unmap() noexcept
 int32_t MemEntityDefault::Mmap() noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 
@@ -346,7 +346,7 @@ int32_t MemEntityDefault::Mmap() noexcept
 int32_t MemEntityDefault::RemoveImported(const std::vector<uint32_t> &ranks) noexcept
 {
     if (!initialized) {
-        BM_LOG_ERROR("the object is not initialized, please check whether Initialize is called.");
+        BM_LOG_INFO("the object is not initialized, please check whether Initialize is called.");
         return BM_NOT_INITIALIZED;
     }
 

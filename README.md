@@ -4,7 +4,7 @@ SHMEM
 
 ## 一、什么是SHMEM
 ### 介绍
-本系统主要面向昇腾平台上的模型和算子开发者，提供便携易用的多机多卡内存访问方式，方便用户开发在卡间同步数据，加速通信或通算融合类算子开发。  
+本系统主要面向昇腾平台上的模型和算子开发者，提供便携易用的多机多卡内存访问方式，方便用户开发在卡间同步数据，加速通信或通算融合类算子开发。
 
 ### 软件架构
 共享内存库接口主要分为host和device接口部分：
@@ -13,7 +13,7 @@ SHMEM
 
 ### 目录结构说明
 详细介绍见[code_organization](docs/code_organization.md)
-``` 
+```
 ├── 3rdparty // 依赖的第三方库
 ├── docs     // 文档
 ├── examples // 使用样例
@@ -25,12 +25,12 @@ SHMEM
 ## 二、环境构建
 
 ### 软件硬件配套说明
-- 硬件型号支持 
+- 硬件型号支持
   - Atlas 800I A2/A3 系列产品
   - Atlas 800T A2/A3 系列产品
 - 平台：aarch64/x86
-- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1及之后版本。   
-cmake >= 3.19  
+- 配套软件：驱动固件 Ascend HDK 25.0.RC1.1、 CANN 8.2.RC1及之后版本。
+cmake >= 3.19
 GLIBC >= 2.28
 
 ### 快速安装CANN软件
@@ -48,12 +48,12 @@ chmod +x Ascend-cann-toolkit_8.2.RC1_linux-$(arch).run
 配置环境变量脚本set_env.sh，当前安装路径以${HOME}/Ascend为例。
 ```
 source ${HOME}/Ascend/ascend-toolkit/set_env.sh
-```  
+```
 安装业务运行时依赖的Python第三方库（如果使用root用户安装，请将命令中的--user删除）。
 ```
 pip3 install attrs cython 'numpy>=1.19.2,<=1.24.0' decorator sympy cffi pyyaml pathlib2 psutil protobuf==3.20.0 scipy requests absl-py --user
 ```
-### CANN详细安装指南 
+### CANN详细安装指南
 开发者可访问[昇腾文档-昇腾社区](https://www.hiascend.com/document)->CANN社区版->软件安装，查看CANN软件安装引导，根据机器环境、操作系统和业务场景选择后阅读详细安装步骤。
 
 ## 三、快速上手
@@ -89,7 +89,7 @@ int32_t ret = shmem_set_conf_store_tls(false, null, 0);
 具体细节详见安全声明章节
 
 ### 执行样例算子Demo
-以执行一个样例matmul_allreduce算子Demo为例：  
+以执行一个样例matmul_allreduce算子Demo为例：
 1. 在源码shmem/目录编译:
 
    ```sh
@@ -117,7 +117,7 @@ run.sh脚本提供-ranks -ipport -test_filter等参数自定义执行用例的�
 bash scripts/run.sh -ranks 8 -ipport tcp://127.0.0.1:8666 -test_filter Init
 ```
 
-### python侧test用例 
+### python侧test用例
 注意：python接口API列表可参考：[python接口API列表](./docs/pythonAPI.md)。
 
 1. 在scripts目录下编译的时候，带上build python的选项
@@ -215,13 +215,20 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
 - ⚠ 注意事项
   - 目前`AscendC算子调测API`**不**支持打印`FixPipe`上的数值。
 
-## 五、参与贡献
- 
-1.  fork仓库
-2.  修改并提交代码
-3.  新建 Pull-Request
+## 五、贡献
+
+### 贡献者列表
+
+- [华南理工大学 陆璐教授团队](https://www2.scut.edu.cn/cs/2017/0629/c22284a328108/page.htm)
+
+
+### 参与贡献指南
+
+1.  fork仓库 & 修改并提交代码
+1.  新建 Pull-Request
 
 详细步骤可参考[贡献指南](docs/CONTRIBUTING.md)
+
 ## 六、学习资源
 - [api_demo](docs/api_demo.md)：api调用示例
 - [code_organization](docs/code_organization.md)：
@@ -232,5 +239,5 @@ AscendC算子调测API是AscendC提供的调试能力，可进行kernel内部的
 - [Troubleshooting_FAQs](docs/Troubleshooting_FAQs.md)：使用限制&常见问题
 - [CONTRIBUTING](docs/CONTRIBUTING.md)：如何向SHMEM贡献代码
 ## 七、参考文档
-- **[CANN社区版文档](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha002/index/index.html)**  
+- **[CANN社区版文档](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/83RC1alpha002/index/index.html)**
 - **[SHMEM文档](https://shmem-doc.pages.dev/)**

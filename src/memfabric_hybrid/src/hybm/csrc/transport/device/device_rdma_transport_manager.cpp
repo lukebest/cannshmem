@@ -26,8 +26,6 @@ bool RdmaTransportManager::deviceIpRetired_ = false;
 bool RdmaTransportManager::raInitialized_ = false;
 void* RdmaTransportManager::storedRdmaHandle_ = nullptr;
 
-thread_local HybmStreamPtr RdmaTransportManager::stream_ = nullptr;
-
 RdmaTransportManager::~RdmaTransportManager()
 {
     ClearAllRegisterMRs();
@@ -35,21 +33,6 @@ RdmaTransportManager::~RdmaTransportManager()
     raInitialized_ = false;
     deviceIpRetired_ = false;
     storedRdmaHandle_ = nullptr;
-}
-
-int RdmaTransportManager::PrepareThreadLocalStream()
-{
-    if (stream_ != nullptr) {
-        return BM_OK;
-    }
-
-    stream_ = HybmStreamManager::CreateStream(deviceId_, 0, 0);
-    auto ret = stream_->Initialize();
-    if (ret != BM_OK) {
-        BM_LOG_ERROR("HybmStream init failed: " << ret);
-        return ret;
-    }
-    return BM_OK;
 }
 
 void RdmaTransportManager::InitializeDeviceAddress(mf_sockaddr &deviceAddr)
@@ -323,32 +306,6 @@ const void *RdmaTransportManager::GetQpInfo() const
     return qpManager_->GetQpInfoAddress();
 }
 
-Result RdmaTransportManager::ReadRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size)
-{
-    BM_LOG_DEBUG("=========== read remote for rankId=" << rankId << ", size=" << size);
-    auto ret = RemoteIO(rankId, lAddr, rAddr, size, false);
-    if (ret != BM_OK) {
-        BM_LOG_ERROR("ReadRemote() failed: " << ret);
-        return ret;
-    }
-
-    BM_LOG_DEBUG("ReadRemote() success.");
-    return BM_OK;
-}
-
-Result RdmaTransportManager::WriteRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size)
-{
-    BM_LOG_DEBUG("=========== write remote for rankId=" << rankId << ", size=" << size);
-    auto ret = RemoteIO(rankId, lAddr, rAddr, size, true);
-    if (ret != BM_OK) {
-        BM_LOG_ERROR("WriteRemote() failed: " << ret);
-        return ret;
-    }
-
-    BM_LOG_DEBUG("WriteRemote() success.");
-    return BM_OK;
-}
-
 bool RdmaTransportManager::PrepareOpenDevice(uint32_t device, uint32_t rankCount,
                                              net_addr_t &deviceIp, void *&rdmaHandle)
 {
@@ -450,7 +407,7 @@ bool RdmaTransportManager::HandleRetiredDeviceIp(net_addr_t &deviceIp, net_addr_
 bool RdmaTransportManager::RetireDeviceIp(uint32_t deviceId, net_addr_t &deviceIp)
 {
     net_addr_t retiredIp{};
- 
+
     auto isRetire = HandleRetiredDeviceIp(deviceIp, retiredIp);
     if (isRetire) {
         return true;
@@ -569,109 +526,6 @@ int RdmaTransportManager::CheckPrepareOptions(const ock::mf::transport::HybmTran
     }
 
     return BM_OK;
-}
-
-int RdmaTransportManager::RemoteIO(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size, bool write)
-{
-    if (qpManager_ == nullptr) {
-        BM_LOG_ERROR("ReadRemote(): connection manager not created.");
-        return BM_ERROR;
-    }
-    auto qpHandle = qpManager_->GetQpHandleWithRankId(rankId);
-    if (qpHandle == nullptr) {
-        BM_LOG_ERROR("no qp to rankId: " << rankId);
-        return BM_ERROR;
-    }
-    auto ret = PrepareThreadLocalStream();
-    if (ret != BM_OK) {
-        BM_LOG_ERROR("prepare stream error rankId: " << rankId);
-        return ret;
-    }
-
-    struct send_wr wr = {};
-    struct sg_list sgList = {.addr = lAddr, .len = (uint32_t)size, .lkey = 0};
-    wr.buf_list = &sgList;
-    wr.buf_num = 1;  // 此处list只有一个，设置为1
-    wr.dst_addr = rAddr;
-    wr.op = write ? 0 : 4; /* RDMA_WRITE: 0  RDMA_READ: 4 */
-    wr.send_flag = RA_SEND_SIGNALED;
-    send_wr_rsp rspInfo{};
-    ret = DlHccpApi::RaSendWr(qpHandle, &wr, &rspInfo);
-    if (ret != 0) {
-        BM_LOG_ERROR("DlHccpApi::RaSendWr(handle, &wr, &opRsp) failed: " << ret);
-        return ret;
-    }
-
-    StreamTask task;
-    task.type = STREAM_TASK_TYPE_RDMA;
-    ConstructSqeNoSinkModeForRdmaDbSendTask(rspInfo, task.sqe);
-    ret = stream_->SubmitTasks(task);
-
-    ret = stream_->Synchronize();
-    if (ret != BM_OK) {
-        BM_LOG_ERROR("stream_->Synchronize() failed: " << ret);
-        return ret;
-    }
-    return BM_OK;
-}
-
-void RdmaTransportManager::ConstructSqeNoSinkModeForRdmaDbSendTask(const send_wr_rsp &rspInfo, rtStarsSqe_t &command)
-{
-    static std::atomic<uint32_t> taskIdGenerator{1};
-    auto sqe = &command.writeValueSqe;
-    const uint8_t RT_STARS_SQE_TYPE_WRITE_VALUE = 8;
-    const uint8_t RT_STARS_WRITE_VALUE_SUB_TYPE_RDMA_DB_SEND = 2;
-
-    auto taskId = taskIdGenerator.fetch_add(1);
-    std::fill(reinterpret_cast<unsigned char*>(sqe), reinterpret_cast<unsigned char*>(sqe) + sizeof(rtStarsSqe_t), 0);
-    sqe->header.type = RT_STARS_SQE_TYPE_WRITE_VALUE;
-    sqe->header.ie = RT_STARS_SQE_INT_DIR_NO;
-    sqe->header.pre_p = RT_STARS_SQE_INT_DIR_NO;
-    sqe->header.post_p = RT_STARS_SQE_INT_DIR_NO;
-    sqe->header.wr_cqe = 0;  // stream->GetStarsWrCqeFlag();
-    sqe->header.rt_stream_id = static_cast<uint16_t>(stream_->GetId());
-    sqe->header.task_id = taskId;
-
-    sqe->va = 0U;
-    sqe->kernel_credit = RT_STARS_DEFAULT_KERNEL_CREDIT;
-    sqe->awsize = 3U;    // RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT;
-    sqe->sub_type = RT_STARS_WRITE_VALUE_SUB_TYPE_RDMA_DB_SEND;
-
-    uint64_t dbVal = rspInfo.db.db_info;
-    uint64_t dbAddr = GetRoceDbAddrForRdmaDbSendTask();
-    if (dbAddr == 0ULL) {
-        sqe->header.type = 63U;  // RT_STARS_SQE_TYPE_INVALID;
-        BM_LOG_ERROR("generate db address is zero.");
-        return;
-    }
-
-    sqe->write_value_part0 = static_cast<uint32_t>(dbVal & MASK_32_BIT);
-    sqe->write_value_part1 = static_cast<uint32_t>(dbVal >> UINT32_BIT_NUM);
-    sqe->write_addr_low = static_cast<uint32_t>(dbAddr & MASK_32_BIT);
-    sqe->write_addr_high = static_cast<uint32_t>((dbAddr >> UINT32_BIT_NUM) & MASK_17_BIT);
-}
-
-uint64_t RdmaTransportManager::GetRoceDbAddrForRdmaDbSendTask()
-{
-    uint32_t deviceId = deviceId_;
-
-    auto chipId = deviceChipInfo_->GetChipId();
-    auto dieId = deviceChipInfo_->GetDieId();
-    auto chipAddr = deviceChipInfo_->GetChipAddr();
-    auto chipOffset = deviceChipInfo_->GetChipOffset();
-    auto dieOffset = deviceChipInfo_->GetDieOffset();
-
-    constexpr uint64_t RT_ASCEND910B1_ROCEE_BASE_ADDR = 0x2000000000UL;
-    constexpr uint64_t RT_ASCEND910B1_ROCEE_VF_DB_CFG0_REG = 0x230UL;
-
-    uint64_t dbAddr = RT_ASCEND910B1_ROCEE_BASE_ADDR +
-                      RT_ASCEND910B1_ROCEE_VF_DB_CFG0_REG +
-                      chipOffset * static_cast<uint64_t>(chipId) +
-                      dieOffset * dieId +
-                      chipAddr;
-    BM_LOG_DEBUG("deviceId=" << deviceId << ", die_id=" << dieId << ", db=0x" << std::hex << dbAddr);
-
-    return dbAddr;
 }
 }
 }

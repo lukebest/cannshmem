@@ -164,37 +164,6 @@ struct halResourceIdOutputInfo {
 
 constexpr uint32_t RT_MILAN_MAX_QUERY_CQE_NUM = 32U;
 
-/**
- * @ingroup engine or starsEngine
- * @brief the type defination of logic cq for all chipType(total 32 bytes).
- */
-struct rtLogicCqReport_t {
-    volatile uint16_t streamId;
-    volatile uint16_t taskId;
-    volatile uint32_t errorCode;    // cqe acc_status/sq_sw_status
-    volatile uint8_t errorType;     // bit0 ~ bit5 cqe stars_defined_err_code, bit 6 cqe warning bit
-    volatile uint8_t sqeType;
-    volatile uint16_t sqId;
-    volatile uint16_t sqHead;
-    volatile uint16_t matchFlag : 1;
-    volatile uint16_t dropFlag : 1;
-    volatile uint16_t errorBit : 1;
-    volatile uint16_t accError : 1;
-    volatile uint16_t reserved0 : 12;
-    union {
-        volatile uint64_t timeStamp;
-        volatile uint16_t sqeIndex;
-    } u1;
-    /* Union description:
-     *  Internal: enque_timestamp temporarily used as dfx
-     *  External: reserved1
-     */
-    union {
-        volatile uint64_t enqueTimeStamp;
-        volatile uint64_t reserved1;
-    } u2;
-};
-
 }
 }
 

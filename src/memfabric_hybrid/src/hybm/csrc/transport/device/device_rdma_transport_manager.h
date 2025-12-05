@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "hybm_define.h"
-#include "hybm_stream_manager.h"
 #include "hybm_transport_manager.h"
 #include "device_chip_info.h"
 #include "device_rdma_common.h"
@@ -46,8 +45,6 @@ public:
     Result UpdateRankOptions(const HybmTransPrepareOptions &options) override;
     const std::string &GetNic() const override;
     const void *GetQpInfo() const override;
-    Result ReadRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size) override;
-    Result WriteRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size) override;
 
 private:
     static bool PrepareOpenDevice(uint32_t device, uint32_t rankCount, net_addr_t &deviceIp, void *&rdmaHandle);
@@ -58,13 +55,7 @@ private:
     static bool RaRdevInit(uint32_t deviceId, net_addr_t deviceIp, void *&rdmaHandle);
     void ClearAllRegisterMRs();
     int CheckPrepareOptions(const HybmTransPrepareOptions &options);
-    int RemoteIO(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size, bool write);
-    int PrepareThreadLocalStream();
     void InitializeDeviceAddress(mf_sockaddr &deviceAddr);
-
-private: // RDMA HOST STARS
-    void ConstructSqeNoSinkModeForRdmaDbSendTask(const send_wr_rsp &rspInfo, rtStarsSqe_t &command);
-    uint64_t GetRoceDbAddrForRdmaDbSendTask();
 
 private:
     bool started_{false};
@@ -82,7 +73,6 @@ private:
     std::string nicInfo_;
     MemoryRegionMap registerMRS_;
     std::shared_ptr<DeviceQpManager> qpManager_;
-    static thread_local HybmStreamPtr stream_;
     std::shared_ptr<DeviceChipInfo> deviceChipInfo_;
 };
 }

@@ -86,13 +86,6 @@ public:
 
     virtual const void *GetQpInfo() const;
 
-    /**
-      * rdma单边传输
-      */
-    virtual Result ReadRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size) = 0;
-
-    virtual Result WriteRemote(uint32_t rankId, uint64_t lAddr, uint64_t rAddr, uint64_t size) = 0;
-
 protected:
     bool connected_{false};
 };

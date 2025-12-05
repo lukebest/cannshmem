@@ -178,7 +178,7 @@ void test_host_shmem_putmem_and_getmem(int rank_id, int n_ranks, uint64_t local_
         ASSERT_EQ(msg, rank_id + 10);                                                            \
                                                                                                  \
         for (int i = 0; i < n_ranks; ++i) {                                                      \
-            int getValue = shmem_##NAME##_g((TYPE *)ptr, i);                                     \
+            TYPE getValue = shmem_##NAME##_g((TYPE *)ptr, i);                                    \
             std::cout << p_name << ", getValue is " << getValue << std::endl;                    \
             ASSERT_EQ(getValue, i + 10);                                                         \
         }                                                                                        \

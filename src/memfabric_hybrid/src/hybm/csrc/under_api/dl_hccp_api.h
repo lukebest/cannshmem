@@ -45,7 +45,6 @@ using raRegisterMrFunc = int (*)(const void *, HccpMrInfo *, void **);
 using raDeregisterMrFunc = int (*)(const void *, void *);
 using raMrRegFunc = int (*)(void *, HccpMrInfo *);
 using raMrDeregFunc = int (*)(void *, HccpMrInfo *);
-using raSendWrFunc = int (*)(void *, send_wr *, send_wr_rsp *);
 using tsdOpenFunc = uint32_t (*)(uint32_t, uint32_t);
 using raPollCqFunc = int (*)(void *, bool, uint32_t, void *);
 
@@ -189,11 +188,6 @@ public:
         return gRaMrDereg(qpHandle, &info);
     }
 
-    static inline int RaSendWr(void *qp_handle, struct send_wr *wr, struct send_wr_rsp *op_rsp)
-    {
-        return gRaSendWr(qp_handle, wr, op_rsp);
-    }
-
     static inline int RaPollCq(void *qp_handle, bool is_send_cq, unsigned int num_entries, void *wc)
     {
         return gRaPollCq(qp_handle, is_send_cq, num_entries, wc);
@@ -240,7 +234,6 @@ private:
     static raDeregisterMrFunc gRaDeregisterMR;
     static raMrRegFunc gRaMrReg;
     static raMrDeregFunc gRaMrDereg;
-    static raSendWrFunc gRaSendWr;
     static raPollCqFunc gRaPollCq;
 
     static tsdOpenFunc gTsdOpen;

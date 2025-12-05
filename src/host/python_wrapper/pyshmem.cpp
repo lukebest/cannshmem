@@ -153,14 +153,14 @@ static int py_decrypt_handler_wrapper(const char *cipherText, size_t cipherTextL
 }
 
 int32_t shmem_set_conf_store_tls_key_with_decrypt(std::string &tls_pk, std::string &tls_pk_pw,
-    py::function py_decrypt_func)
+    std::optional<py::function> py_decrypt_func = std::nullopt)
 {
-    if (!py_decrypt_func || py_decrypt_func.is_none()) {
+    if (!py_decrypt_func || !py_decrypt_func.has_value()) {
         return shmem_set_config_store_tls_key(tls_pk.c_str(), tls_pk.size(), tls_pk_pw.c_str(),
             tls_pk_pw.size(), nullptr);
     }
 
-    g_py_decrypt_func = py_decrypt_func;
+    g_py_decrypt_func = *py_decrypt_func;
     return shmem_set_config_store_tls_key(tls_pk.c_str(), tls_pk.size(), tls_pk_pw.c_str(),
         tls_pk_pw.size(), py_decrypt_handler_wrapper);
 }

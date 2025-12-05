@@ -640,7 +640,10 @@ void FixedRanksQpManager::CloseServices() noexcept
     }
 
     CloseServerConnections();
+    BM_LOG_INFO("server connections closed.");
+
     CloseClientConnections();
+    BM_LOG_INFO("clinet connections closed.");
 }
 
 void FixedRanksQpManager::CloseClientConnections() noexcept
@@ -698,6 +701,7 @@ void FixedRanksQpManager::CloseConnections(std::unordered_map<uint32_t, Connecti
         }
     }
 
+    BM_LOG_INFO("close connection done, size is " << connections.size());
     connections.clear();
 }
 }

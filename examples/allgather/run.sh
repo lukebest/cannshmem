@@ -96,12 +96,26 @@ python3 ./scripts/data_gen.py $RANK_SIZE $TEST_TYPE
 # Kernel test
 rm -rf ./output
 export LD_LIBRARY_PATH=${PROJECT_ROOT}/build/lib:${PROJECT_ROOT}/install/memfabric_hybrid/lib/:${ASCEND_HOME_PATH}/lib64:$LD_LIBRARY_PATH
+pids=()
 for (( idx =0; idx < ${GNPU_NUM}; idx = idx + 1 )); do
     msprof --application="${PROJECT_ROOT}/build/bin/allgather $RANK_SIZE $idx $IPPORT $GNPU_NUM $FIRST_RANK $FIRST_NPU $TEST_TYPE" --output=${PROJECT_ROOT}/examples/allgather/output/ &
+    pid=$!
+    pids+=("$pid")
+    echo "$pid background process recorded"
 done
-wait
+
+ret=0
+for pid in ${pids[@]}; do
+    wait $pid
+    echo "wait process $pid done"
+    cur_ret=$?
+    if [[ $cur_ret -ne 0 ]]; then
+        ret=$cur_ret
+    fi
+done
 
 # Profiling data statistic
 python3 ./scripts/data_statistic.py
 
 cd ${CURRENT_DIR}
+exit $ret

@@ -3,10 +3,11 @@
 CURRENT_DIR=$(pwd)
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$( dirname $( dirname $(dirname "$SCRIPT_DIR")))
+EXAMPLE_DIR=${SCRIPT_DIR}/../
 
 # Default Args
 RANK_SIZE="2"
-IPPORT="tcp://127.0.0.1:8878"
+IPPORT="tcp://127.0.0.1:18878"
 FIRST_NPU="0"
 
 # Args Parse
@@ -113,11 +114,17 @@ echo "DATA_DIR: $DATA_DIR"
 EXEC_BIN=${PROJECT_ROOT}/build/bin/dispatch_gmm_combine
 
 cd ${PROJECT_ROOT}/examples/dispatch_gmm_combine/
+python3 utils/gen_data.py
+if [[ $? -ne 0 ]]; then
+    echo "gen data failed."
+    exit 1
+fi
 
 echo "Test Case, M: ${M}, K: ${K}, N: ${N}, expertPerRank: ${expertPerRank}"
 export LD_LIBRARY_PATH=${PROJECT_ROOT}/install/shmem/lib:${ASCEND_HOME_PATH}/lib64:${PROJECT_ROOT}/install/memfabric_hybrid/lib:$LD_LIBRARY_PATH
 for (( idx =0; idx < ${RANK_SIZE}; idx = idx + 1 )); do
-    INPUT_PATH=${CURRENT_DIR}/utils/test_data/ ${EXEC_BIN} "$RANK_SIZE" "$idx" "$IPPORT" "$FIRST_NPU" "$M" "$K" "$N" "$expertPerRank" "$dataType" "$weightNz" "$transB" &
+    export INPUT_PATH=${EXAMPLE_DIR}/utils/test_data/
+    ${EXEC_BIN} "$RANK_SIZE" "$idx" "$IPPORT" "$FIRST_NPU" "$M" "$K" "$N" "$expertPerRank" "$dataType" "$weightNz" "$transB" &
 done
 
 # Wait until all process exit
@@ -125,3 +132,4 @@ wait
 
 cd ${CURRENT_DIR}
 python ${CURRENT_DIR}/utils/check_result.py --rank_size $RANK_SIZE --dataType $dataType --m $M --k $K --n $N --expert_per_rank $expertPerRank --EP $RANK_SIZE
+exit $?

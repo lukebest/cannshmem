@@ -7,8 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 #
+import sys
 import argparse
 import torch
+
+RED = "\033[31m"
+GREEN = "\033[32m"
+RESET = "\033[0m"
 
 
 def output_error_item(output_tensor, golden_tensor, threshold=0.1, max_print=100, epsilon=1e-8):
@@ -34,8 +39,10 @@ def output_error_item(output_tensor, golden_tensor, threshold=0.1, max_print=100
     a_values = a_slice[indices]
     b_values = b_slice[indices]
     error_values = relative_error[indices]
-
-    print(f"发现 {len(a_values)} 个差异超过{threshold * 100}%的元素")
+    if len(a_values) == 0:
+        print(f"{GREEN}PRECISION OK{RESET}")
+        return
+    print(f"{RED}||||||||||| PRECISION ERROR: 发现 {len(a_values)} 个差异超过{threshold * 100}%的元素 |||||||||||||||{RESET}")
 
 
 def read_binary_file(file_path, dtype=torch.float32):
@@ -47,7 +54,7 @@ def read_binary_file(file_path, dtype=torch.float32):
         return tensor
     except FileNotFoundError:
         print(f"The file {file_path} does not exist!")
-        return None
+        sys.exit(1)
 
 
 parser = argparse.ArgumentParser()

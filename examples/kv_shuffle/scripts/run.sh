@@ -35,7 +35,9 @@ wait
 DATA_PATH=${PROJECT_ROOT}/examples/kv_shuffle/scripts/output
 for (( idx =0; idx < ${RANK_SIZE}; idx = idx + 1 )); do
     python3 scripts/result_compare.py ${DATA_PATH}/k_cache_output_rank_${idx}.bin ${DATA_PATH}/k_cache_golden_rank_${idx}.bin
+    [[ $? -eq 0 ]] || exit 1
     python3 scripts/result_compare.py ${DATA_PATH}/v_cache_output_rank_${idx}.bin ${DATA_PATH}/v_cache_golden_rank_${idx}.bin
+    [[ $? -eq 0 ]] || exit 1
 done
 
 cd -

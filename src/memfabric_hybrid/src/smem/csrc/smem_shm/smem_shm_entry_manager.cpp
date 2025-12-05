@@ -133,6 +133,9 @@ Result SmemShmEntryManager::RemoveEntryByPtr(uintptr_t ptr)
     SM_ASSERT_RETURN(entry != nullptr, SM_ERROR);
     entryIdMap_.erase(entry->Id());
 
+    /* destroy conf store tls as neccessary */
+    this->Destroy();
+
     SM_LOG_DEBUG("remove shm entry success, id: " << entry->Id());
 
     return SM_OK;

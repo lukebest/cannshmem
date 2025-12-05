@@ -31,15 +31,15 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
     const int num10 = 10;
     aclrtStream stream = nullptr;
 
-    status = aclInit(nullptr);
-    status = aclrtSetDevice(device_id);
-    status = aclrtCreateStream(&stream);
+    status |= aclInit(nullptr);
+    status |= aclrtSetDevice(device_id);
+    status |= aclrtCreateStream(&stream);
 
     shmem_init_attr_t *attributes;
-    status = shmem_set_attr(rank_id, n_ranks, local_mem_size, ipport, &attributes);
+    status |= shmem_set_attr(rank_id, n_ranks, local_mem_size, ipport, &attributes);
     attributes->option_attr.data_op_engine_type = SHMEM_DATA_OP_ROCE;
     shmem_set_conf_store_tls(false, nullptr, 0);
-    status = shmem_init_attr(attributes);
+    status |= shmem_init_attr(attributes);
 
     uint8_t *ptr = static_cast<uint8_t*>(shmem_malloc(1024));
 
@@ -50,21 +50,21 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
         input[i] = (rank_id + num10);
     }
 
-    status = aclrtMemcpy(ptr + shmem_my_pe() * trans_size * sizeof(int32_t), trans_size * sizeof(int32_t),
-                         input.data(), trans_size * sizeof(int32_t), ACL_MEMCPY_HOST_TO_DEVICE);
+    status |= aclrtMemcpy(ptr + shmem_my_pe() * trans_size * sizeof(int32_t), trans_size * sizeof(int32_t),
+        input.data(), trans_size * sizeof(int32_t), ACL_MEMCPY_HOST_TO_DEVICE);
 
     // AllGather
     allgather_demo(1, stream, (uint8_t *)ptr, trans_size * sizeof(int32_t));
     shmem_handle_t handle;
     handle.team_id = SHMEM_TEAM_WORLD;
     shmem_handle_wait(handle, stream);
-    status = aclrtSynchronizeStream(stream);
+    status |= aclrtSynchronizeStream(stream);
 
     // 结果校验打印
     int32_t *y_host;
     size_t input_size = n_ranks * trans_size * sizeof(int32_t);
-    status = aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
-    status = aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
+    status |= aclrtMallocHost(reinterpret_cast<void**>(&y_host), input_size);
+    status |= aclrtMemcpy(y_host, input_size, ptr, input_size, ACL_MEMCPY_DEVICE_TO_HOST);
 
     const int block_size = 16;
     for (int i = 0; i < n_ranks; i++) {
@@ -76,13 +76,14 @@ int test_shmem_team_all_gather(int rank_id, int n_ranks, uint64_t local_mem_size
             }
         }
     }
+    std::cout << "check transport result success, rank=" << rank_id << std::endl;
     // 去初始化
-    status = aclrtFreeHost(y_host);
+    status |= aclrtFreeHost(y_host);
     shmem_free(ptr);
-    status = shmem_finalize();
-    status = aclrtDestroyStream(stream);
-    status = aclrtResetDevice(device_id);
-    status = aclFinalize();
+    status |= shmem_finalize();
+    status |= aclrtDestroyStream(stream);
+    status |= aclrtResetDevice(device_id);
+    status |= aclFinalize();
     return 0;
 }
 

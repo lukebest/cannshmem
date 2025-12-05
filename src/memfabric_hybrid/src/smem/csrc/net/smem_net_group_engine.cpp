@@ -190,12 +190,12 @@ void SmemNetGroupEngine::RankExit(int result, const std::string &key, const std:
         try {
             val = std::stoi(value);
         } catch (...) {
-            SM_LOG_WARN("convert string to int failed");
+            SM_LOG_WARN("convert string to int failed:" << value);
             return;
         }
         globalExitHandler_(val);
     } else {
-        SM_LOG_WARN("global exit failed");
+        SM_LOG_WARN("global exit failed:" << value);
     }
 }
 

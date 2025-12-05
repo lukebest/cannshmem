@@ -99,6 +99,9 @@ if [ "$TEST_TYPE" = "0" ]; then
             python3 ${UTILS_PATH}/verify_result.py ./output/output.bin ./output/golden.bin ${DATA_TYPE} ${M} ${N} $((K * RANK_SIZE))
         fi
 
+        ret=$?
+        [[ $ret -eq 0 ]] || exit 1
+
         (( TEST_START_LINE+=TEST_COLLECT_ROWS ))
         (( IDX+=1 ))
     done

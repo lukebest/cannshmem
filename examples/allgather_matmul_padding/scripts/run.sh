@@ -49,6 +49,9 @@ tail -n +2 "$CSV_FILE" | while IFS=',' read -r M K N; do
 
     # Verify output
     python3 ${UTILS_PATH}/verify_result.py ${DATA_DIR}/shmem_output.bin ${DATA_DIR}/golden.bin 1 ${M} ${N} ${K}
+    if [[ $? -ne 0 ]]; then
+        exit 1
+    fi
 done
 
 cd ${CURRENT_DIR}

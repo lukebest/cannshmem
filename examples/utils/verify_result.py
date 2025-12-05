@@ -100,11 +100,11 @@ def precision_performance_analysis(op_type, golden_output_tensor_list, output_te
         precision, eb = cal_precision_eb_percent(op_type, actual_output, golden_output,
                                                  precision_threshold, eb_threshold)
     if precision == 100 and eb <= 100:
-        return True 
+        return True
     else:
         print(f"precision: {precision}, eb: {eb}")
         return False
-    
+
 
 def cal_precision_eb_percent(op_type, actual_output, golden_output, precision_threshold, eb_threshold):
     actual_output = actual_output if actual_output.dtype != torch.bool else actual_output.long()
@@ -130,7 +130,7 @@ def cal_precision_eb_percent(op_type, actual_output, golden_output, precision_th
         tolerance = torch.subtract(torch.abs(diff), torch.ones(diff.shape, dtype=diff.dtype))
     else:
         tolerance = torch.subtract(torch.abs(diff), precision_threshold * tensor_max)
-    
+
     different_element_indexes = torch.where(tolerance > 0)[0]
     for index, real_index in enumerate(different_element_indexes):
         golden_data = golden_output[real_index]
@@ -142,8 +142,9 @@ def cal_precision_eb_percent(op_type, actual_output, golden_output, precision_th
         if index == 10:
             break
     error_num = len(different_element_indexes)
-    print(f"error num: {error_num}")
-    
+    if error_num > 0:
+        print(f"error num: {error_num}")
+
     # eb 统计误差偏移情况
     eb = eb_threshold
     if eb_threshold != 0:
@@ -176,9 +177,11 @@ if __name__ == '__main__':
     try:
         res = verify_result()
         if not res:
-            print(f"{RED}ERROR{RESET}")
+            print(f"{RED}||||||||||| PRECISION ERROR |||||||||||||||{RESET}")
+            sys.exit(0)
         else:
-            print(f"{GREEN}PASS{RESET}")
+            print(f"{GREEN}PRECISION PASS{RESET}")
+            sys.exit(0)
     except Exception as e:
         print(e)
         traceback.print_exc()

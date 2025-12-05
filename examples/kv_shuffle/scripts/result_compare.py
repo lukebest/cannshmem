@@ -30,8 +30,10 @@ def result_compare():
 
     if md5_output == md5_golden:
         print("SUCCESS")
+        sys.exit(0)
     else:
         print("FAILED")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

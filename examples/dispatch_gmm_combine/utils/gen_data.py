@@ -22,7 +22,7 @@ import numpy
 
 
 LCAL_PATH = os.getcwd().replace("build", "")
-DATA_PATH = os.path.join(LCAL_PATH, "utils", "test_data")
+DATA_PATH = os.path.join(LCAL_PATH, "examples", "dispatch_gmm_combine", "utils", "test_data")
 shutil.rmtree(DATA_PATH, ignore_errors=True)
 os.makedirs(DATA_PATH)
 print(f'Use DATA_PATH = {DATA_PATH}')
@@ -382,7 +382,7 @@ class MoeTestDate:
                  expert_tokens_count_or_cumsum, pertoken_scale) = torch_npu.npu_moe_init_routing_v2(
                     self.matrix_a_list[i].to('npu'), expert_idx.to('npu'), scale=None, offset=None,
                     active_num=m * top_k, expert_capacity=m * top_k, expert_num=self.expert_num,
-                    drop_pad_mode=drop_pad_mode, 
+                    drop_pad_mode=drop_pad_mode,
                     expert_tokens_num_type=1, expert_tokens_num_flag=True,
                     active_expert_range=[0, self.expert_num], quant_mode=quant_mode, row_idx_type=0)
                 matrix_a = matrix_a.cpu().numpy()
@@ -463,7 +463,7 @@ class MoeTestDate:
         print(tensor.shape, tensor.dtype, file_path)
         tensor.view(untyped_dict.get(tensor.dtype)).numpy().tofile(file_path)
 
-    def get_moe_input_output_splits(self, expert_per_rank, ep, mode, max_output_size, num_local_tokens_per_expert):        
+    def get_moe_input_output_splits(self, expert_per_rank, ep, mode, max_output_size, num_local_tokens_per_expert):
         all_gather_res = num_local_tokens_per_expert[0].tolist()
         for i in range(1, ep):
             all_gather_res = all_gather_res + num_local_tokens_per_expert[i].tolist()
@@ -824,8 +824,7 @@ def main():
     expert_tokens_count_or_cumsum_flag = int(config['initRoutingInfo']['expertTokensCountOrCumsumFlag'])
     quant_mode = int(config['initRoutingInfo']['quantMode'])
 
-    print(mode)
-    print(mode == 'random')
+    print(f"{mode=}")
 
     is_deterministic = os.environ.get('LCCL_DETERMINISTIC')
     if is_deterministic is not None and is_deterministic.lower() in ['true', '1']:

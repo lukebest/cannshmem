@@ -109,8 +109,10 @@ SHMEM_DEVICE void shmemi_partial_barrier(shmem_team_t tid, __gm__ uint32_t *pes,
             auto s_sync = shmemi_get_team_partial_barrier_slot(team->team_idx, 0);
             auto s_base = (__gm__ int32_t *)s_sync;
             constexpr uint32_t clear_count = SHMEM_PARTIAL_BARRIER_PER_TEAM_SIZE / sizeof(int32_t);
-            AscendC::LocalTensor<int32_t> ub_tensor_32(AscendC::TPosition::VECOUT, SHMEM_INTERNAL_UB_BUF_START_ADDR,
-                                                       clear_count);
+            AscendC::LocalTensor<int32_t> ub_tensor_32;
+            ub_tensor_32.address_.logicPos = AscendC::TPosition::VECOUT;
+            ub_tensor_32.address_.bufferAddr = SHMEM_INTERNAL_UB_BUF_START_ADDR;
+            ub_tensor_32.address_.dataLen = clear_count;
             AscendC::Duplicate(ub_tensor_32, 0, clear_count);
             AscendC::GlobalTensor<int32_t> s_gm;
             s_gm.SetGlobalBuffer(s_base, clear_count * sizeof(int32_t));

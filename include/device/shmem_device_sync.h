@@ -40,6 +40,7 @@
 #include "internal/device/sync/shmemi_device_p2p.h"
 #include "internal/device/sync/shmemi_device_barrier.h"
 #include "internal/device/sync/shmemi_device_handle.h"
+#include "internal/device/sync/shmemi_device_partial_barrier.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,6 +105,31 @@ SHMEM_DEVICE void shmemx_barrier_vec(shmem_team_t tid)
 SHMEM_DEVICE void shmemx_barrier_all_vec()
 {
     shmemx_barrier_vec(SHMEM_TEAM_WORLD);
+}
+
+/**
+ * @brief Partial barrier: synchronize only the PEs listed in pes[0..count-1].
+ *
+ * @param tid   [in] Team handle.
+ * @param pes   [in] Team PE ID array participating in this partial barrier.
+ * @param count [in] Length of the pes array.
+ */
+SHMEM_DEVICE void shmemx_partial_barrier(shmem_team_t tid, __gm__ uint32_t *pes, uint32_t count)
+{
+    shmemi_partial_barrier<false>(tid, pes, count);
+}
+
+/**
+ * @brief Partial barrier (vector version): synchronize only the subset of VEC cores
+ *        corresponding to the PEs listed in pes[0..count-1].
+ *
+ * @param tid   [in] Team handle.
+ * @param pes   [in] Team PE ID array participating in this partial barrier.
+ * @param count [in] Length of the pes array.
+ */
+SHMEM_DEVICE void shmemx_partial_barrier_vec(shmem_team_t tid, __gm__ uint32_t *pes, uint32_t count)
+{
+    shmemi_partial_barrier<true>(tid, pes, count);
 }
 
 /**

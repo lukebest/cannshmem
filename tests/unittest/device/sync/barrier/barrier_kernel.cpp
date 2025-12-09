@@ -80,6 +80,60 @@ extern "C" SHMEM_GLOBAL void increase_vec_odd_team(uint64_t config, GM_ADDR addr
 #endif
 }
 
+extern "C" SHMEM_GLOBAL void partial_increase(uint64_t config,
+    GM_ADDR addr, GM_ADDR pes_addr, uint32_t count, int rank_id, int rank_size, shmem_team_t team_id)
+{
+    shmemx_set_ffts_config(config);
+
+#ifdef __DAV_C220_CUBE__
+    // scalar unit of cube core is not affected by barrier
+    __gm__ uint32_t *pes = (__gm__ uint32_t *)pes_addr;
+
+    shmemx_partial_barrier(team_id, pes, count);
+    shmemx_partial_barrier(team_id, pes, count);
+#endif
+
+#ifdef __DAV_C220_VEC__
+    uint64_t val = shmemi_load((__gm__ uint64_t *)addr);
+    __gm__ uint32_t *pes = (__gm__ uint32_t *)pes_addr;
+    auto state = shmemi_get_state();
+    shmemi_team_t *team = state->team_pools[team_id];
+    int start = team->start;
+    int stride = team->stride;
+    shmemx_partial_barrier(team_id, pes, count);
+    int team_pe = shmem_team_my_pe(team_id);
+    int peer = (team_pe + 1) % count;
+    if (team_pe < count) {
+        GM_ADDR remote = shmemi_ptr(addr, peer * stride + start);
+        shmemi_store((__gm__ uint64_t *)remote, val + 1);
+    }
+    shmemx_partial_barrier(team_id, pes, count);
+#endif
+}
+
+extern "C" SHMEM_GLOBAL void partial_increase_vec(uint64_t config,
+    GM_ADDR addr, GM_ADDR pes_addr, uint32_t count, int rank_id, int rank_size, shmem_team_t team_id)
+{
+    shmemx_set_ffts_config(config);
+
+#ifdef __DAV_C220_VEC__
+    uint64_t val = shmemi_load((__gm__ uint64_t *)addr);
+    __gm__ uint32_t *pes = (__gm__ uint32_t *)pes_addr;
+    auto state = shmemi_get_state();
+    shmemi_team_t *team = state->team_pools[team_id];
+    int start = team->start;
+    int stride = team->stride;
+    shmemx_partial_barrier_vec(team_id, pes, count);
+    int team_pe = shmem_team_my_pe(team_id);
+    int peer = (team_pe + 1) % count;
+    if (team_pe < count) {
+        GM_ADDR remote = shmemi_ptr(addr, peer * stride + start);
+        shmemi_store((__gm__ uint64_t *)remote, val + 1);
+    }
+    shmemx_partial_barrier_vec(team_id, pes, count);
+#endif
+}
+
 void increase_do(void* stream, uint64_t config, uint8_t *addr, int rank_id, int rank_size)
 {
     increase<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size);
@@ -100,4 +154,16 @@ void increase_vec_do_odd_team(void* stream, uint64_t config, uint8_t *addr, int 
     int rank_size, shmem_team_t team_id)
 {
     increase_vec_odd_team<<<16, nullptr, stream>>>(config, addr, rank_id, rank_size, team_id);
+}
+
+void partial_increase_do(void *stream, uint64_t config,
+    uint8_t *addr, uint8_t *pes_addr, uint32_t count, int rank_id, int rank_size, shmem_team_t team_id)
+{
+    partial_increase<<<16, nullptr, stream>>>(config, addr, pes_addr, count, rank_id, rank_size, team_id);
+}
+
+void partial_increase_vec_do(void *stream, uint64_t config,
+    uint8_t *addr, uint8_t *pes_addr, uint32_t count, int rank_id, int rank_size, shmem_team_t team_id)
+{
+    partial_increase_vec<<<16, nullptr, stream>>>(config, addr, pes_addr, count, rank_id, rank_size, team_id);
 }

@@ -61,6 +61,7 @@ constexpr int DEFAULT_IFNAME_LNEGTH = 4;
             0,                                       /* sync_counter */                \
             0,                                      /* core_sync_pool */             \
             0,                                      /* core_sync_counter */          \
+            0,                                        /* partial_barrier_pool */      \
             false,                                   /* shmem_is_shmem_initialized */ \
             false,                                   /* shmem_is_shmem_created */     \
             {0, 16 * 1024, 0},                       /* shmem_mte_config */           \

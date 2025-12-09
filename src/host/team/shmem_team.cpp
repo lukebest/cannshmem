@@ -139,6 +139,26 @@ int32_t shmemi_team_init_core_sync_counter()
     return SHMEM_SUCCESS;
 }
 
+int32_t shmemi_team_init_partial_barrier_pool()
+{
+    g_state.partial_barrier_pool = (uint64_t)shmem_malloc(SHMEM_PARTIAL_BARRIER_POOL_SIZE);
+    if (g_state.partial_barrier_pool == 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("malloc partial barrier pool failed.");
+        return SHMEM_INNER_ERROR;
+    }
+
+    auto ret = aclrtMemset((void *)g_state.partial_barrier_pool, SHMEM_PARTIAL_BARRIER_POOL_SIZE,
+        0, SHMEM_PARTIAL_BARRIER_POOL_SIZE);
+    if (ret != 0) {
+        shmemi_team_finalize();
+        SHM_LOG_ERROR("memset partial barrier pool failed, ret: " << ret);
+        return SHMEM_INNER_ERROR;
+    }
+
+    return SHMEM_SUCCESS;
+}
+
 int32_t shmemi_team_init(int32_t rank, int32_t size)
 {
     /* Initialize SHMEM_TEAM_WORLD */
@@ -176,7 +196,12 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
         return ret;
     }
 
-    return shmemi_team_init_core_sync_counter();
+    ret = shmemi_team_init_core_sync_counter();
+    if (ret != 0) {
+        return ret;
+    }
+
+    return shmemi_team_init_partial_barrier_pool();
 }
 
 int32_t first_free_idx_fetch()
@@ -209,6 +234,10 @@ int32_t shmemi_team_finalize()
     if (g_state.sync_pool != 0) {
         shmem_free(reinterpret_cast<void *>(g_state.sync_pool));
         g_state.sync_pool = 0;
+    }
+    if (g_state.partial_barrier_pool != 0) {
+        shmem_free(reinterpret_cast<void *>(g_state.partial_barrier_pool));
+        g_state.partial_barrier_pool = 0;
     }
     if (g_state.core_sync_counter != 0) {
         SHMEM_CHECK_RET(aclrtFree(reinterpret_cast<void *>(g_state.core_sync_counter)), aclrtFree);

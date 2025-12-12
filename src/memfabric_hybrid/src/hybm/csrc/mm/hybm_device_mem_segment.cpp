@@ -474,7 +474,7 @@ void MemSegmentDevice::FillSysBootIdInfo() noexcept
 
 bool MemSegmentDevice::CanMapRemote(const HbmExportInfo &rmi) noexcept
 {
-    return CanSdmaReaches(rmi.superPodId, rmi.serverId);
+    return IsSdmaAccessible(rmi.superPodId, rmi.serverId, rmi.deviceId);
 }
 
 bool MemSegmentDevice::CanSdmaReaches(uint32_t superPodId, uint32_t serverId) noexcept

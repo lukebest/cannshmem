@@ -199,12 +199,6 @@ int FixedRanksQpManager::StartServerSide() noexcept
             serverConnectResult = ret;
         }
 
-        ret = CreateQpWaitingReady(serverConnections_, CONN_QP_STARS);
-        if (ret != BM_OK) {
-            BM_LOG_ERROR("wait connection STARS qp ready failed: " << ret);
-            serverConnectResult = ret;
-        }
-
         serverConnectResult = BM_OK;
     });
 
@@ -229,12 +223,6 @@ void FixedRanksQpManager::InitClientConnectThread()
             return ret;
         }
 
-        ret = CreateQpWaitingReady(clientConnections_, CONN_QP_STARS);
-        if (ret != BM_OK) {
-            BM_LOG_ERROR("client create qp for STARS failed: " << ret);
-            CloseClientConnections();
-            return ret;
-        }
         clientConnectResult = BM_OK;
         return 0;
     });
@@ -667,14 +655,6 @@ void FixedRanksQpManager::CloseConnections(std::unordered_map<uint32_t, Connecti
                 BM_LOG_WARN("destroy AI QP to server: " << it->first << " failed: " << ret);
             }
             it->second.qpHandles[CONN_QP_AI_CORE] = nullptr;
-        }
-
-        if (it->second.qpHandles[CONN_QP_STARS] != nullptr) {
-            auto ret = DlHccpApi::RaQpDestroy(it->second.qpHandles[CONN_QP_STARS]);
-            if (ret != 0) {
-                BM_LOG_WARN("destroy stars QP to server: " << it->first << " failed: " << ret);
-            }
-            it->second.qpHandles[CONN_QP_STARS] = nullptr;
         }
 
         if (it->second.socketFd != nullptr) {

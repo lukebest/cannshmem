@@ -498,7 +498,7 @@ int32_t shmem_get_ip_from_ifa(char *local, sa_family_t &sockType, const string i
     char ifaName[shm::MAX_IFCONFIG_LENGTH];
     sockType = AF_INET;
     bool flag = false;
-    if (!ipInfo.empty()) {
+    if (ipInfo.empty()) {
         std::copy_n("eth", shm::DEFAULT_IFNAME_LNEGTH, ifaName);
         ifaName[shm::DEFAULT_IFNAME_LNEGTH - 1] = '\0';
         SHM_LOG_INFO("use default if to find IP:" << ifaName);
@@ -649,8 +649,10 @@ int32_t shmem_get_uniqueid(shmem_uniqueid_t *uid)
     char pta_env_ip[shm::MAX_IP];
     uint16_t pta_env_port{};
     sa_family_t sockType;
-    const string ipPort = std::getenv("SHMEM_UID_SESSION_ID");
-    const string ipInfo = std::getenv("SHMEM_UID_SOCK_IFNAM");
+    const char *ipPortInput = std::getenv("SHMEM_UID_SESSION_ID");
+    const char *ipInfoInput = std::getenv("SHMEM_UID_SOCK_IFNAM");
+    const string ipPort = ipPortInput ? ipPortInput : "";
+    const string ipInfo = ipInfoInput ? ipInfoInput : "";
     bool is_from_ifa = false;
     if (!ipPort.empty()) {
         if (shmem_get_ip_from_env(pta_env_ip, pta_env_port, sockType, ipPort) != SHMEM_SUCCESS) {

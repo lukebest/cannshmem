@@ -110,12 +110,6 @@ void DeviceQpManager::DestroyServerSocket() noexcept
     if (ret != 0) {
         BM_LOG_INFO("stop to listen on port: " << listenInfo.port << " return: " << ret);
     }
-
-    ret = DlHccpApi::RaSocketDeinit(serverSocketHandle_);
-    if (ret != 0) {
-        BM_LOG_INFO("deinit server socket return: " << ret);
-    }
-    serverSocketHandle_ = nullptr;
 }
 }
 }

@@ -211,6 +211,11 @@ Result MemSegmentDevice::Import(const std::vector<std::string> &allExInfo, void 
             return BM_INVALID_PARAM;
         }
 
+        if (desInfos[i].size != desInfos[0].size) {
+            BM_LOG_ERROR("local size diffs, pe0=" << desInfos[0].size << ", pe" << i << "=" << desInfos[i].size);
+            return BM_ERROR;
+        }
+
         if (desInfos[i].rankId == options_.rankId) {
             localIdx = i;
         }

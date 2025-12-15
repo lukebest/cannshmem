@@ -460,8 +460,21 @@ int MemSegmentDevice::FillDeviceSuperPodInfo() noexcept
         }
     }
 
+    auto name = DlAclApi::AclrtGetSocName();
+    if (name == nullptr) {
+        BM_LOG_ERROR("AclrtGetSocName() failed.");
+        return BM_ERROR;
+    }
+
+    std::string socName{name};
+    if (socName.find("Ascend910B") != std::string::npos) {
+        socType_ = AscendSocType::ASCEND_910B;
+    } else if (socName.find("Ascend910_93") != std::string::npos) {
+        socType_ = AscendSocType::ASCEND_910C;
+    }
+
     BM_LOG_DEBUG("local sdid=0x" << std::hex << sdid_ << ", local server=0x" << std::hex << serverId_
-                                 << ", spid=" << superPodId_);
+        << ", spid=" << superPodId_ << ", socType=" << socType_ << ", devid=" << deviceId_);
 
     return BM_OK;
 }
@@ -480,21 +493,6 @@ void MemSegmentDevice::FillSysBootIdInfo() noexcept
 bool MemSegmentDevice::CanMapRemote(const HbmExportInfo &rmi) noexcept
 {
     return IsSdmaAccessible(rmi.superPodId, rmi.serverId, rmi.deviceId);
-}
-
-bool MemSegmentDevice::CanSdmaReaches(uint32_t superPodId, uint32_t serverId) noexcept
-{
-    if (serverId == serverId_) {
-        BM_LOG_DEBUG("on sample host, can reach.");
-        return true;
-    }
-
-    if (superPodId == invalidSuperPodId || superPodId_ == invalidSuperPodId) {
-        BM_LOG_INFO("spid: " << superPodId << ", local: " << superPodId_ << " cannot reach.");
-        return false;
-    }
-
-    return superPodId == superPodId_;
 }
 
 void MemSegmentDevice::GetDeviceInfo(uint32_t &sdId, uint32_t &serverId, uint32_t &superPodId) noexcept
@@ -517,22 +515,14 @@ void MemSegmentDevice::GetRankIdByAddr(const void *addr, uint64_t size, uint32_t
     rankId = std::numeric_limits<uint32_t>::max();
 }
 
-bool MemSegmentDevice::CheckSmdaReaches(uint32_t rankId) const noexcept
+bool MemSegmentDevice::CheckSmdaReaches(uint32_t remoteRankId) const noexcept
 {
-    auto pos = importMap_.find(static_cast<uint16_t>(rankId));
+    auto pos = importMap_.find(static_cast<uint16_t>(remoteRankId));
     if (pos == importMap_.end()) {
         return false;
     }
 
-    if (pos->second.serverId == serverId_) {
-        return true;
-    }
-
-    if (pos->second.superPodId == invalidSuperPodId || superPodId_ == invalidSuperPodId) {
-        return false;
-    }
-
-    return pos->second.superPodId == superPodId_;
+    return IsSdmaAccessible(pos->second.superPodId, pos->second.serverId, pos->second.deviceId);
 }
 }  // namespace mf
 }  // namespace ock

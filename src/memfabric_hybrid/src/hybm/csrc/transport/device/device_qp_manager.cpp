@@ -63,7 +63,7 @@ int DeviceQpManager::CreateServerSocket() noexcept
 
     auto socketHandle = CreateLocalSocket();
     if (socketHandle == nullptr) {
-        BM_LOG_ERROR("create local socket handle failed.");
+        BM_LOG_ERROR(rankId_ << " create local socket handle failed.");
         return BM_DL_FUNCTION_FAILED;
     }
 
@@ -86,12 +86,12 @@ int DeviceQpManager::CreateServerSocket() noexcept
         listenInfo.port++;
     }
     if (!successListen) {
-        BM_LOG_ERROR("start to listen server socket failed.");
+        BM_LOG_ERROR(rankId_ << " start to listen server socket failed.");
         DlHccpApi::RaSocketDeinit(socketHandle);
         return BM_DL_FUNCTION_FAILED;
     }
 
-    BM_LOG_INFO("start to listen on port: " << listenInfo.port << " success.");
+    BM_LOG_INFO(rankId_ << " start to listen on port: " << listenInfo.port << " success.");
     serverSocketHandle_ = socketHandle;
     return BM_OK;
 }

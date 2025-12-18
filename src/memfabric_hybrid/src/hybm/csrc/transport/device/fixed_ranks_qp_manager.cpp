@@ -471,7 +471,9 @@ int FixedRanksQpManager::CreateQpWaitingReady(std::unordered_map<uint32_t, Conne
                 BM_LOG_ERROR(rankId_ << ":" << sideName << " get AI QP status to " << it->first << " failed: " << ret);
                 return BM_DL_FUNCTION_FAILED;
             }
-            BM_LOG_DEBUG(rankId_ << ":" << sideName << " get create qp status=" << status);
+
+            // rs_qp_status: 0-disconnect, 1-connected, 2-timeout, 3-connecting, 4-fd_close, 5-pause
+            BM_LOG_DEBUG(rankId_ << ":" << sideName << " get create qp status to " << it->first << "=" << status);
             if (status != 1) {
                 connectingCount++;
             }

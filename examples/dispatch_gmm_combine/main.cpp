@@ -13,12 +13,12 @@
 #include <vector>
 
 // misc
-#include "helper.hpp"
-#include "golden.hpp"
-#include "fp16_t.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "helper.hpp"
+#include "golden.hpp"
+#include "fp16_t.h"
 
 #include <cstdio>
 #include <fstream>

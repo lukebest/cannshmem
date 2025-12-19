@@ -31,7 +31,7 @@ struct LUTGroup {
 
 using LutKey = std::pair<CocCommType, int>; // {kernelType, rankSize}
 
-bool ApplyLookupTable(const COCMatMulInfo& info, CocCommType type, int rankSize, CocTilingParams& t);
+void ApplyLookupTable(const COCMatMulInfo& info, CocCommType type, int rankSize, CocTilingParams& t);
 
 /* ---------- 全局 LUT 声明 ---------- */
 extern const LUTGroup AllReduce2p;

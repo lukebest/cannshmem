@@ -24,9 +24,9 @@ namespace transport {
 namespace device {
 
 template <typename ContainerType, typename MemberType>
-constexpr const ContainerType* container_of(const MemberType* member_ptr, MemberType ContainerType::* member_ptr_to_member)
+constexpr const ContainerType* container_of(const MemberType* ptr, MemberType ContainerType::* member_ptr_to_member)
 {
-    return reinterpret_cast<const ContainerType*>(reinterpret_cast<const char*>(member_ptr) -
+    return reinterpret_cast<const ContainerType*>(reinterpret_cast<const char*>(ptr) -
         reinterpret_cast<std::size_t>(&(reinterpret_cast<ContainerType*>(0)->*member_ptr_to_member)));
 }
 

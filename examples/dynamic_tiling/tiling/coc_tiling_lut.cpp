@@ -59,7 +59,7 @@ const std::map<LutKey, const LUTGroup *> g_allLutGroups = {
     // 继续添加...
 };
 
-bool ApplyLookupTable(const COCMatMulInfo &info,
+void ApplyLookupTable(const COCMatMulInfo &info,
                       CocCommType type,
                       int rankSize,
                       CocTilingParams &t)
@@ -68,7 +68,7 @@ bool ApplyLookupTable(const COCMatMulInfo &info,
     auto it = g_allLutGroups.find(key);
     if (it == g_allLutGroups.end()) {
         std::cerr << "[LUT] no table for (" << type << ',' << rankSize << ")\n";
-        return false;
+        return;
     }
     constexpr uint32_t COMM_TILE_M_MULTIPLIER = 2;
     constexpr uint32_t N0_IF_M0_IS_256 = 128;
@@ -85,5 +85,4 @@ bool ApplyLookupTable(const COCMatMulInfo &info,
     t.commBlockM = t.commTileM;
     t.n0 = (t.m0 == DEFAULT_M0) ? N0_IF_M0_IS_256 : N0_IF_M0_IS_NOT_256;
     t.k0 = DEFAULT_K0;
-    return true;
 }

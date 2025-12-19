@@ -205,6 +205,9 @@ int main(int argc, char **argv)
     std::string ipPort = options.ipPort;
     int32_t deviceId = options.deviceIdList[rankId];
     std::string data_file = options.data_file;
+    if (data_file.empty()) {
+        return -1;
+    }
     const std::vector<std::vector<uint32_t>> shapes = InitTestShapes(options);
 
     std::cout << "[TEST] input rank_size: " << rankSize << " rank_id: " << rankId << " input_ip: " << ipPort << "\n";
@@ -367,10 +370,7 @@ int main(int argc, char **argv)
                 // 搜索 tiling
                 GetTilings(cocTilings, cocTiling, commType, rankSize);
             } else {
-                bool ok = ApplyLookupTable(info, commType, rankSize, cocTiling);
-                if (!ok) {
-                    std::cerr << "[LUT] no table for (" << opName << "," << rankSize << "), using defaults\n";
-                }
+                ApplyLookupTable(info, commType, rankSize, cocTiling);
                 cocTilings.push_back(cocTiling);
             }
         }
@@ -403,22 +403,20 @@ int main(int argc, char **argv)
             ACL_CHECK(aclrtMemcpy(gatherAHost, gatherASize, gatherADevice, gatherASize, ACL_MEMCPY_DEVICE_TO_HOST));
         }
 
-        if (data_file != "") {
-            if (commType == MATMUL_ALLREDUCE) {
-                if (rankId == 0) {
-                    WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
-                }
-            } else if (commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING
-                       || commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
-                if (rankId == 0) {
-                    WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
-                    if (commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
-                        WriteFile(data_file + "/output_gather_a.bin", gatherAHost, gatherASize);
-                    }
-                }
-            } else if (commType == MATMUL_REDUCE_SCATTER || commType == MATMUL_REDUCE_SCATTER_PADDING) {
-                WriteFile(data_file + "/output.bin", cHost, cSizePerRank, rankId * cSizePerRank);
+        if (commType == MATMUL_ALLREDUCE) {
+            if (rankId == 0) {
+                WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
             }
+        } else if (commType == ALLGATHER_MATMUL || commType == ALLGATHER_MATMUL_PADDING
+                    || commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
+            if (rankId == 0) {
+                WriteFile(data_file + "/output.bin", cHost, cSizePerRank);
+                if (commType == ALLGATHER_MATMUL_WITH_GATHER_RESULT) {
+                    WriteFile(data_file + "/output_gather_a.bin", gatherAHost, gatherASize);
+                }
+            }
+        } else if (commType == MATMUL_REDUCE_SCATTER || commType == MATMUL_REDUCE_SCATTER_PADDING) {
+            WriteFile(data_file + "/output.bin", cHost, cSizePerRank, rankId * cSizePerRank);
         }
 
         if (rankId == 0) {

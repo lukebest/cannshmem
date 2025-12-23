@@ -20,12 +20,52 @@
 #include <sstream>
 #include <sys/time.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
 
 #undef inline
 #include <iostream>
 #define inline __inline__ __attribute__((always_inline))
 
 namespace shm {
+    
+// 日志文件管理核心常量
+constexpr size_t MAX_LOG_FILE_COUNT = 50;                               // 最多保留50个日志文件
+constexpr size_t MAX_FILE_NAME_LEN = 255;                               // 文件名最大长度（不含\0）
+constexpr uint64_t MAX_FILE_SIZE_THRESHOLD = 1024 * 1024 * 1024;        // 单个日志文件最大1GB
+constexpr uint64_t DISK_AVAILABLE_LIMIT = 10 * MAX_FILE_SIZE_THRESHOLD; // 磁盘剩余空间门限10GB
+constexpr size_t MAX_ENV_STRING_LEN = 12800;
+
+// 内部辅助函数声明（仅在cpp中使用）
+std::string get_home_dir();
+bool is_invalid_path(const std::string& path);
+std::string normalize_path(const std::string& path);
+void make_dir_recursive(const std::string& dir);
+bool is_disk_available(const std::string& dir);
+bool starts_with(const std::string& str, const std::string& prefix);
+bool ends_with(const std::string& str, const std::string& suffix);
+bool is_all_digit(const std::string& str);
+
+class log_file_sink {
+public:
+    log_file_sink();
+    ~log_file_sink();
+    void write_log(const std::string& log_content);
+
+private:
+    void init_log_dir();
+    void delete_oldest_files();
+    bool is_valid_log_filename(const std::string& filename, std::string& timestamp);
+    std::string generate_new_log_path();
+    bool open_new_file();
+    void close_file();
+
+private:
+    std::string shmem_log_dir;
+    int shmem_fd = -1;
+    uint64_t shmem_current_file_size = 0;
+    std::mutex shmem_file_mutex;
+};
+
 using external_log = void (*)(int32_t, const char *);
 
 enum log_level : int32_t {
@@ -39,81 +79,32 @@ enum log_level : int32_t {
 
 class shm_out_logger {
 public:
-    static shm_out_logger &Instance()
-    {
-        static shm_out_logger g_logger;
-        return g_logger;
-    }
-
-    inline shmem_error_code_t set_log_level(log_level level)
-    {
-        if (level < DEBUG_LEVEL || level >= BUTT_LEVEL) {
-            return SHMEM_INVALID_VALUE;
-        }
-        m_log_level = level;
-        return SHMEM_SUCCESS;
-    }
-
-    inline void set_extern_log_func(external_log func, bool force_update = false)
-    {
-        if (m_log_func == nullptr || force_update) {
-            m_log_func = func;
-        }
-    }
-
-    inline void log(int32_t level, const std::ostringstream &oss)
-    {
-        if (m_log_func != nullptr) {
-            m_log_func(level, oss.str().c_str());
-            return;
-        }
-
-        if (level < m_log_level) {
-            return;
-        }
-
-        struct timeval tv {};
-        char str_time[24];
-
-        gettimeofday(&tv, nullptr);
-        time_t time_stamp = tv.tv_sec;
-        struct tm local_time {};
-        if (strftime(str_time, sizeof str_time, "%Y-%m-%d %H:%M:%S.", localtime_r(&time_stamp, &local_time)) != 0) {
-            std::cout << str_time << std::setw(6U) << std::setfill('0') << tv.tv_usec
-                      << " " << log_level_desc(level) << " " << syscall(SYS_gettid)
-                      << " pid[" << getpid() << "] " << oss.str() << std::endl;
-        } else {
-            std::cout << " Invalid time " << log_level_desc(level) << " " << syscall(SYS_gettid)
-                      << " pid[" << getpid() << "] " << oss.str() << std::endl;
-        }
-    }
+    static shm_out_logger &Instance();
+    shmem_error_code_t set_log_level(log_level level);
+    void set_extern_log_func(external_log func, bool force_update = false);
+    void log(int32_t level, const std::ostringstream &oss);
 
     shm_out_logger(const shm_out_logger &) = delete;
     shm_out_logger(shm_out_logger &&) = delete;
 
-    ~shm_out_logger()
-    {
-        m_log_func = nullptr;
-    }
+    shm_out_logger& operator=(const shm_out_logger &) = delete;
+    shm_out_logger& operator=(shm_out_logger &&) = delete;
+
+    ~shm_out_logger();
 
 private:
-    shm_out_logger() = default;
-
-    inline const std::string &log_level_desc(int32_t level)
-    {
-        static std::string invalid = "invalid";
-        if (level < DEBUG_LEVEL || level >= BUTT_LEVEL) {
-            return invalid;
-        }
-        return m_log_level_desc[level];
-    }
+    shm_out_logger();
+    std::string build_log_content(int32_t level, const std::ostringstream &oss);
+    const std::string &log_level_desc(int32_t level);
 
 private:
-    const std::string m_log_level_desc[BUTT_LEVEL] = {"debug", "info", "warn", "error", "fatal"};
-
-    log_level m_log_level = WARN_LEVEL;
-    external_log m_log_func = nullptr;
+    const std::string shmem_log_level_desc[BUTT_LEVEL] = {"debug", "info", "warn", "error", "fatal"};
+    log_level shmem_log_level = WARN_LEVEL;
+    external_log shmem_log_func = nullptr;
+    log_file_sink* shmem_file_sink;
+    bool is_log_stdout = false;
 };
+
 }  // namespace shm
 
 #ifndef SHM_LOG_FILENAME_SHORT

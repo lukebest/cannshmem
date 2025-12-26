@@ -590,7 +590,7 @@ int32_t HalGvaAlloc(uint64_t address, size_t size, uint64_t flags)
     int32_t ret = HybmIoctlAllocAnddAdvice(va, size, g_gvaHeapMgr.deviceId, advise);
     if (ret != 0) {
         BM_LOG_ERROR("Alloc gva local mem error. (ret=" << ret << " size=0x" << std::hex <<
-            size << "advise=0x" << advise << ")");
+            size << ", advise=0x" << advise << ")");
         (void)RemoveInGvaHeap(va);
         return -1;
     }
@@ -654,7 +654,7 @@ int32_t HalGvaClose(uint64_t address, uint64_t flags)
         BM_LOG_ERROR("Close error. ret:" << ret);
         return ret;
     }
-    
+
     return HalGvaFree(address, 0);
 }
 

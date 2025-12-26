@@ -226,7 +226,10 @@ int32_t shmemi_heap_init(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(aclrtMalloc(((void **)&g_state.roce_heap_device_base), g_state.npes * sizeof(void *),
         ACL_MEM_MALLOC_HUGE_FIRST));
 
-    g_state.heap_base = (void *)((uintptr_t)gva + g_state.heap_size * static_cast<uint32_t>(attributes->my_rank));
+    auto alignedSize = ALIGN_UP(g_state.heap_size, SHMEM_HEAP_SEGMENT_SIZE);
+    g_state.heap_base = (void *)((uintptr_t)gva + alignedSize * static_cast<uint32_t>(attributes->my_rank));
+    g_state.heap_size = alignedSize;
+
     shmemi_reach_info_init(gva);
     if (shm::g_ipport[0] != '\0') {
         g_ipport[0] = '\0';
@@ -758,7 +761,8 @@ int32_t shmem_init_attr(shmem_init_attr_t *attributes)
     SHMEM_CHECK_RET(shm::shmemi_heap_init(attributes), shmemi_heap_init);
     SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);
 
-    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, shm::g_state.heap_size),
+    // heap_size is aligned, use actual local_mem_size to init mm
+    SHMEM_CHECK_RET(shm::memory_manager_initialize(shm::g_state.heap_base, attributes->local_mem_size + SHMEM_EXTRA_SIZE),
                     memory_manager_initialize);
     SHMEM_CHECK_RET(shm::shmemi_team_init(shm::g_state.mype, shm::g_state.npes), shmemi_team_init);
     SHMEM_CHECK_RET(shm::update_device_state(), update_device_state);

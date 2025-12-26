@@ -49,11 +49,17 @@ extern "C" {
 #define SHMEM_PARTIAL_BARRIER_POOL_SIZE (SHMEM_PARTIAL_BARRIER_PER_TEAM_SIZE * SHMEM_MAX_TEAMS)
 
 // Total extra
-#define SHMEM_EXTRA_SIZE_UNALIGHED (SYNC_POOL_SIZE + SHMEM_PARTIAL_BARRIER_POOL_SIZE)
+#define SHMEM_EXTRA_SIZE_UNALIGHED (SYNC_POOL_SIZE + SYNC_COUNTERS_SIZE + SHMEM_PARTIAL_BARRIER_POOL_SIZE)
 #define SHMEM_EXTRA_SIZE ALIGH_TO(SHMEM_EXTRA_SIZE_UNALIGHED, SHMEM_PAGE_SIZE)
 
 // synchronization
 typedef int32_t shmemi_sync_bit[SHMEMI_SYNCBIT_SIZE / sizeof(int32_t)];
+
+// hybm constants ref
+constexpr uint64_t SHMEM_HEAP_SEGMENT_SIZE = (1UL << 30UL);     // same definition with DEVMM_HEAP_SIZE
+#ifndef ALIGN_UP
+#define ALIGN_UP(val, al) (((val) + ((al) - 1)) & ~((al) - 1))
+#endif
 
 // Team
 typedef struct {
@@ -99,7 +105,7 @@ typedef struct {
     uint64_t core_sync_counter;
 
     uint64_t partial_barrier_pool;
-    
+
     bool is_shmem_initialized;
     bool is_shmem_created;
 

@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstddef>
 #include "mf_out_logger.h"
+#include "devmm_define.h"
 
 namespace ock {
 namespace mf {

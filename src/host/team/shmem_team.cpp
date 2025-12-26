@@ -81,7 +81,7 @@ int32_t shmemi_team_init_sync_pool()
     auto ret = aclrtMemset((void *)g_state.sync_pool, SYNC_POOL_SIZE, 0, SYNC_POOL_SIZE);
     if (ret != 0) {
         shmemi_team_finalize();
-        SHM_LOG_ERROR("memset sync pool failed.");
+        SHM_LOG_ERROR("memset sync pool failed, ret=" << ret);
         return SHMEM_INNER_ERROR;
     }
     return SHMEM_SUCCESS;

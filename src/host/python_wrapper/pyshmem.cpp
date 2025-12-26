@@ -196,6 +196,10 @@ void DefineShmemAttr(py::module_ &m)
     py::class_<shmem_init_optional_attr_t>(m, "OptionalAttr")
         .def(py::init([]() {
             auto optional_attr = new (std::nothrow) shmem_init_optional_attr_t;
+            optional_attr->shm_init_timeout = DEFAULT_TIMEOUT;
+            optional_attr->shm_create_timeout = DEFAULT_TIMEOUT;
+            optional_attr->control_operation_timeout = DEFAULT_TIMEOUT;
+            optional_attr->sockFd = -1;
             return optional_attr;
         }))
         .def_readwrite("version", &shmem_init_optional_attr_t::version)

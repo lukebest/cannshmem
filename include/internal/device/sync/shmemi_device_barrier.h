@@ -289,6 +289,33 @@ SHMEM_DEVICE void shmemi_barrier_npu_v3(shmemi_team_t *team)
     shmemi_store((__gm__ int32_t *)sync_counter, count);
 }
 
+/** 
+ * Switch-accelerated Barrier (v4).
+ * Offloads synchronization to a network switch barrier accelerator.
+ */
+SHMEM_DEVICE void shmemi_barrier_npu_v4(shmemi_team_t *team)
+{
+    if (!team->use_switch_barrier) {
+        shmemi_barrier_npu_v3(team);
+        return;
+    }
+
+    int vec_id = AscendC::GetBlockIdx();
+    if (vec_id != 0) {
+        return; 
+    }
+    
+    auto sync_counter = shmemi_get_team_sync_counter(team->team_idx);
+    int32_t count = shmemi_load((__gm__ int32_t *)sync_counter) + 1;
+
+    uint64_t payload = ((uint64_t)team->switch_group_id << 32) | (uint32_t)count;
+
+    shmemi_store((__gm__ uint64_t *)team->switch_trigger_addr, payload);
+    dcci_cacheline((__gm__ uint8_t *)team->switch_trigger_addr);
+
+    shmemi_signal_wait_until_eq_for_barrier((__gm__ int32_t *)sync_counter, count);
+}
+
 /* Level 3: barrier between hosts, TO BE IMPLEMENTED. */
 SHMEM_DEVICE void shmemi_barrier_sys()
 {
@@ -312,7 +339,7 @@ SHMEM_DEVICE void shmemi_barrier(shmem_team_t tid)
     shmemi_barrier_core<is_aiv_only>();
 
     if ASCEND_IS_AIV {
-        shmemi_barrier_npu_v3(team);
+        shmemi_barrier_npu_v4(team);
     }
 
     shmemi_barrier_core<is_aiv_only>();

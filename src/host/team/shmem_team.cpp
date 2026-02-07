@@ -21,6 +21,66 @@
 using namespace std;
 
 namespace shm {
+
+// --- Switch Barrier Control Plane ---
+struct BarrierMemberConfig {
+    uint32_t rank_id;
+    uint32_t ip_address; 
+    uint64_t flag_vaddr;
+    uint32_t rkey;
+};
+
+class SwitchBarrierController {
+public:
+    // Simulated Switch Configuration
+    static void initialize_switch_group(uint32_t group_id, int size, const std::vector<BarrierMemberConfig>& members) {
+        SHM_LOG_INFO("[Switch] Initializing Barrier Group " << group_id << " Size: " << size);
+        for (const auto& m : members) {
+            // Mock switch configuration logic
+        }
+    }
+};
+
+static uint32_t get_switch_group_id(int team_idx) {
+    return (uint32_t)team_idx + 100;
+}
+
+static void setup_switch_barrier(shmemi_team_t *team) {
+    const char* env_switch = std::getenv("SHMEM_ENABLE_SWITCH_BARRIER");
+    if (!env_switch || strcmp(env_switch, "1") != 0) {
+        team->use_switch_barrier = 0;
+        return;
+    }
+
+    team->use_switch_barrier = 1;
+    team->switch_group_id = get_switch_group_id(team->team_idx);
+    
+    // Hardcoded switch addressing for demo purpose
+    team->switch_dest_ip = 0xC0A80001; 
+    team->switch_trigger_addr = 0xBA000000; 
+    team->switch_rkey = 0x12345678;
+
+    // TODO: Configure IOMMU to map switch_trigger_addr into Device VA space
+    // ret = aclrtMapMem(..., team->switch_trigger_addr, ...);
+
+    if (team->mype == 0) {
+        std::vector<BarrierMemberConfig> members;
+        for (int i = 0; i < team->size; i++) {
+            BarrierMemberConfig config;
+            config.rank_id = team->start + i * team->stride;
+            config.ip_address = 0x0A000000 + config.rank_id; 
+            
+            uint64_t team_sync_base = g_state.sync_counter + team->team_idx * SYNC_COUNTER_SIZE;
+            config.flag_vaddr = team_sync_base; 
+            config.rkey = 0x1234; 
+
+            members.push_back(config);
+        }
+        SwitchBarrierController::initialize_switch_group(team->switch_group_id, team->size, members);
+    }
+}
+// ------------------------------------
+
 uint64_t g_team_mask = 0;
 shmemi_team_t *g_shmem_team_pool = nullptr;
 
@@ -178,6 +238,10 @@ int32_t shmemi_team_init(int32_t rank, int32_t size)
     shmem_team_world.size = size;
     shmem_team_world.mype = rank;
     g_team_mask |= 1ULL << SHMEM_TEAM_WORLD;
+    
+    // Initialize Switch Barrier if enabled
+    setup_switch_barrier(&shmem_team_world);
+
     SHMEM_CHECK_RET(device_team_update(SHMEM_TEAM_WORLD, &shmem_team_world));
 
     /* Initialize TEAM SYNC */
@@ -323,6 +387,9 @@ int32_t shmem_team_split_strided(shmem_team_t parent_team, int32_t pe_start, int
         SHM_LOG_ERROR("create team failed, team num is full!");
         return SHMEM_INNER_ERROR;
     }
+
+    // Configure Switch Barrier for new team
+    setup_switch_barrier(&my_team);
 
     shm::g_shmem_team_pool[my_team.team_idx] = my_team;
     if (shm::device_team_update(my_team.team_idx, &shm::g_shmem_team_pool[my_team.team_idx]) != 0) {

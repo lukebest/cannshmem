@@ -10,6 +10,9 @@
 #ifndef SHMEMI_TYPES_H
 #define SHMEMI_TYPES_H
 
+#include <stdint.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -68,6 +71,12 @@ typedef struct {
     int stride;         // global view, [1, npes - 1]
     int size;           // team view
     int team_idx;
+
+    // Switch Barrier Accelerator Fields
+    int use_switch_barrier;
+    uint32_t switch_group_id;
+    uint64_t switch_trigger_addr;
+    uint32_t switch_rkey;
 } shmemi_team_t;
 
 // mte_config

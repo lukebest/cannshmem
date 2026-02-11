@@ -77,6 +77,7 @@ typedef struct {
     uint32_t switch_group_id;
     uint64_t switch_trigger_addr;
     uint32_t switch_rkey;
+    uint64_t switch_handle; // Handle to the switch barrier object
 } shmemi_team_t;
 
 // mte_config
@@ -100,6 +101,10 @@ typedef struct {
     void **sdma_heap_device_base;
     void **roce_heap_device_base;
     uint8_t topo_list[SHMEM_MAX_RANKS];
+    
+    // Capability of the device connected to rank i: 1 if connected to switch with barrier offload
+    uint8_t device_barrier_cap[SHMEM_MAX_RANKS];
+
     size_t heap_size;
 
     shmemi_team_t *team_pools[SHMEM_MAX_TEAMS];
